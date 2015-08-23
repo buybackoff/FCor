@@ -114,7 +114,7 @@ Target "CopyBinaries" (fun _ ->
 // Clean build results
 
 Target "Clean" (fun _ ->
-    CleanDirs ["bin/FCore"; "temp"]
+    CleanDirs ["bin/FCore"]
 )
 
 Target "CleanDocs" (fun _ ->
@@ -254,13 +254,13 @@ Target "GenerateDocs" DoNothing
 
 Target "ReleaseDocs" (fun _ ->
     let tempDocsDir = "temp/gh-pages"
-    CleanDir tempDocsDir
-    Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
+    //CleanDir tempDocsDir
+    //Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
 
     CopyRecursive "docs/output" tempDocsDir true |> tracefn "%A"
-    StageAll tempDocsDir
-    Git.Commit.Commit tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
-    Branches.push tempDocsDir
+    //StageAll tempDocsDir
+    //Git.Commit.Commit tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
+    //Branches.push tempDocsDir
 )
 
 #load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
@@ -296,8 +296,8 @@ Target "All" DoNothing
   ==> "CopyBinaries"
   ==> "BuildTests"
   ==> "RunTests"
-  ==> "GenerateHelpDebug"
-  ==> "KeepRunning"
+  ==> "GenerateHelp"
+  ==> "ReleaseDocs"
 
 
 //"Clean"
