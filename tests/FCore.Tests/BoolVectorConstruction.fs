@@ -1,11 +1,13 @@
 module FCore.Tests
 
 open FCore
-open NUnit.Framework
-open FsUnit
+open Util
+open Xunit
+open FsCheck
+open FsCheck.Xunit
+open System
 
-[<Test>]
-let ``Constructs BoolVector from int64 and bool value`` () =
-  use v = new BoolVector(5L, false)
-  v.LongLength |> should equal 5L
-  v.ToArray() |> should equal [|false;false;false;false;false|]
+[<Property>]
+let ``Constructs BoolVector from int64 and bool value`` (len : int64) x =
+    len >= 0L ==> lazy((new BoolVector(len, x)).LongLength = len)
+

@@ -3,7 +3,13 @@ source https://nuget.org/api/v2
 nuget FSharp.Formatting
 nuget NUnit 
 nuget NUnit.Runners
+nuget xUnit = 1.9.2
+nuget xUnit.Runners = 1.9.2
+nuget FsCheck
+nuget FsCheck.NUnit
+nuget FsCheck.XUnit
 nuget FAKE
 nuget SourceLink.Fake
+nuget FSharp.Core = 3.1.2.5
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx

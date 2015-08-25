@@ -1,2 +1,2 @@
-NUnit
-NUnit.Runners
+FsCheck
+FsCheck.XUnit
