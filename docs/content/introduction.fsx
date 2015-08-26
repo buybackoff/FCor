@@ -4,19 +4,16 @@
 #I "../../bin/FCore"
 
 (**
-Introducing your project
-========================
+Introduction
+============
+FCore is a .NET numerical library with an F# API. It contains F# types and functions which will allow you to manipulate multidimensional dense and 2D sparse matrices as well as generate random numbers. 
+For maximum performance most functions are implemented in C using Intel MKL.
 
-Say more
+It is organised into the following namespaces and modules:
 
-*)
-#r "FCore.dll"
-open FCore
-open FCore.Random
-
-let rng = new MT19937Rng()
-let matrix = rand rng 3 4
-
-(**
-Some more info
+* **FCore** - contains the main types such as BoolVector, Vector, BoolMatrix, Matrix... 
+* **FCore.BasicStats** - contains standard statistical functions, such as mean.
+* **FCore.LinearAlgebra** - contains linear algebra functions, such as for cholesky factorization 
+* **FCore.Math** - contains mathematical functions, such as for calculation of the hyperbolic sine. 
+* **FCore.Random** - contains random functions, such as for allowing the generation of samples from the binomial distribution. 
 *)

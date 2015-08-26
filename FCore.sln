@@ -1,5 +1,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{63297B98-5CED-492C-A5B7-A5B4F73CF142}"
 	ProjectSection(SolutionItems) = preProject
 		paket.dependencies = paket.dependencies
@@ -7,11 +9,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{63297B
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FCore", "src\FCore\FCore.fsproj", "{949BEAFD-6F65-42AB-B4EF-BFF6DBC29C8E}"
-	ProjectSection(ProjectDependencies) = postProject
-		{A63D210B-E21F-40FA-83A2-8E38FA3545C9} = {A63D210B-E21F-40FA-83A2-8E38FA3545C9}
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{BF60BC93-E09B-4E5F-9D85-95A519479D54}"
 	ProjectSection(SolutionItems) = preProject
@@ -33,9 +30,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{8E6D
 	ProjectSection(SolutionItems) = preProject
 		docs\content\index.fsx = docs\content\index.fsx
 		docs\content\introduction.fsx = docs\content\introduction.fsx
+		docs\content\license.md = docs\content\license.md
+		docs\content\release-notes.md = docs\content\release-notes.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{ED8079DD-2B06-4030-9F0F-DC548F98E1C4}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FCore", "src\FCore\FCore.fsproj", "{949BEAFD-6F65-42AB-B4EF-BFF6DBC29C8E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A63D210B-E21F-40FA-83A2-8E38FA3545C9} = {A63D210B-E21F-40FA-83A2-8E38FA3545C9}
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FCore.Tests", "tests\FCore.Tests\FCore.Tests.fsproj", "{9405B5E0-05C7-4B39-AB28-8E1895B3D7E3}"
 EndProject
