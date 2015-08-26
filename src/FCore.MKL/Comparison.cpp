@@ -49,14 +49,14 @@ bool arrays_are_equal(MKL_INT n, T* x, T* y)
 template<typename T>
 void compare_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, int compCode, bool* result)
 {
-	if (nx = 1)
+	if (nx == 1)
 	{
 		for (MKL_INT i = 0; i < ny; i++)
 		{
 			result[i] = Comp(x[0], y[i], compCode);
 		}
 	}
-	else if (ny = 1)
+	else if (ny == 1)
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{

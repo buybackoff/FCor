@@ -95,14 +95,14 @@ void array_pow_scalar(T a, MKL_INT n, T* x, T* result)
 template<typename T>
 void min_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 {
-	if (nx = 1)
+	if (nx == 1)
 	{
 		for (MKL_INT i = 0; i < ny; i++)
 		{
 			result[i] = x[0] < y[i] ? x[0] : y[i];
 		}
 	}
-	else if (ny = 1)
+	else if (ny == 1)
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
@@ -121,14 +121,14 @@ void min_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 template<typename T>
 void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 {
-	if (nx = 1)
+	if (nx == 1)
 	{
 		for (MKL_INT i = 0; i < ny; i++)
 		{
 			result[i] = x[0] > y[i] ? x[0] : y[i];
 		}
 	}
-	else if (ny = 1)
+	else if (ny == 1)
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
@@ -147,14 +147,14 @@ void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 template<typename T>
 void iif_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, bool* b, T* result)
 {
-	if (nx = 1)
+	if (nx == 1)
 	{
 		for (MKL_INT i = 0; i < ny; i++)
 		{
 			result[i] = b[i] ? x[0] : y[i];
 		}
 	}
-	else if (ny = 1)
+	else if (ny == 1)
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
@@ -219,14 +219,14 @@ extern "C" __declspec(dllexport) void s_iif_arrays(MKL_INT nx, float* x, MKL_INT
 
 extern "C" __declspec(dllexport) void b_and_arrays(MKL_INT nx, bool* x, MKL_INT ny, bool* y, bool* result)
 {
-	if (nx = 1)
+	if (nx == 1)
 	{
 		for (MKL_INT i = 0; i < ny; i++)
 		{
 			result[i] = x[0] && y[i];
 		}
 	}
-	else if (ny = 1)
+	else if (ny == 1)
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
@@ -244,14 +244,14 @@ extern "C" __declspec(dllexport) void b_and_arrays(MKL_INT nx, bool* x, MKL_INT 
 
 extern "C" __declspec(dllexport) void b_or_arrays(MKL_INT nx, bool* x, MKL_INT ny, bool* y, bool* result)
 {
-	if (nx = 1)
+	if (nx == 1)
 	{
 		for (MKL_INT i = 0; i < ny; i++)
 		{
 			result[i] = x[0] || y[i];
 		}
 	}
-	else if (ny = 1)
+	else if (ny == 1)
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
