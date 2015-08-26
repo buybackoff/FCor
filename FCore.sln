@@ -28,7 +28,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{83F16175
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{8E6D5255-776D-4B61-85F9-73C37AA1FB9A}"
 	ProjectSection(SolutionItems) = preProject
-		docs\content\BoolVector.fsx = docs\content\BoolVector.fsx
 		docs\content\index.fsx = docs\content\index.fsx
 		docs\content\introduction.fsx = docs\content\introduction.fsx
 		docs\content\license.md = docs\content\license.md
@@ -77,13 +76,13 @@ Global
 		{9405B5E0-05C7-4B39-AB28-8E1895B3D7E3}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{9405B5E0-05C7-4B39-AB28-8E1895B3D7E3}.Release|Win32.ActiveCfg = Release|Any CPU
 		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Debug|Mixed Platforms.Build.0 = Debug|x64
 		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Debug|Win32.ActiveCfg = Debug|Win32
 		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Debug|Win32.Build.0 = Debug|Win32
 		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Release|Any CPU.ActiveCfg = Release|Win32
-		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Release|Mixed Platforms.ActiveCfg = Release|x64
+		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Release|Mixed Platforms.Build.0 = Release|x64
 		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Release|Win32.ActiveCfg = Release|Win32
 		{A63D210B-E21F-40FA-83A2-8E38FA3545C9}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection

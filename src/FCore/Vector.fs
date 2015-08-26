@@ -12,6 +12,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     static let empty = new BoolVector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
 
     new(length : int64, init : bool) =
+        if length < 0L then raise (new ArgumentException("Vector length must be >= 0"))
         let mutable arr = IntPtr.Zero
         let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
         MklFunctions.B_Create_Array(length, nativeArrayPtr)
@@ -46,7 +47,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     new(length : int, initializer : int -> bool) =
         let data = Array.init length initializer
-        new BoolVector(data)
+        new BoolVector(data, false)
 
 
     member this.Length = length |> int
@@ -189,7 +190,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         let length = vectors |> Seq.map (fun v -> v.LongLength) |> Seq.reduce (+)
         let res = new BoolVector(length, false)
         vectors |> Seq.fold (fun offset v ->
-                                 res.View(offset, v.LongLength).[0L..] <- v
+                                 res.View(offset, v.LongLength).SetSlice(Some(0L), None, v)
                                  offset + v.LongLength
                             ) 0L |> ignore
         res
@@ -562,7 +563,7 @@ and BoolVectorExpr =
         for i in 0L..(m-1L) do
             let sliceStart = i * n
             let v, _, _, _, _ = BoolVectorExpr.EvalSlice vectorExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
-            res.View(sliceStart, n).[0L..] <- v
+            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
             freePool.AddRange(usedPool)
             usedPool.Clear()
             freeBoolPool.AddRange(usedBoolPool)
@@ -577,7 +578,7 @@ and BoolVectorExpr =
             let freePool' = new List<Vector>(freePool |> Seq.map (fun v -> v.View(0L, k)))
             let sliceStart = m * n
             let v, _, _, _, _ = BoolVectorExpr.EvalSlice vectorExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
-            res.View(sliceStart, k).[0L..] <- v
+            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
             freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
             freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
 
@@ -943,7 +944,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         let length = vectors |> Seq.map (fun v -> v.LongLength) |> Seq.reduce (+)
         let res = new Vector(length, 0.0)
         vectors |> Seq.fold (fun offset v ->
-                                 res.View(offset, v.LongLength).[0L..] <- v
+                                 res.View(offset, v.LongLength).SetSlice(Some(0L), None, v)
                                  offset + v.LongLength
                             ) 0L |> ignore
         res
@@ -1616,7 +1617,7 @@ and VectorExpr =
         for i in 0L..(m-1L) do
             let sliceStart = i * n
             let v, _, _, _, _ = VectorExpr.EvalSlice vectorExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
-            res.View(sliceStart, n).[0L..] <- v
+            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
             freePool.AddRange(usedPool)
             usedPool.Clear()
             freeBoolPool.AddRange(usedBoolPool)
@@ -1631,7 +1632,7 @@ and VectorExpr =
             let freeBoolPool' = new List<BoolVector>(freeBoolPool |> Seq.map (fun v -> v.View(0L, k)))
             let sliceStart = m * n
             let v, _, _, _, _ = VectorExpr.EvalSlice vectorExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
-            res.View(sliceStart, k).[0L..] <- v
+            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
             freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
             freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
 

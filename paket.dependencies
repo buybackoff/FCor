@@ -5,6 +5,7 @@ nuget NUnit
 nuget NUnit.Runners
 nuget xUnit = 1.9.2
 nuget xUnit.Runners = 1.9.2
+nuget FsUnit.xUnit = 1.3.1
 nuget FsCheck
 nuget FsCheck.NUnit
 nuget FsCheck.XUnit

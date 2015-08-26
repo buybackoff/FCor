@@ -138,7 +138,9 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
         let slice = new BoolMatrix(sliceRowCount, sliceColCount, false)
         for i in 0L..sliceColCount - 1L do
-            slice.ColView(i).[0L..] <- this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount)
+            let v = slice.ColView(i)
+            //slice.ColView(i).[0L..] <- this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount)
+            slice.ColView(i).SetSlice(Some(0L), None, this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount))
         slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
@@ -172,7 +174,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         let sliceRowCount = toRowIndex - fromRowIndex + 1L
         let sliceColCount = toColIndex - fromColIndex + 1L
         for i in 0L..sliceColCount - 1L do
-            this.ColView(i).[0L..] <- value
+            this.ColView(i).SetSlice(Some(0L), None, value)
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : bool) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -205,7 +207,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         let sliceRowCount = toRowIndex - fromRowIndex + 1L
         let sliceColCount = toColIndex - fromColIndex + 1L
         for i in 0L..sliceColCount - 1L do
-            this.ColView(i).[0L..] <- value.ColView(i)
+            this.ColView(i).SetSlice(Some(0L), None, value.ColView(i))
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : BoolMatrix) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -666,7 +668,7 @@ and BoolMatrixExpr =
         for i in 0L..(m-1L) do
             let sliceStart = i * n
             let v, _, _, _, _ = BoolMatrixExpr.EvalSlice matrixExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
-            res.View(sliceStart, n).[0L..] <- v
+            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
             freePool.AddRange(usedPool)
             usedPool.Clear()
             freeBoolPool.AddRange(usedBoolPool)
@@ -681,7 +683,7 @@ and BoolMatrixExpr =
             let freePool' = new List<Vector>(freePool |> Seq.map (fun v -> v.View(0L, k)))
             let sliceStart = m * n
             let v, _, _, _, _ = BoolMatrixExpr.EvalSlice matrixExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
-            res.View(sliceStart, k).[0L..] <- v
+            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
             freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
             freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
 
@@ -1007,7 +1009,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
         let slice = new Matrix(sliceRowCount, sliceColCount, 0.0)
         for i in 0L..sliceColCount - 1L do
-            slice.ColView(i).[0L..] <- this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount)
+            slice.ColView(i).SetSlice(Some(0L), None, this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount))
         slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
@@ -1041,7 +1043,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         let sliceRowCount = toRowIndex - fromRowIndex + 1L
         let sliceColCount = toColIndex - fromColIndex + 1L
         for i in 0L..sliceColCount - 1L do
-            this.ColView(i).[0L..] <- value
+            this.ColView(i).SetSlice(Some(0L), None, value)
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : float) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -1074,7 +1076,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         let sliceRowCount = toRowIndex - fromRowIndex + 1L
         let sliceColCount = toColIndex - fromColIndex + 1L
         for i in 0L..sliceColCount - 1L do
-            this.ColView(i).[0L..] <- value.ColView(i)
+            this.ColView(i).SetSlice(Some(0L), None, value.ColView(i))
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : Matrix) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -2130,7 +2132,7 @@ and MatrixExpr =
         for i in 0L..(m-1L) do
             let sliceStart = i * n
             let v, _, _, _, _ = MatrixExpr.EvalSlice matrixExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
-            res.View(sliceStart, n).[0L..] <- v
+            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
             freePool.AddRange(usedPool)
             usedPool.Clear()
             freeBoolPool.AddRange(usedBoolPool)
@@ -2145,7 +2147,7 @@ and MatrixExpr =
             let freeBoolPool' = new List<BoolVector>(freeBoolPool |> Seq.map (fun v -> v.View(0L, k)))
             let sliceStart = m * n
             let v, _, _, _, _ = MatrixExpr.EvalSlice matrixExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
-            res.View(sliceStart, k).[0L..] <- v
+            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
             freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
             freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
 
