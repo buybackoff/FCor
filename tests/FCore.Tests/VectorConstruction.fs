@@ -15,15 +15,15 @@ module VectorConstruction =
         let v = Vector.Empty
         v.LongLength = 0L && v.ToArray() = Array.zeroCreate<float> 0
 
-//    [<Property>]
-//    let ``Throws arg exception if construction with len64 < 0`` (len : int64) ix =
-//        let x = cln ix
-//        len < 0L ==> Prop.throws<ArgumentException, _> (lazy(new Vector(len, x)))
-//
-//    [<Property>]
-//    let ``Throws arg exception if construction with len < 0`` (len : int) (ix : float) =
-//        let x = cln ix
-//        len < 0 ==> Prop.throws<ArgumentException, _> (lazy(new Vector(len, x)))
+    [<Property>]
+    let ``Throws arg exception if construction with len64 < 0`` (len : int64) ix =
+        let x = cln ix
+        len < 0L ==> Prop.throws<ArgumentException, _> (lazy(new Vector(len, x)))
+
+    [<Property>]
+    let ``Throws arg exception if construction with len < 0`` (len : int) (ix : float) =
+        let x = cln ix
+        len < 0 ==> Prop.throws<ArgumentException, _> (lazy(new Vector(len, x)))
 
     [<Property>]
     let ``Constructs Vector from non negative int64 and float value`` (len : int64) ix =

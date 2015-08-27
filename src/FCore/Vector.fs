@@ -764,6 +764,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
     static let empty = new Vector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
 
     new(length : int64, init : float) =
+        if length < 0L then raise (new ArgumentException("Vector length must be >= 0"))
         let mutable arr = IntPtr.Zero
         let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
         MklFunctions.D_Create_Array(length, nativeArrayPtr)

@@ -50,11 +50,11 @@ module VectorOperators =
         |> Array.map cln
         |> should equal ([| -0.1; -0.2; -0.4 |] |> Array.map cln)
     
-//    [<Fact>]
-//    let ``Operator ==``() = (v1 == v2) |> should equal false
-//    
-//    [<Fact>]
-//    let ``Operator !=``() = (v1 != v2) |> should equal true
+    [<Fact>]
+    let ``Operator ==``() = (v1 == v2) |> should equal false
+    
+    [<Fact>]
+    let ``Operator !=``() = (v1 != v2) |> should equal true
     
     [<Fact>]
     let ``Operator .<``() = (v1 .< v2).ToArray() |> should equal [| false; false; true |]

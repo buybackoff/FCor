@@ -38,7 +38,7 @@ bool arrays_are_equal(MKL_INT n, T* x, T* y)
 {
 	for (MKL_INT i = 0; i < n; i++)
 	{
-		if (x[i] != y[i])
+		if (!(x[i] == y[i]))
 		{
 			return false;
 		}

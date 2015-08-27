@@ -8,7 +8,7 @@ FCore is a .NET library but for maximum performance on Intel it is accelerated b
  
 FCore source code on GitHub is covered under the terms of the MIT/X11 license. Please note that MKL is not open source and therefore FCore binary distribution on Nuget, which contains MKL, is available under a separate license.
     
-Read the [Getting started tutorial](http://fsprojects.github.io/ProjectScaffold/index.html#Getting-started) to learn more.
+Read the [Getting started tutorial](http://statfactory.github.io/FCore) to learn more.
 
-Documentation: http://fsprojects.github.io/ProjectScaffold
+Documentation: http://statfactory.github.io/FCore
 
