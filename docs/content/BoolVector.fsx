@@ -22,7 +22,7 @@ let v3 = new BoolVector(false)
 (** This gives a value for v2 of: *)
 (*** include-value: v2 ***)
 (**
-You can also create a vector by just providing a sequence of bool values or by specifiying a length and an initiializer function:
+You can also create a vector by just providing a sequence of bool values or by specifiying a length and an initializer function:
 *)
 let v4 = new BoolVector([ false; true ])
 
@@ -51,15 +51,32 @@ There are a full range of operators provided for working with BoolVectors. These
 
 * **==** - tests whether two vectors are equal 
 * **!=** - tests whether two vectors are different 
-* **.&&** - creates a new vector which is the results of applying && to each element of the two vectors  
-* **.||** - creates a new vector which is the results of applying || to each element of the two vectors  
+* **.&&** - creates a new vector, which is the result of applying && to each element of the two vectors  
+* **.||** - creates a new vector, which is the result of applying || to each element of the two vectors  
 
 Here are some examples:
 *)
-v1 == v2 //false
-v1 != v2 //true
-let v10 = new BoolVector([ false; true ; false ])
-let v11 = new BoolVector([ false; true ; true ])
-let b1 = v10 .&& v11 //?? should be false, true,false but is false,false,false???
-let b2 = v10 .|| v11 //false,true,true
-
+let v10 = new BoolVector([ false; true; false ])
+let v11 = new BoolVector([ false; true; true ])
+v10 == v11 //false
+v10 != v11 //true
+v10 .&& v11 //false,true,false
+v10 .|| v11 //false,true,true
+(**
+Accessing elements and slicing
+------------------------------
+To access an individual element within the vector you can just use the standard F# syntax: x.[i]. For example:
+*)
+v10.[2]
+(**
+produces a value of:
+*)
+(*** include-value: v10.[2] ***)
+(**
+Tou can also access a range within a vector using slicing syntax: x.[i..j]. For example:
+*)
+v10.[1..2]
+(**
+produces a value of:
+*)
+(*** include-value: v10.[1..2] ***)

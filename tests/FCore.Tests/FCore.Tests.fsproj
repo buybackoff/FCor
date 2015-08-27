@@ -88,6 +88,9 @@
     <Compile Include="Util.fs" />
     <None Include="paket.references" />
     <Compile Include="BoolVectorConstruction.fs" />
+    <Compile Include="BoolVectorOperators.fs" />
+    <Compile Include="VectorConstruction.fs" />
+    <Compile Include="VectorOperators.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FsCheck">
