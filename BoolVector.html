@@ -71,7 +71,7 @@
 
 </code></pre></td></tr></table>
 
-<p>You can also create a vector by just providing a sequence of bool values or by specifiying a length and an initiializer function:</p>
+<p>You can also create a vector by just providing a sequence of bool values or by specifiying a length and an initializer function:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
@@ -130,8 +130,8 @@
 <ul>
 <li><strong>==</strong> - tests whether two vectors are equal</li>
 <li><strong>!=</strong> - tests whether two vectors are different</li>
-<li><strong>.&amp;&amp;</strong> - creates a new vector which is the results of applying &amp;&amp; to each element of the two vectors</li>
-<li><strong>.||</strong> - creates a new vector which is the results of applying || to each element of the two vectors</li>
+<li><strong>.&amp;&amp;</strong> - creates a new vector, which is the result of applying &amp;&amp; to each element of the two vectors</li>
+<li><strong>.||</strong> - creates a new vector, which is the result of applying || to each element of the two vectors</li>
 </ul>
 
 <p>Here are some examples:</p>
@@ -143,15 +143,47 @@
 <span class="l">5: </span>
 <span class="l">6: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs2', 24)" onmouseover="showTip(event, 'fs2', 24)" class="i">v1</span> <span class="o">==</span> <span onmouseout="hideTip(event, 'fs4', 25)" onmouseover="showTip(event, 'fs4', 25)" class="i">v2</span> <span class="c">//false</span>
-<span onmouseout="hideTip(event, 'fs2', 26)" onmouseover="showTip(event, 'fs2', 26)" class="i">v1</span> <span class="o">!=</span> <span onmouseout="hideTip(event, 'fs4', 27)" onmouseover="showTip(event, 'fs4', 27)" class="i">v2</span> <span class="c">//true</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 28)" onmouseover="showTip(event, 'fs14', 28)" class="i">v10</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 29)" onmouseover="showTip(event, 'fs3', 29)" class="t">BoolVector</span>([ <span class="k">false</span>; <span class="k">true</span> ; <span class="k">false</span> ])
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs15', 30)" onmouseover="showTip(event, 'fs15', 30)" class="i">v11</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 31)" onmouseover="showTip(event, 'fs3', 31)" class="t">BoolVector</span>([ <span class="k">false</span>; <span class="k">true</span> ; <span class="k">true</span> ])
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 32)" onmouseover="showTip(event, 'fs16', 32)" class="i">b1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 33)" onmouseover="showTip(event, 'fs14', 33)" class="i">v10</span> <span class="o">.</span><span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs15', 34)" onmouseover="showTip(event, 'fs15', 34)" class="i">v11</span> <span class="c">//?? should be false, true,false but is false,false,false???</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 35)" onmouseover="showTip(event, 'fs17', 35)" class="i">b2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs14', 36)" onmouseover="showTip(event, 'fs14', 36)" class="i">v10</span> <span class="o">.</span><span class="o">||</span> <span onmouseout="hideTip(event, 'fs15', 37)" onmouseover="showTip(event, 'fs15', 37)" class="i">v11</span> <span class="c">//false,true,true</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs14', 24)" onmouseover="showTip(event, 'fs14', 24)" class="i">v10</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 25)" onmouseover="showTip(event, 'fs3', 25)" class="t">BoolVector</span>([ <span class="k">false</span>; <span class="k">true</span>; <span class="k">false</span> ])
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs15', 26)" onmouseover="showTip(event, 'fs15', 26)" class="i">v11</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 27)" onmouseover="showTip(event, 'fs3', 27)" class="t">BoolVector</span>([ <span class="k">false</span>; <span class="k">true</span>; <span class="k">true</span> ])
+<span onmouseout="hideTip(event, 'fs14', 28)" onmouseover="showTip(event, 'fs14', 28)" class="i">v10</span> <span class="o">==</span> <span onmouseout="hideTip(event, 'fs15', 29)" onmouseover="showTip(event, 'fs15', 29)" class="i">v11</span> <span class="c">//false</span>
+<span onmouseout="hideTip(event, 'fs14', 30)" onmouseover="showTip(event, 'fs14', 30)" class="i">v10</span> <span class="o">!=</span> <span onmouseout="hideTip(event, 'fs15', 31)" onmouseover="showTip(event, 'fs15', 31)" class="i">v11</span> <span class="c">//true</span>
+<span onmouseout="hideTip(event, 'fs14', 32)" onmouseover="showTip(event, 'fs14', 32)" class="i">v10</span> <span class="o">.</span><span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs15', 33)" onmouseover="showTip(event, 'fs15', 33)" class="i">v11</span> <span class="c">//false,true,false</span>
+<span onmouseout="hideTip(event, 'fs14', 34)" onmouseover="showTip(event, 'fs14', 34)" class="i">v10</span> <span class="o">.</span><span class="o">||</span> <span onmouseout="hideTip(event, 'fs15', 35)" onmouseover="showTip(event, 'fs15', 35)" class="i">v11</span> <span class="c">//false,true,true</span>
 </code></pre></td>
 </tr>
 </table>
+
+<h2><a name="Accessing-elements-and-slicing" class="anchor" href="#Accessing-elements-and-slicing">Accessing elements and slicing</a></h2>
+
+<p>To access an individual element within the vector you can just use the standard F# syntax: x.[i]. For example:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs14', 36)" onmouseover="showTip(event, 'fs14', 36)" class="i">v10</span><span class="o">.</span>[<span class="n">2</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<p>produces a value of:</p>
+
+<table class="pre"><tr><td><pre><code>false</code></pre></td></tr></table>
+
+<p>Tou can also access a range within a vector using slicing syntax: x.[i..j]. For example:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs14', 37)" onmouseover="showTip(event, 'fs14', 37)" class="i">v10</span><span class="o">.</span>[<span class="n">1..</span><span class="n">2</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<p>produces a value of:</p>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+  True
+ False
+
+</code></pre></td></tr></table>
 
 <div class="tip" id="fs1">namespace FCore</div>
 <div class="tip" id="fs2">val v1 : BoolVector<br /><br />Full name: BoolVector.v1</div>
@@ -168,8 +200,6 @@
 <div class="tip" id="fs13">val v9 : BoolVector<br /><br />Full name: BoolVector.v9</div>
 <div class="tip" id="fs14">val v10 : BoolVector<br /><br />Full name: BoolVector.v10</div>
 <div class="tip" id="fs15">val v11 : BoolVector<br /><br />Full name: BoolVector.v11</div>
-<div class="tip" id="fs16">val b1 : BoolVector<br /><br />Full name: BoolVector.b1</div>
-<div class="tip" id="fs17">val b2 : BoolVector<br /><br />Full name: BoolVector.b2</div>
 
         </div>
         <div class="span3">
