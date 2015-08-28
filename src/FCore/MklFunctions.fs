@@ -129,13 +129,13 @@ type internal MklFunctions() =
     static extern int d_set_bool_slice(IntPtr length, float* x, bool* b, float* y, IntPtr ny)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern bool b_arrays_are_equal(IntPtr length, bool* x, bool* y)
+    static extern int b_arrays_are_equal(IntPtr length, bool* x, bool* y)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern bool d_arrays_are_equal(IntPtr length, float* x, float* y)
+    static extern int d_arrays_are_equal(IntPtr length, float* x, float* y)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern bool s_arrays_are_equal(IntPtr length, float32* x, float32* y)
+    static extern int s_arrays_are_equal(IntPtr length, float32* x, float32* y)
 
 
 
@@ -885,13 +885,13 @@ type internal MklFunctions() =
         |> validateRetCode
 
     static member B_Arrays_Are_Equal(length : int64, x, y) =
-        b_arrays_are_equal(new IntPtr(length), x, y)
+        b_arrays_are_equal(new IntPtr(length), x, y) = 1
 
     static member D_Arrays_Are_Equal(length : int64, x, y) =
-        d_arrays_are_equal(new IntPtr(length), x, y)
+        d_arrays_are_equal(new IntPtr(length), x, y) = 1
 
     static member S_Arrays_Are_Equal(length : int64, x, y) =
-        s_arrays_are_equal(new IntPtr(length), x, y)
+        s_arrays_are_equal(new IntPtr(length), x, y) = 1
 
 
     static member B_Arrays_GreaterThan(lengthX : int64, x, lengthY : int64, y, result) =
