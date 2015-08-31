@@ -54,6 +54,7 @@
     <Compile Include="ExplicitConversion.fs" />
     <Compile Include="MklFunctions.fs" />
     <Compile Include="MklControl.fs" />
+    <Compile Include="ArgumentChecks.fs" />
     <Compile Include="Vector.fs" />
     <Compile Include="Matrix.fs" />
     <Compile Include="Overloading.fs" />

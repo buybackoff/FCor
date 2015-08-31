@@ -197,7 +197,10 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
 
     static member (==) (vector1: BoolVector, vector2: BoolVector) =
-        MklFunctions.B_Arrays_Are_Equal(vector1.LongLength, vector1.NativeArray, vector2.NativeArray)
+        if vector1.LongLength = 0L && vector2.LongLength = 0L then true
+        elif vector1.LongLength <> vector2.LongLength then false
+        else 
+            MklFunctions.B_Arrays_Are_Equal(vector1.LongLength, vector1.NativeArray, vector2.NativeArray)
 
     static member (!=) (vector1: BoolVector, vector2: BoolVector) =
         not (vector1 == vector2)
@@ -216,37 +219,43 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
 
     static member (.<) (vector1: BoolVector, vector2: BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Arrays_LessThan(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.<=) (vector1: BoolVector, vector2: BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Arrays_LessEqual(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.>) (vector1: BoolVector, vector2: BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Arrays_GreaterThan(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.>=) (vector1: BoolVector, vector2: BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Arrays_GreaterEqual(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.=) (vector1: BoolVector, vector2: BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Arrays_EqualElementwise(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.<>) (vector1: BoolVector, vector2: BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Arrays_NotEqualElementwise(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
@@ -318,13 +327,15 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
 
     static member Max(vector1 : BoolVector, vector2 : BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Max_Arrays(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member Min(vector1 : BoolVector, vector2 : BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Min_Arrays(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
@@ -344,13 +355,15 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         BoolVector.Min(vector, a)
 
     static member (.&&) (vector1 : BoolVector, vector2 : BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_And_Arrays(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.||) (vector1 : BoolVector, vector2 : BoolVector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.B_Or_Arrays(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res

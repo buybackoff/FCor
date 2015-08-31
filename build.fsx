@@ -145,12 +145,23 @@ Target "BuildTests" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
-Target "RunTests" (fun _ ->
+Target "RunTests_x86" (fun _ ->
     !! testAssemblies
     |> xUnit (fun p -> 
         { p with
             ShadowCopy = false
             TimeOut = TimeSpan.FromMinutes 20.
+            ToolPath = "./packages/xunit.runners/tools/xunit.console.clr4.x86.exe"
+             })
+)
+
+Target "RunTests_x64" (fun _ ->
+    !! testAssemblies
+    |> xUnit (fun p -> 
+        { p with
+            ShadowCopy = false
+            TimeOut = TimeSpan.FromMinutes 20.
+            ToolPath = "./packages/xunit.runners/tools/xunit.console.clr4.exe"
              })
 )
 
@@ -296,7 +307,8 @@ Target "All" DoNothing
   ==> "Build"
   ==> "CopyBinaries"
   ==> "BuildTests"
-  ==> "RunTests"
+  ==> "RunTests_x86"
+  ==> "RunTests_x64"
   ==> "GenerateHelp"
   ==> "ReleaseDocs"
 
