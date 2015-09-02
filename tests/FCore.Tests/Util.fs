@@ -1,52 +1,128 @@
-﻿module Util
+﻿namespace FCore.Tests
 open System
 open FCore
+open MLApp
 
-//let should (f : 'a -> #Constraint) x (y : obj) =
-//    let c = f x
-//    let y =
-//        match y with
-//        | :? (unit -> unit) -> box (new TestDelegate(y :?> unit -> unit))
-//        | _                 -> y
-//    Assert.That(y, c)
-//
-//let equal x = new EqualConstraint(x)
-//
-//let not x = new NotConstraint(x)
-//
-//let contain x = new ContainsConstraint(x)
-//
-//let haveLength n = Has.Length.EqualTo(n)
-//
-//let haveCount n = Has.Count.EqualTo(n)
-//
-//let be = id
-//
-//let Null = new NullConstraint()
-//
-//let Empty = new EmptyConstraint()
-//
-//let EmptyString = new EmptyStringConstraint()
-//
-//let NullOrEmptyString = new NullOrEmptyStringConstraint()
-//
-//let True = new TrueConstraint()
-//
-//let False = new FalseConstraint()
-//
-//let sameAs x = new SameAsConstraint(x)
-//
-//let throw = Throws.TypeOf
+module Util =
 
-let inline epsEqual x y eps =
-    if x = y then true
-    else
-        if x = 0.0 then abs(y) <= eps
-        elif y = 0.0 then abs(x) <= eps
-        else abs(x-y)/(max (abs(x)) (abs(y))) <= eps
+    let getMatrix (app : MLAppClass) (varName : string) =
+        app.Execute(sprintf "is_nan=isnan(%s);is_empty=isempty(%s)" varName varName ) |> ignore
+        let is_empty = app.GetVariable("is_empty", "base"):?>bool
+        if is_empty then Array2D.create 0 0 0.0
+        else
+            let is_nan = app.GetVariable("is_nan", "base")
+            match is_nan with
+                | :? bool as v ->
+                    if v then Array2D.create 1 1 Double.NaN
+                    else
+                        let m = app.GetVariable(varName, "base")
+                        match m with
+                            | :? float as v -> Array2D.create 1 1 v
+                            | :? Array as v -> v:?>float[,]
+                            | :? System.Reflection.Missing -> Array2D.create 0 0 0.0
+                            | _ -> raise (InvalidOperationException())
+                | :? Array as v ->
+                    let v = v:?>bool[,]
+                    if v = Array2D.create 1 1 true then
+                        Array2D.create 1 1 Double.NaN
+                    else
+                        let m = app.GetVariable(varName, "base")
+                        match m with
+                            | :? float as v -> Array2D.create 1 1 v
+                            | :? Array as v -> v:?>float[,]
+                            | :? System.Reflection.Missing -> Array2D.create 0 0 0.0
+                            | _ -> raise (InvalidOperationException())
+                | :? System.Reflection.Missing -> Array2D.create 0 0 0.0
+                | _ -> raise (InvalidOperationException())
 
-let inline nearlyEqual (a : Vector) (b : Vector) (eps : float) =
-    let A = a.ToArray()
-    let B = b.ToArray()
-    B |> Array.zip A |> Array.map (fun (x,y) -> epsEqual x y eps) |> Array.fold (&&) true
+    let getVector (app : MLAppClass) (varName : string) =
+        app.Execute(sprintf "is_nan=isnan(%s);is_empty=isempty(%s)" varName varName ) |> ignore
+        let is_empty = app.GetVariable("is_empty", "base"):?>bool
+        if is_empty then Array.create 0 0.0
+        else
+            let is_nan = app.GetVariable("is_nan", "base")
+            match is_nan with
+                | :? bool as v ->
+                    if v then [|Double.NaN|]
+                    else
+                        let m = app.GetVariable(varName, "base")
+                        match m with
+                            | :? float as v -> Array.create 1 v
+                            | :? Array as v ->
+                                if v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
+                                let v = v:?>float[,]
+                                Array.init (v.GetLength(0)) (fun i -> v.[i, 0])
+                            | :? System.Reflection.Missing -> Array.create 0 0.0
+                            | _ -> raise (InvalidOperationException())
+                | :? Array as v ->
+                    let v = v:?>bool[,]
+                    if v = Array2D.create 1 1 true then
+                        [|Double.NaN|]
+                    else
+                        let m = app.GetVariable(varName, "base")
+                        match m with
+                            | :? float as v -> Array.create 1 v
+                            | :? Array as v ->
+                                if v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
+                                let v = v:?>float[,]
+                                Array.init (v.GetLength(0)) (fun i -> v.[i, 0])
+                            | :? System.Reflection.Missing -> Array.create 0 0.0
+                            | _ -> raise (InvalidOperationException())
+                | :? System.Reflection.Missing -> Array.create 0 0.0
+                | _ -> raise (InvalidOperationException())
+
+    let getScalar (app : MLAppClass) (varName : string) =
+        app.Execute(sprintf "is_nan=isnan(%s);" varName ) |> ignore
+        let is_nan = app.GetVariable("is_nan", "base")
+        match is_nan with
+            | :? bool as v ->
+                if v then
+                    Double.NaN
+                else
+                    Convert.ToDouble(app.GetVariable(varName, "base"))
+            | _ -> raise (InvalidOperationException())
+
+    let setMatrix (app : MLAppClass) (varName : string) (v : float[,]) =
+        if v.Length = 1 && Double.IsNaN(v.[0, 0]) then
+            app.Execute(sprintf "%s = [NaN];" varName) |> ignore
+        elif v.Length = 1 && Double.IsNegativeInfinity(v.[0, 0]) then
+            app.Execute(sprintf "%s = [-Inf];" varName) |> ignore
+        elif v.Length = 1 && Double.IsPositiveInfinity(v.[0, 0]) then
+            app.Execute(sprintf "%s = [Inf];" varName) |> ignore
+        else
+            app.PutWorkspaceData(varName, "base", v)
+
+    let setVector (app : MLAppClass) (varName : string) (v : float[]) =
+        if v.Length = 1 && Double.IsNaN(v.[0]) then
+            app.Execute(sprintf "%s = [NaN];" varName) |> ignore
+        elif v.Length = 1 && Double.IsNegativeInfinity(v.[0]) then
+            app.Execute(sprintf "%s = [-Inf];" varName) |> ignore
+        elif v.Length = 1 && Double.IsPositiveInfinity(v.[0]) then
+            app.Execute(sprintf "%s = [Inf];" varName) |> ignore
+        else
+            let v = Array2D.init v.Length 1 (fun i j -> v.[i])
+            app.PutWorkspaceData(varName, "base", v)
+
+    let setScalar (app : MLAppClass) (varName : string) (v : float) =
+        if Double.IsNaN(v) then
+            app.Execute(sprintf "%s = [NaN];" varName) |> ignore
+        elif Double.IsNegativeInfinity(v) then
+            app.Execute(sprintf "%s = [-Inf];" varName) |> ignore
+        elif Double.IsPositiveInfinity(v) then
+            app.Execute(sprintf "%s = [Inf];" varName) |> ignore
+        else
+            app.PutWorkspaceData(varName, "base", v)
+
+    let inline epsEqualFloat x y eps =
+        if x = y then true
+        else
+            if x = 0.0 then abs(y) <= eps
+            elif y = 0.0 then abs(x) <= eps
+            elif Double.IsNaN(x) && Double.IsNaN(y) then true
+            elif Double.IsNegativeInfinity(x) && Double.IsNegativeInfinity(y) then true
+            elif Double.IsPositiveInfinity(x) && Double.IsPositiveInfinity(y) then true
+            else abs(x-y)/(max (abs(x)) (abs(y))) <= eps
+
+    let inline epsEqualArray (a : 'T[]) (b : 'T[]) (epsEqual : 'T -> 'T -> 'S -> bool) (eps : 'S) =
+        b |> Array.zip a |> Array.map (fun (x,y) -> epsEqual x y eps) |> Array.fold (&&) true
 

@@ -17,6 +17,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         new BoolMatrix(colMajorDataVector.LongLength, 1L, colMajorDataVector)
 
     new(rowCount : int64, colCount : int64, init : bool) =
+        if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
         let length = rowCount * colCount
         let v = new BoolVector(length, init)
         new BoolMatrix(rowCount, colCount, v)
@@ -27,8 +28,10 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         new BoolMatrix(rowCount, colCount, init)
 
     new(rowCount : int64, colCount : int64, colMajorDataSeq : seq<bool>) =
+        if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
         let length = rowCount * colCount
         let v = new BoolVector(colMajorDataSeq)
+        if v.LongLength <> length then raise (new ArgumentException("Matrix row and column count not compatible with data length"))
         new BoolMatrix(rowCount, colCount, v)
 
     new(rowCount : int, colCount : int, colMajorDataSeq : seq<bool>) =
@@ -140,7 +143,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         for i in 0L..sliceColCount - 1L do
             let v = slice.ColView(i)
             //slice.ColView(i).[0L..] <- this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount)
-            slice.ColView(i).SetSlice(Some(0L), None, this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount))
+            slice.ColView(i).SetSlice(Some(0L), None, this.View((fromColIndex + i) * rowCount + fromRowIndex, sliceRowCount))
         slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
@@ -473,7 +476,8 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
     interface IDisposable with
         member this.Dispose() = this.ColMajorDataVector.DoDispose(true)
 
-    override this.Finalize() = this.ColMajorDataVector.DoDispose(false)
+    override this.Finalize() =
+            try this.ColMajorDataVector.DoDispose(false) with _ -> ()
 
     override this.ToString() = 
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<bool>() true, null)
@@ -870,6 +874,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(colMajorDataVector.LongLength, 1L, colMajorDataVector)
 
     new(rowCount : int64, colCount : int64, init : float) =
+        if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
         let length = rowCount * colCount
         let v = new Vector(length, init)
         new Matrix(rowCount, colCount, v)
@@ -880,8 +885,10 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(rowCount, colCount, init)
 
     new(rowCount : int64, colCount : int64, colMajorDataSeq : seq<float>) =
+        if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
         let length = rowCount * colCount
         let v = new Vector(colMajorDataSeq)
+        if v.LongLength <> length then raise (new ArgumentException("Matrix row and column count not compatible with data length"))
         new Matrix(rowCount, colCount, v)
 
     new(rowCount : int, colCount : int, colMajorDataSeq : seq<float>) =
@@ -1009,7 +1016,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
         let slice = new Matrix(sliceRowCount, sliceColCount, 0.0)
         for i in 0L..sliceColCount - 1L do
-            slice.ColView(i).SetSlice(Some(0L), None, this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount))
+            slice.ColView(i).SetSlice(Some(0L), None, this.View((fromColIndex + i) * rowCount + fromRowIndex, sliceRowCount))
         slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
@@ -1973,7 +1980,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
     interface IDisposable with
         member this.Dispose() = this.ColMajorDataVector.DoDispose(true)
 
-    override this.Finalize() = this.ColMajorDataVector.DoDispose(false)
+    override this.Finalize() = try this.ColMajorDataVector.DoDispose(false) with _ -> ()
 
 //************************************************MatrixExpr*******************************************************************************
 
