@@ -10,7 +10,7 @@ Creating BoolVectors
 --------------------
 There are a number of options provided to create these vectors.
 
-They can be created by defining then length using an integer or long and the value to be used for each element, or if you just provide a value you will get a vector of length 1: 
+They can be created by defining the length using an integer or long and the value to be used for each element, or if you just provide a value you will get a vector of length 1: 
 *)
 #r "FCore.dll"
 
