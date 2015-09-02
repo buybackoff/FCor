@@ -965,6 +965,9 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member (==) (vector1: Vector, vector2: Vector) =
+        if vector1.LongLength = 0L && vector2.LongLength = 0L then true
+        elif vector1.LongLength <> vector2.LongLength then false
+        else 
         MklFunctions.D_Arrays_Are_Equal(vector1.LongLength, vector1.NativeArray, vector2.NativeArray)
 
     static member (!=) (vector1: Vector, vector2: Vector) =
@@ -985,37 +988,43 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member (.<) (vector1: Vector, vector2: Vector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.D_Arrays_LessThan(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.<=) (vector1: Vector, vector2: Vector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.D_Arrays_LessEqual(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.>) (vector1: Vector, vector2: Vector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.D_Arrays_GreaterThan(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.>=) (vector1: Vector, vector2: Vector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.D_Arrays_GreaterEqual(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.=) (vector1: Vector, vector2: Vector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.D_Arrays_EqualElementwise(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member (.<>) (vector1: Vector, vector2: Vector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
         MklFunctions.D_Arrays_NotEqualElementwise(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
@@ -1086,13 +1095,15 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member Max(vector1 : Vector, vector2 : Vector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new Vector(length, 0.0)
         MklFunctions.D_Max_Arrays(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
 
     static member Min(vector1 : Vector, vector2 : Vector) =
-        let length = max vector1.LongLength vector2.LongLength
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
+        let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new Vector(length, 0.0)
         MklFunctions.D_Min_Arrays(vector1.LongLength, vector1.NativeArray, vector2.LongLength, vector2.NativeArray, res.NativeArray)
         res
@@ -1125,6 +1136,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         a .* vector
 
     static member (.*) (vector1 : Vector, vector2 : Vector) =
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] .* vector2
         elif vector2.LongLength = 1L then
@@ -1145,6 +1157,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         a + vector
 
     static member (+) (vector1 : Vector, vector2 : Vector) =
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] + vector2
         elif vector2.LongLength = 1L then
@@ -1168,6 +1181,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res 
 
     static member (./) (vector1 : Vector, vector2 : Vector) =
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] ./ vector2
         elif vector2.LongLength = 1L then
@@ -1191,6 +1205,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res 
 
     static member (-) (vector1 : Vector, vector2 : Vector) =
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] - vector2
         elif vector2.LongLength = 1L then
@@ -1220,6 +1235,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res  
         
     static member (.^) (vector1 : Vector, vector2 : Vector) =
+        ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] .^ vector2
         elif vector2.LongLength = 1L then

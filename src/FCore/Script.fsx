@@ -14,7 +14,5 @@ open BasicStats
 
 let is64 = Environment.Is64BitProcess
 
-let m = new Matrix([[1.;2.;3.]
-                    [1.;2.;3.]
-                   ]
-                  )
+
+

@@ -67,6 +67,12 @@ module BoolVectorOperators =
         let A = new BoolVector(a)
         ((X .< a) == (X .< A)) .&. ((X .< a).ToArray() = (x |> Array.map (fun z -> z < a)))
 
+    [<Property>]
+    let ``a .< X`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((a .< X) == (A .< X)) .&. ((a .< X).ToArray() = (x |> Array.map (fun z -> a < z)))
+
 
 
     [<Property(MaxTest=1000)>]
@@ -92,6 +98,12 @@ module BoolVectorOperators =
         let A = new BoolVector(a)
         ((X .<= a) == (X .<= A)) .&. ((X .<= a).ToArray() = (x |> Array.map (fun z -> z <= a)))
 
+    [<Property>]
+    let ``a .<= X`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((a .<= X) == (A .<= X)) .&. ((a .<= X).ToArray() = (x |> Array.map (fun z -> a <= z)))
+
 
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X .> Y`` (x : bool[]) (y : bool[]) =
@@ -115,6 +127,12 @@ module BoolVectorOperators =
         let X = new BoolVector(x)
         let A = new BoolVector(a)
         ((X .> a) == (X .> A)) .&. ((X .> a).ToArray() = (x |> Array.map (fun z -> z > a)))
+
+    [<Property>]
+    let ``a .> X`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((a .> X) == (A .> X)) .&. ((a .> X).ToArray() = (x |> Array.map (fun z -> a > z)))
 
 
     [<Property(MaxTest=1000)>]
@@ -140,6 +158,12 @@ module BoolVectorOperators =
         let A = new BoolVector(a)
         ((X .>= a) == (X .>= A)) .&. ((X .>= a).ToArray() = (x |> Array.map (fun z -> z >= a)))
 
+    [<Property>]
+    let ``a .>= X`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((a .>= X) == (A .>= X)) .&. ((a .>= X).ToArray() = (x |> Array.map (fun z -> a >= z)))
+
 
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X .= Y`` (x : bool[]) (y : bool[]) =
@@ -163,6 +187,12 @@ module BoolVectorOperators =
         let X = new BoolVector(x)
         let A = new BoolVector(a)
         ((X .= a) == (X .= A)) .&. ((X .= a).ToArray() = (x |> Array.map (fun z -> z = a)))
+
+    [<Property>]
+    let ``a .= X`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((a .= X) == (A .= X)) .&. ((a .= X).ToArray() = (x |> Array.map (fun z -> z = a)))
   
   
     [<Property(MaxTest=1000)>]
@@ -188,6 +218,12 @@ module BoolVectorOperators =
         let A = new BoolVector(a)
         ((X .<> a) == (X .<> A)) .&. ((X .<> a).ToArray() = (x |> Array.map (fun z -> z <> a)))
 
+    [<Property>]
+    let ``a .<> X`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((a .<> X) == (A .<> X)) .&. ((a .<> X).ToArray() = (x |> Array.map (fun z -> z <> a)))
+
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in Min(X, Y)`` (x : bool[]) (y : bool[]) =
         let X = new BoolVector(x)
@@ -210,6 +246,12 @@ module BoolVectorOperators =
         let X = new BoolVector(x)
         let A = new BoolVector(a)
         ((BoolVector.Min(X, a)) == (BoolVector.Min(X, A))) .&. ((BoolVector.Min(X, a)).ToArray() = (x |> Array.map (fun z -> min z a)))
+
+    [<Property>]
+    let ``Min(a, X)`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((BoolVector.Min(a, X)) == (BoolVector.Min(A, X))) .&. ((BoolVector.Min(a, X)).ToArray() = (x |> Array.map (fun z -> min a z)))
 
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in Max(X, Y)`` (x : bool[]) (y : bool[]) =
@@ -234,7 +276,12 @@ module BoolVectorOperators =
         let A = new BoolVector(a)
         ((BoolVector.Max(X, a)) == (BoolVector.Max(X, A))) .&. ((BoolVector.Max(X, a)).ToArray() = (x |> Array.map (fun z -> max z a)))
         
-                 
+    [<Property>]
+    let ``Max(a, X)`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((BoolVector.Max(a, X)) == (BoolVector.Max(A, X))) .&. ((BoolVector.Max(a, X)).ToArray() = (x |> Array.map (fun z -> max z a)))
+                         
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X .&& Y`` (x : bool[]) (y : bool[]) =
         let X = new BoolVector(x)
@@ -258,6 +305,12 @@ module BoolVectorOperators =
         let A = new BoolVector(a)
         ((X .&& a) == (X .&& A)) .&. ((X .&& a).ToArray() = (x |> Array.map (fun z -> z && a)))
 
+    [<Property>]
+    let ``a .&& X`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((a .&& X) == (A .&& X)) .&. ((a .&& X).ToArray() = (x |> Array.map (fun z -> a && z)))
+
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X .|| Y`` (x : bool[]) (y : bool[]) =
         let X = new BoolVector(x)
@@ -280,6 +333,12 @@ module BoolVectorOperators =
         let X = new BoolVector(x)
         let A = new BoolVector(a)
         ((X .|| a) == (X .|| A)) .&. ((X .|| a).ToArray() = (x |> Array.map (fun z -> z || a)))
+
+    [<Property>]
+    let ``a .|| X`` (x : bool[]) (a : bool) =
+        let X = new BoolVector(x)
+        let A = new BoolVector(a)
+        ((a .|| X) == (A .|| X)) .&. ((a .|| X).ToArray() = (x |> Array.map (fun z -> a || z)))
 
     [<Property>]
     let ``Not X`` (x : bool[]) =
