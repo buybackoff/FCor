@@ -49,7 +49,9 @@ let tags = "fsharp math stat machine learning"
 let solutionFile  = "FCore.sln"
 
 // Pattern specifying assemblies to be tested using NUnit
-let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
+let testAssemblies = "tests/**/bin/Release/*.Tests*.dll"
+
+let matlabTestAssemblies = "tests/**/bin/Release/*.MatlabTests*.dll"
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted
@@ -137,7 +139,13 @@ Target "Build" (fun _ ->
 )
 
 Target "BuildTests" (fun _ ->
-    !! "tests/**/*.fsproj"
+    !! "tests/**/*.Tests.fsproj"
+      |> MSBuildRelease "" "Build"
+      |> ignore
+)
+
+Target "BuildMatlabTests" (fun _ ->
+    !! "tests/**/*.MatlabTests.fsproj"
       |> MSBuildRelease "" "Build"
       |> ignore
 )
@@ -155,8 +163,28 @@ Target "RunTests_x86" (fun _ ->
              })
 )
 
+Target "RunMatlabTests_x86" (fun _ ->
+    !! matlabTestAssemblies
+    |> xUnit (fun p -> 
+        { p with
+            ShadowCopy = false
+            TimeOut = TimeSpan.FromMinutes 20.
+            ToolPath = "./packages/xunit.runners/tools/xunit.console.clr4.x86.exe"
+             })
+)
+
 Target "RunTests_x64" (fun _ ->
     !! testAssemblies
+    |> xUnit (fun p -> 
+        { p with
+            ShadowCopy = false
+            TimeOut = TimeSpan.FromMinutes 20.
+            ToolPath = "./packages/xunit.runners/tools/xunit.console.clr4.exe"
+             })
+)
+
+Target "RunMatlabTests_x64" (fun _ ->
+    !! matlabTestAssemblies
     |> xUnit (fun p -> 
         { p with
             ShadowCopy = false
@@ -307,8 +335,11 @@ Target "All" DoNothing
   ==> "Build"
   ==> "CopyBinaries"
   ==> "BuildTests"
+  ==> "BuildMatlabTests"
   ==> "RunTests_x86"
   ==> "RunTests_x64"
+  ==> "RunMatlabTests_x86"
+  ==> "RunMatlabTests_x64"
   ==> "GenerateHelp"
   ==> "ReleaseDocs"
 
