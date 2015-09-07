@@ -20,18 +20,15 @@ extern "C" __declspec(dllexport) int d_min_matrix(bool byRows, MKL_INT varCount,
 	if (byRows)
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_COLS;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = x[i];
-		}
 	}
 	else
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = x[i * obsCount];
-		}
+	}
+
+	for (MKL_INT i = 0; i < varCount; i++)
+	{
+		res[i] = INFINITY;
 	}
 
 	status = vsldSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
@@ -54,18 +51,15 @@ extern "C" __declspec(dllexport) int s_min_matrix(bool byRows, MKL_INT varCount,
 	if (byRows)
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_COLS;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = x[i];
-		}
 	}
 	else
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = x[i * obsCount];
-		}
+	}
+
+	for (MKL_INT i = 0; i < varCount; i++)
+	{
+		res[i] = INFINITY;
 	}
 
 	status = vslsSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
@@ -88,18 +82,15 @@ extern "C" __declspec(dllexport) int d_max_matrix(bool byRows, MKL_INT varCount,
 	if (byRows)
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_COLS;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = x[i];
-		}
 	}
 	else
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = x[i * obsCount];
-		}
+	}
+
+	for (MKL_INT i = 0; i < varCount; i++)
+	{
+		res[i] = -INFINITY;
 	}
 
 	status = vsldSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
@@ -122,18 +113,15 @@ extern "C" __declspec(dllexport) int s_max_matrix(bool byRows, MKL_INT varCount,
 	if (byRows)
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_COLS;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = x[i];
-		}
 	}
 	else
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = x[i * obsCount];
-		}
+	}
+
+	for (MKL_INT i = 0; i < varCount; i++)
+	{
+		res[i] = -INFINITY;
 	}
 
 	status = vslsSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
@@ -205,6 +193,16 @@ extern "C" __declspec(dllexport) int d_variance_matrix(bool byRows, MKL_INT varC
 	VSLSSTaskPtr task;
 	int status;
 	MKL_INT xstorage;
+	double* mean;
+	double* raw2;
+	mean = (double*)malloc(varCount*sizeof(double));
+	raw2 = (double*)malloc(varCount*sizeof(double));
+	if (raw2 == nullptr || mean == nullptr)
+	{
+		free(raw2);
+		free(mean);
+		return OUTOFMEMORY;
+	}
 	if (byRows)
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_COLS;
@@ -215,16 +213,14 @@ extern "C" __declspec(dllexport) int d_variance_matrix(bool byRows, MKL_INT varC
 	}
 
 	status = vsldSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
-	status = vsldSSEditTask(task, VSL_SS_ED_2C_SUM, res);
-	status = vsldSSCompute(task, VSL_SS_2C_SUM, VSL_SS_METHOD_FAST);
+	status = vsldSSEditTask(task, VSL_SS_ED_MEAN, mean);
+	status = vsldSSEditTask(task, VSL_SS_ED_2R_MOM, raw2);
+	status = vsldSSEditTask(task, VSL_SS_ED_2C_MOM, res);
+	status = vsldSSCompute(task, VSL_SS_2C_MOM, VSL_SS_METHOD_FAST);
 	status = vslSSDeleteTask( &task );
-	if (obsCount > 1)
-	{
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] /= obsCount - 1;
-		}
-	}
+
+	free(mean);
+	free(raw2);
 
 	if (status != 0)
 	{
@@ -238,6 +234,16 @@ extern "C" __declspec(dllexport) int s_variance_matrix(bool byRows, MKL_INT varC
 	VSLSSTaskPtr task;
 	int status;
 	MKL_INT xstorage;
+	float* mean;
+	float* raw2;
+	mean = (float*)malloc(varCount*sizeof(float));
+	raw2 = (float*)malloc(varCount*sizeof(float));
+	if (raw2 == nullptr || mean == nullptr)
+	{
+		free(raw2);
+		free(mean);
+		return OUTOFMEMORY;
+	}
 	if (byRows)
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_COLS;
@@ -248,16 +254,15 @@ extern "C" __declspec(dllexport) int s_variance_matrix(bool byRows, MKL_INT varC
 	}
 
 	status = vslsSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
-	status = vslsSSEditTask(task, VSL_SS_ED_2C_SUM, res);
-	status = vslsSSCompute(task, VSL_SS_2C_SUM, VSL_SS_METHOD_FAST);
-	status = vslSSDeleteTask( &task );
-	if (obsCount > 1)
-	{
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] /= obsCount - 1;
-		}
-	}
+	status = vslsSSEditTask(task, VSL_SS_ED_MEAN, mean);
+	status = vslsSSEditTask(task, VSL_SS_ED_2R_MOM, raw2);
+	status = vslsSSEditTask(task, VSL_SS_ED_2C_MOM, res);
+	status = vslsSSCompute(task, VSL_SS_2C_MOM, VSL_SS_METHOD_FAST);
+	status = vslSSDeleteTask(&task);
+
+	free(mean);
+	free(raw2);
+
 
 	if (status != 0)
 	{
@@ -268,15 +273,22 @@ extern "C" __declspec(dllexport) int s_variance_matrix(bool byRows, MKL_INT varC
 
 extern "C" __declspec(dllexport) int d_skewness_matrix(bool byRows, MKL_INT varCount, MKL_INT obsCount, double* x, double* res)
 {
+	double factor = pow((double)obsCount / (obsCount - 1), 1.5); 
 	VSLSSTaskPtr task;
+	double* c2;
+	double* c3;
 	double* r2;
 	double* r3;
 	double* mean;
+	c2 = (double*)malloc(varCount*sizeof(double));
+	c3 = (double*)malloc(varCount*sizeof(double));
 	r2 = (double*)malloc(varCount*sizeof(double));
 	r3 = (double*)malloc(varCount*sizeof(double));
 	mean = (double*)malloc(varCount*sizeof(double));
-	if (r2 == nullptr || r3 == nullptr || mean == nullptr)
+	if (c2 == nullptr || c3 == nullptr || r2 == nullptr || r3 == nullptr || mean == nullptr)
 	{
+		free(c2);
+		free(c3);
 		free(r2);
 		free(r3);
 		free(mean);
@@ -296,20 +308,22 @@ extern "C" __declspec(dllexport) int d_skewness_matrix(bool byRows, MKL_INT varC
 
 	status = vsldSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
 	status = vsldSSEditTask(task, VSL_SS_ED_MEAN, mean );
+	status = vsldSSEditTask(task, VSL_SS_ED_2C_MOM, c2);
+	status = vsldSSEditTask(task, VSL_SS_ED_3C_MOM, c3);
 	status = vsldSSEditTask(task, VSL_SS_ED_2R_MOM, r2 );
 	status = vsldSSEditTask(task, VSL_SS_ED_3R_MOM, r3 );
 	status = vsldSSEditTask(task, VSL_SS_ED_SKEWNESS, res);
-	status = vsldSSCompute(task, VSL_SS_SKEWNESS, VSL_SS_METHOD_FAST);
-	status = vslSSDeleteTask( &task );
-	if (obsCount > 1)
+	status = vsldSSCompute(task, VSL_SS_MEAN | VSL_SS_2R_MOM | VSL_SS_3R_MOM | VSL_SS_2C_MOM | VSL_SS_3C_MOM | VSL_SS_SKEWNESS, VSL_SS_METHOD_FAST);
+	status = vslSSDeleteTask(&task);
+
+	for (MKL_INT i = 0; i < varCount; i++)
 	{
-		double factor = pow((double)obsCount/(obsCount-1), 1.5);
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] *= factor;
-		}
+		res[i] *= factor;
 	}
+
 	free(mean);
+	free(c2);
+	free(c3);
 	free(r2);
 	free(r3);
 	if (status != 0)
@@ -321,15 +335,22 @@ extern "C" __declspec(dllexport) int d_skewness_matrix(bool byRows, MKL_INT varC
 
 extern "C" __declspec(dllexport) int s_skewness_matrix(bool byRows, MKL_INT varCount, MKL_INT obsCount, float* x, float* res)
 {
+	double factor = pow((double)obsCount / (obsCount - 1), 1.5);
 	VSLSSTaskPtr task;
+	float* c2;
+	float* c3;
 	float* r2;
 	float* r3;
 	float* mean;
+	c2 = (float*)malloc(varCount*sizeof(float));
+	c3 = (float*)malloc(varCount*sizeof(float));
 	r2 = (float*)malloc(varCount*sizeof(float));
 	r3 = (float*)malloc(varCount*sizeof(float));
 	mean = (float*)malloc(varCount*sizeof(float));
-	if (r2 == nullptr || r3 == nullptr || mean == nullptr)
+	if (c2 == nullptr || c3 == nullptr || r2 == nullptr || r3 == nullptr || mean == nullptr)
 	{
+		free(c2);
+		free(c3);
 		free(r2);
 		free(r3);
 		free(mean);
@@ -348,21 +369,23 @@ extern "C" __declspec(dllexport) int s_skewness_matrix(bool byRows, MKL_INT varC
 	}
 
 	status = vslsSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
-	status = vslsSSEditTask(task, VSL_SS_ED_MEAN, mean );
-	status = vslsSSEditTask(task, VSL_SS_ED_2R_MOM, r2 );
-	status = vslsSSEditTask(task, VSL_SS_ED_3R_MOM, r3 );
+	status = vslsSSEditTask(task, VSL_SS_ED_MEAN, mean);
+	status = vslsSSEditTask(task, VSL_SS_ED_2C_MOM, c2);
+	status = vslsSSEditTask(task, VSL_SS_ED_3C_MOM, c3);
+	status = vslsSSEditTask(task, VSL_SS_ED_2R_MOM, r2);
+	status = vslsSSEditTask(task, VSL_SS_ED_3R_MOM, r3);
 	status = vslsSSEditTask(task, VSL_SS_ED_SKEWNESS, res);
-	status = vslsSSCompute(task, VSL_SS_SKEWNESS, VSL_SS_METHOD_FAST);
-	status = vslSSDeleteTask( &task );
-	if (obsCount > 1)
+	status = vslsSSCompute(task, VSL_SS_MEAN | VSL_SS_2R_MOM | VSL_SS_3R_MOM | VSL_SS_2C_MOM | VSL_SS_3C_MOM | VSL_SS_SKEWNESS, VSL_SS_METHOD_FAST);
+	status = vslSSDeleteTask(&task);
+
+	for (MKL_INT i = 0; i < varCount; i++)
 	{
-		double factor = pow((double)obsCount/(obsCount-1), 1.5);
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] *= factor;
-		}
+		res[i] *= factor;
 	}
+
 	free(mean);
+	free(c2);
+	free(c3);
 	free(r2);
 	free(r3);
 	if (status != 0)
@@ -375,16 +398,26 @@ extern "C" __declspec(dllexport) int s_skewness_matrix(bool byRows, MKL_INT varC
 extern "C" __declspec(dllexport) int d_kurtosis_matrix(bool byRows, MKL_INT varCount, MKL_INT obsCount, double* x, double* res)
 {
 	VSLSSTaskPtr task;
+	double* c2;
+	double* c3;
+	double* c4;
 	double* r2;
 	double* r3;
 	double* r4;
 	double* mean;
+
+	c2 = (double*)malloc(varCount*sizeof(double));
+	c3 = (double*)malloc(varCount*sizeof(double));
+	c4 = (double*)malloc(varCount*sizeof(double));
 	r2 = (double*)malloc(varCount*sizeof(double));
 	r3 = (double*)malloc(varCount*sizeof(double));
 	r4 = (double*)malloc(varCount*sizeof(double));
 	mean = (double*)malloc(varCount*sizeof(double));
-	if (r2 == nullptr || r3 == nullptr || r4 == nullptr || mean == nullptr)
+	if (c2 == nullptr || c3 == nullptr || c4 == nullptr || r2 == nullptr || r3 == nullptr || r4 == nullptr || mean == nullptr)
 	{
+		free(c2);
+		free(c3);
+		free(c4);
 		free(r2);
 		free(r3);
 		free(r4);
@@ -405,22 +438,27 @@ extern "C" __declspec(dllexport) int d_kurtosis_matrix(bool byRows, MKL_INT varC
 
 	status = vsldSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
 	status = vsldSSEditTask(task, VSL_SS_ED_MEAN, mean );
+	status = vsldSSEditTask(task, VSL_SS_ED_2C_MOM, c2);
+	status = vsldSSEditTask(task, VSL_SS_ED_3C_MOM, c3);
+	status = vsldSSEditTask(task, VSL_SS_ED_4C_MOM, c4);
 	status = vsldSSEditTask(task, VSL_SS_ED_2R_MOM, r2 );
 	status = vsldSSEditTask(task, VSL_SS_ED_3R_MOM, r3 );
 	status = vsldSSEditTask(task, VSL_SS_ED_4R_MOM, r4 );
 	status = vsldSSEditTask(task, VSL_SS_ED_KURTOSIS, res);
-	status = vsldSSCompute(task, VSL_SS_KURTOSIS, VSL_SS_METHOD_FAST);
+	status = vsldSSCompute(task, VSL_SS_MEAN | VSL_SS_2R_MOM | VSL_SS_3R_MOM | VSL_SS_4R_MOM | VSL_SS_2C_MOM | VSL_SS_3C_MOM | VSL_SS_4C_MOM | VSL_SS_KURTOSIS, VSL_SS_METHOD_FAST);
 	status = vslSSDeleteTask( &task );
-	if (obsCount > 1)
+
+	double tmp = (double)obsCount/(obsCount-1);
+	double factor = tmp*tmp;
+	for (MKL_INT i = 0; i < varCount; i++)
 	{
-		double tmp = (double)obsCount/(obsCount-1);
-		double factor = tmp*tmp;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = (3+res[i]) * factor;
-		}
+		res[i] = (3+res[i]) * factor;
 	}
+
 	free(mean);
+	free(c2);
+	free(c3);
+	free(c4);
 	free(r2);
 	free(r3);
 	free(r4);
@@ -434,16 +472,26 @@ extern "C" __declspec(dllexport) int d_kurtosis_matrix(bool byRows, MKL_INT varC
 extern "C" __declspec(dllexport) int s_kurtosis_matrix(bool byRows, MKL_INT varCount, MKL_INT obsCount, float* x, float* res)
 {
 	VSLSSTaskPtr task;
+	float* c2;
+	float* c3;
+	float* c4;
 	float* r2;
 	float* r3;
 	float* r4;
 	float* mean;
+
+	c2 = (float*)malloc(varCount*sizeof(float));
+	c3 = (float*)malloc(varCount*sizeof(float));
+	c4 = (float*)malloc(varCount*sizeof(float));
 	r2 = (float*)malloc(varCount*sizeof(float));
 	r3 = (float*)malloc(varCount*sizeof(float));
 	r4 = (float*)malloc(varCount*sizeof(float));
 	mean = (float*)malloc(varCount*sizeof(float));
-	if (r2 == nullptr || r3 == nullptr || r4 == nullptr || mean == nullptr)
+	if (c2 == nullptr || c3 == nullptr || c4 == nullptr || r2 == nullptr || r3 == nullptr || r4 == nullptr || mean == nullptr)
 	{
+		free(c2);
+		free(c3);
+		free(c4);
 		free(r2);
 		free(r3);
 		free(r4);
@@ -463,23 +511,28 @@ extern "C" __declspec(dllexport) int s_kurtosis_matrix(bool byRows, MKL_INT varC
 	}
 
 	status = vslsSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
-	status = vslsSSEditTask(task, VSL_SS_ED_MEAN, mean );
-	status = vslsSSEditTask(task, VSL_SS_ED_2R_MOM, r2 );
-	status = vslsSSEditTask(task, VSL_SS_ED_3R_MOM, r3 );
-	status = vslsSSEditTask(task, VSL_SS_ED_4R_MOM, r4 );
+	status = vslsSSEditTask(task, VSL_SS_ED_MEAN, mean);
+	status = vslsSSEditTask(task, VSL_SS_ED_2C_MOM, c2);
+	status = vslsSSEditTask(task, VSL_SS_ED_3C_MOM, c3);
+	status = vslsSSEditTask(task, VSL_SS_ED_4C_MOM, c4);
+	status = vslsSSEditTask(task, VSL_SS_ED_2R_MOM, r2);
+	status = vslsSSEditTask(task, VSL_SS_ED_3R_MOM, r3);
+	status = vslsSSEditTask(task, VSL_SS_ED_4R_MOM, r4);
 	status = vslsSSEditTask(task, VSL_SS_ED_KURTOSIS, res);
-	status = vslsSSCompute(task, VSL_SS_KURTOSIS, VSL_SS_METHOD_FAST);
-	status = vslSSDeleteTask( &task );
-	if (obsCount > 1)
+	status = vslsSSCompute(task, VSL_SS_MEAN | VSL_SS_2R_MOM | VSL_SS_3R_MOM | VSL_SS_4R_MOM | VSL_SS_2C_MOM | VSL_SS_3C_MOM | VSL_SS_4C_MOM | VSL_SS_KURTOSIS, VSL_SS_METHOD_FAST);
+	status = vslSSDeleteTask(&task);
+
+	double tmp = (double)obsCount / (obsCount - 1);
+	double factor = tmp*tmp;
+	for (MKL_INT i = 0; i < varCount; i++)
 	{
-		double tmp = (double)obsCount/(obsCount-1);
-		double factor = tmp*tmp;
-		for (MKL_INT i = 0; i < varCount; i++)
-		{
-			res[i] = (3+res[i]) * factor;
-		}
+		res[i] = (3 + res[i]) * factor;
 	}
+
 	free(mean);
+	free(c2);
+	free(c3);
+	free(c4);
 	free(r2);
 	free(r3);
 	free(r4);
@@ -811,6 +864,12 @@ extern "C" __declspec(dllexport) int d_quantiles_matrix(bool byRows, MKL_INT var
 	status = vsldSSEditQuantiles( task, &qCount, q, res, 0, &xstorage );
 	status = vsldSSCompute(task, VSL_SS_QUANTS, VSL_SS_METHOD_FAST );
 	status = vslSSDeleteTask( &task );
+
+	double a = 1;
+	if (byRows)
+	{
+		mkl_dimatcopy('C', 'T', qCount, varCount, a, res, qCount, varCount);
+	}
 
 	if (status != 0)
 	{

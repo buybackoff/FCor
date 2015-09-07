@@ -1,4 +1,4 @@
-﻿namespace FCore.Tests
+﻿namespace FCore.MatlabTests
 open System
 open FCore
 open MLApp
@@ -116,11 +116,10 @@ module Util =
     let inline epsEqualFloat x y eps =
         if x = y then true
         else
-            if x = 0.0 then abs(y) <= eps
-            elif y = 0.0 then abs(x) <= eps
-            elif Double.IsNaN(x) && Double.IsNaN(y) then true
+            if Double.IsNaN(x) && Double.IsNaN(y) then true
             elif Double.IsNegativeInfinity(x) && Double.IsNegativeInfinity(y) then true
             elif Double.IsPositiveInfinity(x) && Double.IsPositiveInfinity(y) then true
+            elif abs(x) <= eps && abs(y) <= eps then true
             else abs(x-y)/(max (abs(x)) (abs(y))) <= eps
 
     let inline epsEqualArray (a : 'T[]) (b : 'T[]) (epsEqual : 'T -> 'T -> 'S -> bool) (eps : 'S) =

@@ -8,8 +8,14 @@
 #include "mkl_vsl_functions.h"
 #include "mkl_vsl.h"
 #include "mkl_trans.h"
-#include <math.h>
+//#include <math.h>
+#include <cmath>
 #include <mkl_service.h>
+
+
+#define max(a,b)    (((a) > (b)) ? (a) : (b))
+#define min(a,b)    (((a) < (b)) ? (a) : (b))
+
 
 template<typename T>
 void minus_array(MKL_INT n, T* x, T* result)
@@ -97,23 +103,65 @@ void min_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 {
 	if (nx == 1)
 	{
-		for (MKL_INT i = 0; i < ny; i++)
+		if (isnan(x[0]))
 		{
-			result[i] = x[0] < y[i] ? x[0] : y[i];
+			for (MKL_INT i = 0; i < ny; i++)
+			{
+				result[i] = nan("");
+			}
 		}
+		else
+		{
+			for (MKL_INT i = 0; i < ny; i++)
+			{
+				if (isnan(y[i]))
+				{
+					result[i] = nan("");
+				}
+				else
+				{
+					result[i] = fmin(x[0], y[i]);
+				}
+			}
+		}
+
 	}
 	else if (ny == 1)
 	{
-		for (MKL_INT i = 0; i < nx; i++)
+		if (isnan(y[0]))
 		{
-			result[i] = y[0] < x[i] ? y[0] : x[i];
+			for (MKL_INT i = 0; i < nx; i++)
+			{
+				result[i] = nan("");
+			}
+		}
+		else
+		{
+			for (MKL_INT i = 0; i < nx; i++)
+			{
+				if (isnan(x[i]))
+				{
+					result[i] = nan("");
+				}
+				else
+				{
+					result[i] = fmin(x[i], y[0]);
+				}
+			}
 		}
 	}
 	else
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
-			result[i] = y[i] < x[i] ? y[i] : x[i];
+			if (isnan(x[i]) || isnan(y[i]))
+			{
+				result[i] = nan("");
+			}
+			else
+			{
+				result[i] = fmin(x[i], y[i]);
+			}
 		}
 	}
 }
@@ -123,23 +171,65 @@ void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 {
 	if (nx == 1)
 	{
-		for (MKL_INT i = 0; i < ny; i++)
+		if (isnan(x[0]))
 		{
-			result[i] = x[0] > y[i] ? x[0] : y[i];
+			for (MKL_INT i = 0; i < ny; i++)
+			{
+				result[i] = nan("");
+			}
 		}
+		else
+		{
+			for (MKL_INT i = 0; i < ny; i++)
+			{
+				if (isnan(y[i]))
+				{
+					result[i] = nan("");
+				}
+				else
+				{
+					result[i] = fmax(x[0], y[i]);
+				}
+			}
+		}
+
 	}
 	else if (ny == 1)
 	{
-		for (MKL_INT i = 0; i < nx; i++)
+		if (isnan(y[0]))
 		{
-			result[i] = y[0] > x[i] ? y[0] : x[i];
+			for (MKL_INT i = 0; i < nx; i++)
+			{
+				result[i] = nan("");
+			}
+		}
+		else
+		{
+			for (MKL_INT i = 0; i < nx; i++)
+			{
+				if (isnan(x[i]))
+				{
+					result[i] = nan("");
+				}
+				else
+				{
+					result[i] = fmax(x[i], y[0]);
+				}
+			}
 		}
 	}
 	else
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
-			result[i] = y[i] > x[i] ? y[i] : x[i];
+			if (isnan(x[i]) || isnan(y[i]))
+			{
+				result[i] = nan("");
+			}
+			else
+			{
+				result[i] = fmax(x[i], y[i]);
+			}
 		}
 	}
 }
@@ -172,12 +262,32 @@ void iif_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, bool* b, T* result)
 
 extern "C" __declspec(dllexport) void b_min_arrays(MKL_INT nx, bool* x, MKL_INT ny, bool* y, bool* result)
 {
-	min_arrays(nx, x, ny, y, result); 
+	if (nx == 1)
+	{
+		for (MKL_INT i = 0; i < ny; i++)
+		{
+			result[i] = min(x[0], y[i]);
+		}
+	}
+	else if (ny == 1)
+	{
+		for (MKL_INT i = 0; i < nx; i++)
+		{
+			result[i] = min(x[i], y[0]);
+		}
+	}
+	else
+	{
+		for (MKL_INT i = 0; i < nx; i++)
+		{
+			result[i] = min(x[i], y[i]);
+		}
+	}
 }
 
 extern "C" __declspec(dllexport) void d_min_arrays(MKL_INT nx, double* x, MKL_INT ny, double* y, double* result)
 {
-	min_arrays(nx, x, ny, y, result); 
+	min_arrays(nx, x, ny, y, result);
 }
 
 extern "C" __declspec(dllexport) void s_min_arrays(MKL_INT nx, float* x, MKL_INT ny, float* y, float* result)
@@ -185,16 +295,34 @@ extern "C" __declspec(dllexport) void s_min_arrays(MKL_INT nx, float* x, MKL_INT
 	min_arrays(nx, x, ny, y, result); 
 }
 
-
-
 extern "C" __declspec(dllexport) void b_max_arrays(MKL_INT nx, bool* x, MKL_INT ny, bool* y, bool* result)
 {
-	max_arrays(nx, x, ny, y, result); 
+	if (nx == 1)
+	{
+		for (MKL_INT i = 0; i < ny; i++)
+		{
+			result[i] = max(x[0], y[i]);
+		}
+	}
+	else if (ny == 1)
+	{
+		for (MKL_INT i = 0; i < nx; i++)
+		{
+			result[i] = max(x[i], y[0]);
+		}
+	}
+	else
+	{
+		for (MKL_INT i = 0; i < nx; i++)
+		{
+			result[i] = max(x[i], y[i]);
+		}
+	}
 }
 
 extern "C" __declspec(dllexport) void d_max_arrays(MKL_INT nx, double* x, MKL_INT ny, double* y, double* result)
 {
-	max_arrays(nx, x, ny, y, result); 
+	max_arrays(nx, x, ny, y, result);
 }
 
 extern "C" __declspec(dllexport) void s_max_arrays(MKL_INT nx, float* x, MKL_INT ny, float* y, float* result)
