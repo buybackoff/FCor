@@ -88,6 +88,7 @@
     <Compile Include="Util.fs" />
     <None Include="paket.references" />
     <Compile Include="BoolVectorConstruction.fs" />
+    <Compile Include="BoolVectorOperators.fs" />
     <Compile Include="BoolVectorSlicing.fs" />
     <Compile Include="VectorConstruction.fs" />
     <Compile Include="VectorSlicing.fs" />
@@ -95,6 +96,7 @@
     <Compile Include="BoolMatrixOperators.fs" />
     <Compile Include="BoolMatrixSlicing.fs" />
     <None Include="Script1.fsx" />
+    <Compile Include="MatrixConstruction.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FsCheck">

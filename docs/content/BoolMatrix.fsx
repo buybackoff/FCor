@@ -22,7 +22,7 @@ let m3 = new BoolMatrix(false)
 (** This gives a value for m2 of: *)
 (*** include-value: m2 ***)
 (**
-You can also create a matrix by providing a sequence containing all the values and also specifiy the number of rows and columns. :
+You can also create a matrix by providing a sequence containing all the values and also specifiy the number of rows and columns:
 *)
 let m4 = new BoolMatrix(2, 2, [ false; true; false; false ])
 (** This gives a value for m4 of: *)
@@ -43,7 +43,7 @@ let b1 = new BoolVector([| false; true |])
 let m8 = new BoolMatrix(b1)
 
 (**
-You can also create a vector by converting a single bool, a sequence of sequences of bool values or a 2D array of bool values, using !! operator from the ExplicitConversion module.
+You can also create a matrix by converting a single bool, a sequence of sequences of bool values or a 2D array of bool values, using !! operator from the ExplicitConversion module.
 *)
 open FCore.ExplicitConversion
 let m9 : BoolMatrix = !!false
@@ -78,7 +78,7 @@ produces a value of:
 *)
 (*** include-value: m14 ***)
 (**
-Tou can also access a range within a matrix using slicing syntax: x.[r..s,c..d]. For example:
+You can also access a range within a matrix using slicing syntax: x.[r..s,c..d]. For example:
 *)
 let m15 = m12.[1..1,0..1]
 (**
