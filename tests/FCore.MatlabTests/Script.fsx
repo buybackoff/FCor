@@ -1,8 +1,18 @@
-﻿// Learn more about F# at http://fsharp.net. See the 'F# Tutorial' project
-// for more guidance on F# programming.
+﻿#r "./bin/release/Interop.MLApp.dll"
+#r "./bin/release/FCore.MatlabTests.dll"
+#r "./bin/release/FCore.dll"
 
-#load "Library1.fs"
+open MLApp
+open System
+open FCore
+open FCore.BasicStats
+open FCore.Math
 open FCore.MatlabTests
+open FCore.MatlabTests.Util
 
-// Define your library scripting code here
+let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
 
+let x = new Vector([|1000.0..(-1.0)..0.0|])
+let q = new Vector([|1.0..(-0.1)..0.0|])
+let m = quantile x q 
+DisplayControl.MaxDisplaySize <- (20L,10L)

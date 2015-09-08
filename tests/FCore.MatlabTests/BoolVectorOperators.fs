@@ -1,4 +1,4 @@
-namespace FCore.Tests
+namespace FCore.MatlabTests
 
 open FCore
 open Xunit
@@ -56,7 +56,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``X .< Y`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X .< Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 < z2)) 
@@ -87,7 +87,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``X .<= Y`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X .<= Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 <= z2)) 
@@ -117,7 +117,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``X .> Y`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X .> Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 > z2)) 
@@ -147,7 +147,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``X .>= Y`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X .>= Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 >= z2)) 
@@ -177,7 +177,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``X .= Y`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X .= Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 = z2)) 
@@ -207,7 +207,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``X .<> Y`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X .<> Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 <> z2)) 
@@ -236,7 +236,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``Min(X, Y)`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (BoolVector.Min(X, Y)).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> min z1 z2)) 
@@ -265,7 +265,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``Max(X, Y)`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (BoolVector.Max(X, Y)).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> max z1 z2)) 
@@ -294,7 +294,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``X .&& Y`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X .&& Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 && z2)) 
@@ -323,7 +323,7 @@ module BoolVectorOperators =
     [<Property>]
     let ``X .|| Y`` (v : (bool*bool)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X .|| Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 || z2)) 

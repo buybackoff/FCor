@@ -52,6 +52,9 @@
     <Compile Include="Util.fs" />
     <Compile Include="BoolVectorOperators.fs" />
     <Compile Include="VectorOperators.fs" />
+    <Compile Include="VectorFunctions.fs" />
+    <Compile Include="VectorBasicStats.fs" />
+    <Compile Include="VectorSlicing.fs" />
     <None Include="paket.references" />
     <None Include="Script.fsx" />
     <COMReference Include="Matlab Application %28Version 7.13%29 Type Library">

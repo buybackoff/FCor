@@ -12,7 +12,7 @@ open FCore.Random
 open Overloading
 open BasicStats
 
-let is64 = Environment.Is64BitProcess
+let res = var(new Vector([1.0;1e150]))
 
 
 

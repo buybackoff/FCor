@@ -1,4 +1,4 @@
-namespace FCore.Tests
+namespace FCore.MatlabTests
 
 open FCore
 open Xunit
@@ -64,7 +64,7 @@ module VectorOperators =
     [<Property>]
     let ``X .< Y`` (v : (float*float)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new Vector(x)
         let Y = new Vector(y)
         (X .< Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 < z2)) 
@@ -95,7 +95,7 @@ module VectorOperators =
     [<Property>]
     let ``X .<= Y`` (v : (float*float)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new Vector(x)
         let Y = new Vector(y)
         (X .<= Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 <= z2)) 
@@ -125,7 +125,7 @@ module VectorOperators =
     [<Property>]
     let ``X .> Y`` (v : (float*float)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new Vector(x)
         let Y = new Vector(y)
         (X .> Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 > z2)) 
@@ -155,7 +155,7 @@ module VectorOperators =
     [<Property>]
     let ``X .>= Y`` (v : (float*float)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new Vector(x)
         let Y = new Vector(y)
         (X .>= Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 >= z2)) 
@@ -184,7 +184,7 @@ module VectorOperators =
     [<Property>]
     let ``X .= Y`` (v : (float*float)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new Vector(x)
         let Y = new Vector(y)
         (X .= Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 = z2)) 
@@ -214,7 +214,7 @@ module VectorOperators =
     [<Property>]
     let ``X .<> Y`` (v : (float*float)[]) =
         let x = v |> Array.map fst
-        let y = v |> Array.map fst
+        let y = v |> Array.map snd
         let X = new Vector(x)
         let Y = new Vector(y)
         (X .<> Y).ToArray() = (y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 <> z2)) 
@@ -232,6 +232,23 @@ module VectorOperators =
         ((a .<> X) == (A .<> X)) .&. ((a .<> X).ToArray() = (x |> Array.map (fun z -> a <> z)))
         
         
+    [<Property(MaxTest=1000)>]
+    let ``Throws arg exception if length mismatch in X * Y or empty`` (x : float[]) (y : float[]) =
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        let len1 = X.LongLength
+        let len2 = Y.LongLength
+        ((len1 <> len2) || (len1 = 0L) || (len2 = 0L)) ==> 
+            Prop.throws<ArgumentException, _> (lazy(X * Y))
+
+    [<Property>]
+    let ``X * Y`` (v : (float*float)[]) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        (v.Length > 0) ==> lazy(epsEqual 1e-14 [|X * Y|] [|(y |> Array.zip x |> Array.map (fun (z1,z2) -> z1 * z2) |> Array.reduce (+))|])
+
                     
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X + Y`` (x : float[]) (y : float[]) =
@@ -364,13 +381,13 @@ module VectorOperators =
     let ``X ./ a`` (x : float[]) (a : float) =
         let X = new Vector(x)
         let A = new Vector(a)
-        (epsEqual 1e-14 ((X ./ a).ToArray()) ((X ./ A).ToArray())) .&. (epsEqual 1e-15 ((X ./ a).ToArray()) (x |> Array.map (fun z -> z / a)))
+        (epsEqual 1e-14 ((X ./ a).ToArray()) ((X ./ A).ToArray())) .&. (epsEqual 1e-14 ((X ./ a).ToArray()) (x |> Array.map (fun z -> z / a)))
 
     [<Property>]
     let ``a ./ X`` (x : float[]) (a : float) =
         let X = new Vector(x)
         let A = new Vector(a)
-        (epsEqual 1e-14 ((a ./ X).ToArray()) ((A ./ X).ToArray())) .&. (epsEqual 1e-15 ((a ./ X).ToArray()) (x |> Array.map (fun z -> a / z)))
+        (epsEqual 1e-14 ((a ./ X).ToArray()) ((A ./ X).ToArray())) .&. (epsEqual 1e-14 ((a ./ X).ToArray()) (x |> Array.map (fun z -> a / z)))
 
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X .^ Y`` (x : float[]) (y : float[]) =
@@ -396,7 +413,7 @@ module VectorOperators =
 
     [<Property>]
     let ``X .^ a`` (x : float[]) (a : float) =
-        let x = x |> Array.map abs
+        let x = x |> Array.map abs |> Array.filter (Double.IsNaN>>not)
         let X = new Vector(x)
         let A = new Vector(a)
         (epsEqual 1e-14 ((X .^ a).ToArray()) ((X .^ A).ToArray())) .&. (epsEqual 1e-15 ((X .^ a).ToArray()) (x |> Array.map (fun z -> if a = 0.0 then 1.0 elif z = 1.0 then 1.0 else z ** a)))
@@ -404,6 +421,7 @@ module VectorOperators =
     [<Property>]
     let ``a .^ X`` (x : float[]) (a : float) =
         let a = abs a
+        let x = x |> Array.filter (Double.IsNaN>>not)
         let X = new Vector(x)
         let A = new Vector(a)
         (epsEqual 1e-14 ((a .^ X).ToArray()) ((A .^ X).ToArray())) .&. (epsEqual 1e-15 ((a .^ X).ToArray()) (x |> Array.map (fun z -> if z = 0.0 then 1.0 elif a = 1.0 then 1.0 else a ** z)))
@@ -416,4 +434,61 @@ module VectorOperators =
         let V = new Vector(v)
         (-V).ToArray() <=> res
 
+    [<Property(MaxTest=1000)>]
+    let ``Throws arg exception if length mismatch in Min(X, Y)`` (x : float[]) (y : float[]) =
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        let len1 = X.LongLength
+        let len2 = Y.LongLength
+        ((len1 <> len2) && (len1 <> 1L) && (len2 <> 1L)) ==> 
+            Prop.throws<ArgumentException, _> (lazy(Vector.Min(X, Y)))
 
+    [<Property>]
+    let ``Min(X, Y)`` (v : (float*float)[]) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        (Vector.Min(X, Y)).ToArray() <=> (y |> Array.zip x |> Array.map Math.Min)
+
+    [<Property>]
+    let ``Min(X, a)`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        let A = new Vector(a)
+        ((Vector.Min(X, a).ToArray()) <=> (Vector.Min(X, A).ToArray())) .&. ((Vector.Min(X, a)).ToArray() <=> (x |> Array.map (fun z -> min z a)))
+
+    [<Property>]
+    let ``Min(a, X)`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        let A = new Vector(a)
+        ((Vector.Min(a, X).ToArray()) <=> (Vector.Min(A, X).ToArray())) .&. ((Vector.Min(a, X)).ToArray() <=> (x |> Array.map (fun z -> min a z)))
+
+
+    [<Property(MaxTest=1000)>]
+    let ``Throws arg exception if length mismatch in Max(X, Y)`` (x : float[]) (y : float[]) =
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        let len1 = X.LongLength
+        let len2 = Y.LongLength
+        ((len1 <> len2) && (len1 <> 1L) && (len2 <> 1L)) ==> 
+            Prop.throws<ArgumentException, _> (lazy(Vector.Max(X, Y)))
+
+    [<Property>]
+    let ``Max(X, Y)`` (v : (float*float)[]) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        (Vector.Max(X, Y)).ToArray() <=> (y |> Array.zip x |> Array.map Math.Max) 
+
+    [<Property>]
+    let ``Max(X, a)`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        let A = new Vector(a)
+        ((Vector.Max(X, a).ToArray()) <=> (Vector.Max(X, A).ToArray())) .&. ((Vector.Max(X, a)).ToArray() <=> (x |> Array.map (fun z -> max z a)))
+
+    [<Property>]
+    let ``Max(a, X)`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        let A = new Vector(a)
+        ((Vector.Max(a, X).ToArray()) <=> (Vector.Max(A, X).ToArray())) .&. ((Vector.Max(a, X)).ToArray() <=> (x |> Array.map (fun z -> max a z)))

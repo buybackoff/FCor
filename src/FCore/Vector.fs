@@ -1124,6 +1124,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member (*) (vector1 : Vector, vector2 : Vector) =
+        if vector1.LongLength <> vector2.LongLength then raise (new ArgumentException("Vector lengths must be equal"))
+        if vector1.LongLength = 0L || vector2.LongLength = 0L then raise (new ArgumentException("Vector lengths must be > 0"))
         MklFunctions.D_Inner_Product(vector1.LongLength, vector1.NativeArray, vector2.NativeArray)
 
     static member (.*) (a: float, vector : Vector) =
@@ -1424,11 +1426,13 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member Sum(vector : Vector) =
+        if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         let mutable res = 0.0
         MklFunctions.D_Sum_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member Prod(vector : Vector) =
+        if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         let mutable res = 0.0
         MklFunctions.D_Prod_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
@@ -1444,40 +1448,59 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member Min(vector : Vector) =
-        let mutable res = 0.0
-        MklFunctions.D_Min_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
-        res
+        if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
+        if vector.LongLength = 1L && Double.IsNaN(vector.[0]) then
+            Double.NaN
+        else 
+            let mutable res = 0.0
+            MklFunctions.D_Min_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
+            res
 
     static member Max(vector : Vector) =
-        let mutable res = 0.0
-        MklFunctions.D_Max_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
-        res
+        if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
+        if vector.LongLength = 1L && Double.IsNaN(vector.[0]) then
+            Double.NaN
+        else
+            let mutable res = 0.0
+            MklFunctions.D_Max_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
+            res
 
     static member Mean(vector : Vector) =
+        if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         let mutable res = 0.0
         MklFunctions.D_Mean_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member Variance(vector : Vector) =
-        let mutable res = 0.0
-        MklFunctions.D_Variance_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
-        res
+        if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
+        elif vector.LongLength = 1L then
+            if Double.IsInfinity(vector.[0]) || Double.IsNaN(vector.[0]) then Double.NaN
+            else 0.0
+        else
+            let mutable res = 0.0
+            MklFunctions.D_Variance_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
+            res
 
     static member Skewness(vector : Vector) =
+        if vector.LongLength <= 1L then raise (new ArgumentException("Vector must have length > 1"))
         let mutable res = 0.0
         MklFunctions.D_Skewness_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member Kurtosis(vector : Vector) =
+        if vector.LongLength <= 1L then raise (new ArgumentException("Vector must have length > 1"))
         let mutable res = 0.0
         MklFunctions.D_Kurtosis_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member Quantile(vector : Vector) =
         fun (quantileOrders : Vector) ->
-            let res = new Vector(quantileOrders.LongLength, 0.0)
-            MklFunctions.D_Quantiles_Matrix(false, 1L, vector.LongLength, quantileOrders.LongLength, vector.NativeArray, quantileOrders.NativeArray, res.NativeArray)
-            res
+            if quantileOrders.LongLength = 0L then raise (new ArgumentException("Quantile orders vector must not be empty"))
+            if vector.LongLength = 0L then Vector.Empty
+            else
+                let res = new Vector(quantileOrders.LongLength, 0.0)
+                MklFunctions.D_Quantiles_Matrix(false, 1L, vector.LongLength, quantileOrders.LongLength, vector.NativeArray, quantileOrders.NativeArray, res.NativeArray)
+                res
 
     override this.ToString() = 
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<float>() 0.0, null)
