@@ -1,5 +1,6 @@
 ﻿namespace FCore.MatlabTests
 open System
+open System.Runtime.InteropServices
 open FCore
 open MLApp
 
@@ -123,5 +124,10 @@ module Util =
             else abs(x-y)/(max (abs(x)) (abs(y))) <= eps
 
     let inline epsEqualArray (a : 'T[]) (b : 'T[]) (epsEqual : 'T -> 'T -> 'S -> bool) (eps : 'S) =
-        b |> Array.zip a |> Array.map (fun (x,y) -> epsEqual x y eps) |> Array.fold (&&) true
+        if a.Length = 0 && b.Length = 0 then true
+        else (a.Length = b.Length) && (b |> Array.zip a |> Array.map (fun (x,y) -> epsEqual x y eps) |> Array.fold (&&) true)
+
+
+
+        
 

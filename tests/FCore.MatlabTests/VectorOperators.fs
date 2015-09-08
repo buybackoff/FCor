@@ -414,13 +414,14 @@ module VectorOperators =
     [<Property>]
     let ``X .^ a`` (x : float[]) (a : float) =
         let x = x |> Array.map abs |> Array.filter (Double.IsNaN>>not)
+        let a = if Double.IsNaN(a) then 1.0 else a
         let X = new Vector(x)
         let A = new Vector(a)
         (epsEqual 1e-14 ((X .^ a).ToArray()) ((X .^ A).ToArray())) .&. (epsEqual 1e-15 ((X .^ a).ToArray()) (x |> Array.map (fun z -> if a = 0.0 then 1.0 elif z = 1.0 then 1.0 else z ** a)))
 
     [<Property>]
     let ``a .^ X`` (x : float[]) (a : float) =
-        let a = abs a
+        let a = if Double.IsNaN(a) then 1.0 else abs a
         let x = x |> Array.filter (Double.IsNaN>>not)
         let X = new Vector(x)
         let A = new Vector(a)

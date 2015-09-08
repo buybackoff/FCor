@@ -111,11 +111,6 @@ module VectorBasicStats =
     let ``quantile``() =
         let v = new Vector([|1000.0..(-1.0)..0.0|])
         let q = new Vector([|1.0..(-0.1)..0.0|])
-//        setVector app "v" (v.ToArray())
-//        setVector app "q" (q.ToArray())
-//        app.Execute("res = quantile(v, q);") |> ignore
-//        let res = getVector app "res"
         let res = [|1000.0..(-100.)..0.0|]
         epsEqual 1e-14 ((quantile v q).ToArray()) res |> should be True
-        //(v.Length > 0) ==> lazy(epsEqual 1e-14 ((quantile v q).ToArray()) res)
 

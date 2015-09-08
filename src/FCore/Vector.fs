@@ -855,14 +855,15 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
         if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
-        if fromIndex > toIndex then raise (new IndexOutOfRangeException())
-        let length = toIndex - fromIndex + 1L
-        let view = this.View(fromIndex, length)
-        let mutable arr = IntPtr.Zero
-        let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
-        MklFunctions.D_Create_Array(length, nativeArrayPtr)
-        MklFunctions.D_Copy_Array(length, view.NativeArray, arr |> NativePtr.ofNativeInt<float>) 
-        new Vector(length, arr |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
+        if fromIndex > toIndex then Vector.Empty
+        else
+            let length = toIndex - fromIndex + 1L
+            let view = this.View(fromIndex, length)
+            let mutable arr = IntPtr.Zero
+            let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
+            MklFunctions.D_Create_Array(length, nativeArrayPtr)
+            MklFunctions.D_Copy_Array(length, view.NativeArray, arr |> NativePtr.ofNativeInt<float>) 
+            new Vector(length, arr |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
 
     member this.GetSlice(fromIndex : int option, toIndex : int option) =
         this.GetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64)
@@ -872,10 +873,11 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
         if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
-        if fromIndex > toIndex then raise (new IndexOutOfRangeException())
-        let length = toIndex - fromIndex + 1L
-        let view = this.View(fromIndex, length)
-        MklFunctions.D_Fill_Array(value, length, view.NativeArray)
+        if fromIndex > toIndex then ()
+        else
+            let length = toIndex - fromIndex + 1L
+            let view = this.View(fromIndex, length)
+            MklFunctions.D_Fill_Array(value, length, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value : float) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
@@ -885,11 +887,12 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
         if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
-        if fromIndex > toIndex then raise (new IndexOutOfRangeException())
-        let length = toIndex - fromIndex + 1L
-        if value.LongLength <> length then raise (new ArgumentException())
-        let view = this.View(fromIndex, length)
-        MklFunctions.D_Copy_Array(length, value.NativeArray, view.NativeArray)
+        if fromIndex > toIndex && value.LongLength = 0L then ()
+        else
+            let length = toIndex - fromIndex + 1L
+            if value.LongLength <> length then raise (new ArgumentException())
+            let view = this.View(fromIndex, length)
+            MklFunctions.D_Copy_Array(length, value.NativeArray, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value: Vector) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
