@@ -13,5 +13,8 @@ open FCore.MatlabTests
 open FCore.MatlabTests.Util
 
 let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
-let x = new Vector([|1./3.;1./3.|])
-let s = skewness x
+let rnd = new Random()
+let app = new MLAppClass()
+let v = [|true; false|]
+setBoolVector app "v" v
+let res = getBoolVector app "v"

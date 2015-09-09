@@ -85,6 +85,7 @@ type internal MklFunctions() =
     static let validateRetCode(code : int) =
         match code with
             | -1 -> raise (new OutOfMemoryException())
+            | -9 -> raise (new ArgumentException("Vector length mismatch"))
             | 0 -> ()
             | _ -> raise (new ArgumentException()) 
 

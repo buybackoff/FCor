@@ -36,6 +36,18 @@ module Util =
                 | :? System.Reflection.Missing -> Array2D.create 0 0 0.0
                 | _ -> raise (InvalidOperationException())
 
+    let getBoolMatrix (app : MLAppClass) (varName : string) =
+        app.Execute(sprintf "is_empty=isempty(%s)" varName ) |> ignore
+        let is_empty = app.GetVariable("is_empty", "base"):?>bool
+        if is_empty then Array2D.create 0 0 false
+        else
+            let m = app.GetVariable(varName, "base")
+            match m with
+                | :? bool as v -> Array2D.create 1 1 v
+                | :? Array as v -> v:?>bool[,]
+                | :? System.Reflection.Missing -> Array2D.create 0 0 false
+                | _ -> raise (InvalidOperationException())
+
     let getVector (app : MLAppClass) (varName : string) =
         app.Execute(sprintf "is_nan=isnan(%s);is_empty=isempty(%s)" varName varName ) |> ignore
         let is_empty = app.GetVariable("is_empty", "base"):?>bool
@@ -72,6 +84,21 @@ module Util =
                 | :? System.Reflection.Missing -> Array.create 0 0.0
                 | _ -> raise (InvalidOperationException())
 
+    let getBoolVector (app : MLAppClass) (varName : string) =
+        app.Execute(sprintf "is_empty=isempty(%s)" varName ) |> ignore
+        let is_empty = app.GetVariable("is_empty", "base"):?>bool
+        if is_empty then Array.create 0 false
+        else
+            let m = app.GetVariable(varName, "base")
+            match m with
+                | :? bool as v -> Array.create 1 v
+                | :? Array as v ->
+                    if v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
+                    let v = v:?>bool[,]
+                    Array.init (v.GetLength(0)) (fun i -> v.[i, 0])
+                | :? System.Reflection.Missing -> Array.create 0 false
+                | _ -> raise (InvalidOperationException())            
+
     let getScalar (app : MLAppClass) (varName : string) =
         app.Execute(sprintf "is_nan=isnan(%s);" varName ) |> ignore
         let is_nan = app.GetVariable("is_nan", "base")
@@ -83,6 +110,9 @@ module Util =
                     Convert.ToDouble(app.GetVariable(varName, "base"))
             | _ -> raise (InvalidOperationException())
 
+    let getBoolScalar (app : MLAppClass) (varName : string) =
+        Convert.ToBoolean(app.GetVariable(varName, "base"))
+
     let setMatrix (app : MLAppClass) (varName : string) (v : float[,]) =
         if v.Length = 1 && Double.IsNaN(v.[0, 0]) then
             app.Execute(sprintf "%s = [NaN];" varName) |> ignore
@@ -92,6 +122,9 @@ module Util =
             app.Execute(sprintf "%s = [Inf];" varName) |> ignore
         else
             app.PutWorkspaceData(varName, "base", v)
+
+    let setBoolMatrix (app : MLAppClass) (varName : string) (v : bool[,]) =
+        app.PutWorkspaceData(varName, "base", v)
 
     let setVector (app : MLAppClass) (varName : string) (v : float[]) =
         if v.Length = 1 && Double.IsNaN(v.[0]) then
@@ -104,6 +137,10 @@ module Util =
             let v = Array2D.init v.Length 1 (fun i j -> v.[i])
             app.PutWorkspaceData(varName, "base", v)
 
+    let setBoolVector (app : MLAppClass) (varName : string) (v : bool[]) =
+        let v = Array2D.init v.Length 1 (fun i j -> v.[i])
+        app.PutWorkspaceData(varName, "base", v)
+
     let setScalar (app : MLAppClass) (varName : string) (v : float) =
         if Double.IsNaN(v) then
             app.Execute(sprintf "%s = [NaN];" varName) |> ignore
@@ -113,6 +150,9 @@ module Util =
             app.Execute(sprintf "%s = [Inf];" varName) |> ignore
         else
             app.PutWorkspaceData(varName, "base", v)
+
+    let setBoolScalar (app : MLAppClass) (varName : string) (v : bool) =
+        app.PutWorkspaceData(varName, "base", v)
 
     let inline epsEqualFloat x y eps =
         if x = y then true

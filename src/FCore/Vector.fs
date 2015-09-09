@@ -89,14 +89,15 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
         if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
-        if fromIndex > toIndex then raise (new IndexOutOfRangeException())
-        let length = toIndex - fromIndex + 1L
-        let view = this.View(fromIndex, length)
-        let mutable arr = IntPtr.Zero
-        let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
-        MklFunctions.B_Create_Array(length, nativeArrayPtr)
-        MklFunctions.B_Copy_Array(length, view.NativeArray, arr |> NativePtr.ofNativeInt<bool>) 
-        new BoolVector(length, arr |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
+        if fromIndex > toIndex then BoolVector.Empty
+        else
+            let length = toIndex - fromIndex + 1L
+            let view = this.View(fromIndex, length)
+            let mutable arr = IntPtr.Zero
+            let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
+            MklFunctions.B_Create_Array(length, nativeArrayPtr)
+            MklFunctions.B_Copy_Array(length, view.NativeArray, arr |> NativePtr.ofNativeInt<bool>) 
+            new BoolVector(length, arr |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
 
     member this.GetSlice(fromIndex : int option, toIndex : int option) =
         this.GetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64)
@@ -106,10 +107,11 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
         if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
-        if fromIndex > toIndex then raise (new IndexOutOfRangeException())
-        let length = toIndex - fromIndex + 1L
-        let view = this.View(fromIndex, length)
-        MklFunctions.B_Fill_Array(value, length, view.NativeArray)
+        if fromIndex > toIndex then ()
+        else
+            let length = toIndex - fromIndex + 1L
+            let view = this.View(fromIndex, length)
+            MklFunctions.B_Fill_Array(value, length, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value: bool) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
@@ -119,11 +121,12 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
         if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
-        if fromIndex > toIndex then raise (new IndexOutOfRangeException())
-        let length = toIndex - fromIndex + 1L
-        if value.LongLength <> length then raise (new ArgumentException())
-        let view = this.View(fromIndex, length)
-        MklFunctions.B_Copy_Array(length, value.NativeArray, view.NativeArray)
+        if fromIndex > toIndex && value.LongLength = 0L then ()
+        else
+            let length = toIndex - fromIndex + 1L
+            if value.LongLength <> length then raise (new ArgumentException())
+            let view = this.View(fromIndex, length)
+            MklFunctions.B_Copy_Array(length, value.NativeArray, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value: BoolVector) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
@@ -171,6 +174,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     member this.Item
         with get(boolVector : BoolVector) = 
+            if length <> boolVector.LongLength then raise (new ArgumentException("Vector length mismatch"))
             let mutable arr = IntPtr.Zero
             let mutable resLen = 0L
             let nativeArrPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
@@ -178,6 +182,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
             new BoolVector(resLen, arr |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
 
         and set (boolVector : BoolVector) (value : BoolVector) =
+            if length <> boolVector.LongLength then raise (new ArgumentException("Vector length mismatch"))
             MklFunctions.B_Set_Bool_Slice(length, nativeArray, boolVector.NativeArray, value.NativeArray, value.LongLength)
 
     member this.ToArray() =
@@ -935,12 +940,13 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             res
         and set (indices : int seq) (value : Vector) =
             if value.LongLength = 1L then
-                indices |> Seq.iteri (fun i index -> this.[index] <- value.[0])
+                indices |> Seq.iter (fun index -> this.[index] <- value.[0])
             else
                 indices |> Seq.iteri (fun i index -> this.[index] <- value.[i])
 
     member this.Item
         with get(boolVector : BoolVector) = 
+            if length <> boolVector.LongLength then raise (new ArgumentException("Vector length mismatch"))
             let mutable arr = IntPtr.Zero
             let mutable resLen = 0L
             let nativeArrPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
@@ -948,6 +954,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             new Vector(resLen, arr |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
 
         and set (boolVector : BoolVector) (value : Vector) =
+            if length <> boolVector.LongLength then raise (new ArgumentException("Vector length mismatch"))
             MklFunctions.D_Set_Bool_Slice(length, nativeArray, boolVector.NativeArray, value.NativeArray, value.LongLength)
 
 

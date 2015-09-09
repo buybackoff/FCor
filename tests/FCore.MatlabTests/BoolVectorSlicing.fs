@@ -13,453 +13,446 @@ open System
 open MLApp
 open Util
 
-module VectorSlicing =
+module BoolVectorSlicing =
 
     let app = new MLAppClass()
     do app.Visible <- 0
 
     let rnd = new Random()
 
-    let rng = new MT19937Rng()
-
-    let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
-
-    let inline epsEqual eps (x : float[]) (y :float[])  = epsEqualArray x y epsEqualFloat eps
-
     [<Property>]
-    let ``GetItem int64``(v : float[]) =
+    let ``GetItem int64``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let index = rnd.Next(v.Length) |> int64
                                     setScalar app "index" (float(index + 1L))
                                     app.Execute("res = v(index);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 ([|v.[index]|]) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    [|v.[index]|] = res       
                                     )
 
     [<Property>]
-    let ``GetItem int``(v : float[]) =
+    let ``GetItem int``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let index = rnd.Next(v.Length) 
                                     setScalar app "index" (float(index + 1))
                                     app.Execute("res = v(index);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 ([|v.[index]|]) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    [|v.[index]|] = res       
                                     )
 
     [<Property>]
-    let ``SetItem int64``(v : float[]) (a : float) =
+    let ``SetItem int64``(v : bool[]) (a : bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let index = rnd.Next(v.Length) |> int64
                                     setScalar app "index" (float(index + 1L))
-                                    setScalar app "a" a
+                                    setBoolScalar app "a" a
                                     app.Execute("v(index) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.[index] <- a
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetItem int``(v : float[]) (a : float) =
+    let ``SetItem int``(v : bool[]) (a : bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let index = rnd.Next(v.Length) 
                                     setScalar app "index" (float(index + 1))
-                                    setScalar app "a" a
+                                    setBoolScalar app "a" a
                                     app.Execute("v(index) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.[index] <- a
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetItem int64 seq``(v : float[]) =
+    let ``GetItem int64 seq``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let indices = v |> Array.map (fun x -> rnd.Next(v.Length) |> int64)
                                     setVector app "indices" (indices |> Array.map (fun index -> float(index + 1L)))
                                     app.Execute("res = v(indices);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 (v.[indices |> Array.toSeq].ToArray()) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    v.[indices |> Array.toSeq].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetItem int seq``(v : float[]) =
+    let ``GetItem int seq``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let indices = v |> Array.map (fun x -> rnd.Next(v.Length))
                                     setVector app "indices" (indices |> Array.map (fun index -> float(index + 1)))
                                     app.Execute("res = v(indices);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 (v.[indices |> Array.toSeq].ToArray()) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    v.[indices |> Array.toSeq].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetItem int64 seq scalar``(v : float[]) (a : float) =
+    let ``SetItem int64 seq scalar``(v : bool[]) (a : bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "a" [|a|]
-                                    let a = new Vector(a)
-                                    setVector app "v" v
+                                    setBoolVector app "a" [|a|]
+                                    let a = new BoolVector(a)
+                                    setBoolVector app "v" v
                                     let indices = v |> Array.map (fun x -> rnd.Next(v.Length) |> int64)
                                     setVector app "indices" (indices |> Array.map (fun index -> float(index + 1L)))
                                     app.Execute("v(indices) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.[indices |> Array.toSeq] <- a
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetItem int seq scalar``(v : float[]) (a : float) =
+    let ``SetItem int seq scalar``(v : bool[]) (a : bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "a" [|a|]
-                                    let a = new Vector(a)
-                                    setVector app "v" v
+                                    setBoolVector app "a" [|a|]
+                                    let a = new BoolVector(a)
+                                    setBoolVector app "v" v
                                     let indices = v |> Array.map (fun x -> rnd.Next(v.Length))
                                     setVector app "indices" (indices |> Array.map (fun index -> float(index + 1)))
                                     app.Execute("v(indices) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.[indices |> Array.toSeq] <- a
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetItem int64 seq vector``(v : float[]) =
+    let ``SetItem int64 seq vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let indices = v |> Array.map (fun x -> rnd.Next(v.Length) |> int64)
-                                    let a = v |> Array.map (fun x -> rnd.NextDouble())
-                                    setVector app "a" a
+                                    let a = v |> Array.map (fun x -> rnd.NextDouble() < 0.5)
+                                    setBoolVector app "a" a
                                     setVector app "indices" (indices |> Array.map (fun index -> float(index + 1L)))
                                     app.Execute("v(indices) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
-                                    v.[indices |> Array.toSeq] <- new Vector(a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    v.[indices |> Array.toSeq] <- new BoolVector(a)
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetItem int seq vector``(v : float[]) =
+    let ``SetItem int seq vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let indices = v |> Array.map (fun x -> rnd.Next(v.Length))
-                                    let a = v |> Array.map (fun x -> rnd.NextDouble())
-                                    setVector app "a" a
+                                    let a = v |> Array.map (fun x -> rnd.NextDouble() < 0.5)
+                                    setBoolVector app "a" a
                                     setVector app "indices" (indices |> Array.map (fun index -> float(index + 1)))
                                     app.Execute("v(indices) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
-                                    v.[indices |> Array.toSeq] <- new Vector(a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    v.[indices |> Array.toSeq] <- new BoolVector(a)
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetSlice Some int64, Some int64``(v : float[]) =
+    let ``GetSlice Some int64, Some int64``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) |> int64
                                     let toIndex = rnd.Next(v.Length) |> int64
                                     setScalar app "fromIndex" (float(fromIndex + 1L))
                                     setScalar app "toIndex" (float(toIndex + 1L))
                                     app.Execute("res = v(fromIndex:toIndex);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 (v.[fromIndex..toIndex].ToArray()) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    v.[fromIndex..toIndex].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetSlice Some int64, None``(v : float[]) =
+    let ``GetSlice Some int64, None``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) |> int64
                                     setScalar app "fromIndex" (float(fromIndex + 1L))
                                     app.Execute("res = v(fromIndex:end);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 (v.[fromIndex..].ToArray()) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    v.[fromIndex..].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetSlice None, Some int64``(v : float[]) =
+    let ``GetSlice None, Some int64``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let toIndex = rnd.Next(v.Length) |> int64
                                     setScalar app "toIndex" (float(toIndex + 1L))
                                     app.Execute("res = v(1:toIndex);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 (v.[..toIndex].ToArray()) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    v.[..toIndex].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetSlice Some int, Some int``(v : float[]) =
+    let ``GetSlice Some int, Some int``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length)
                                     let toIndex = rnd.Next(v.Length) 
                                     setScalar app "fromIndex" (float(fromIndex + 1))
                                     setScalar app "toIndex" (float(toIndex + 1))
                                     app.Execute("res = v(fromIndex:toIndex);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 (v.[fromIndex..toIndex].ToArray()) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    v.[fromIndex..toIndex].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetSlice Some int, None``(v : float[]) =
+    let ``GetSlice Some int, None``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length)
                                     setScalar app "fromIndex" (float(fromIndex + 1))
                                     app.Execute("res = v(fromIndex:end);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 (v.[fromIndex..].ToArray()) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    v.[fromIndex..].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetSlice None, Some int``(v : float[]) =
+    let ``GetSlice None, Some int``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let toIndex = rnd.Next(v.Length) 
                                     setScalar app "toIndex" (float(toIndex + 1))
                                     app.Execute("res = v(1:toIndex);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
-                                    epsEqual 0.0 (v.[..toIndex].ToArray()) res       
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
+                                    v.[..toIndex].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice Some int64, Some int64 scalar``(v : float[]) (a:float) =
+    let ``SetSlice Some int64, Some int64 scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) |> int64
                                     let toIndex = rnd.Next(v.Length) |> int64
                                     setScalar app "fromIndex" (float(fromIndex + 1L))
                                     setScalar app "toIndex" (float(toIndex + 1L))
-                                    setScalar app "a" a
+                                    setBoolScalar app "a" a
                                     app.Execute("v(fromIndex:toIndex) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(Some fromIndex, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice Some int64, None scalar``(v : float[]) (a:float) =
+    let ``SetSlice Some int64, None scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) |> int64
                                     setScalar app "fromIndex" (float(fromIndex + 1L))
-                                    setScalar app "a" a
+                                    setBoolScalar app "a" a
                                     app.Execute("v(fromIndex:end) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(Some fromIndex, None, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice None, Some int64 scalar``(v : float[]) (a:float) =
+    let ``SetSlice None, Some int64 scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let toIndex = rnd.Next(v.Length) |> int64
                                     setScalar app "toIndex" (float(toIndex + 1L))
-                                    setScalar app "a" a
+                                    setBoolScalar app "a" a
                                     app.Execute("v(1:toIndex) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(None, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice Some int, Some int scalar``(v : float[]) (a:float) =
+    let ``SetSlice Some int, Some int scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) 
                                     let toIndex = rnd.Next(v.Length) 
                                     setScalar app "fromIndex" (float(fromIndex + 1))
                                     setScalar app "toIndex" (float(toIndex + 1))
-                                    setScalar app "a" a
+                                    setBoolScalar app "a" a
                                     app.Execute("v(fromIndex:toIndex) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(Some fromIndex, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice Some int, None scalar``(v : float[]) (a:float) =
+    let ``SetSlice Some int, None scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) 
                                     setScalar app "fromIndex" (float(fromIndex + 1))
-                                    setScalar app "a" a
+                                    setBoolScalar app "a" a
                                     app.Execute("v(fromIndex:end) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(Some fromIndex, None, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice None, Some int scalar``(v : float[]) (a:float) =
+    let ``SetSlice None, Some int scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let toIndex = rnd.Next(v.Length) 
                                     setScalar app "toIndex" (float(toIndex + 1))
-                                    setScalar app "a" a
+                                    setBoolScalar app "a" a
                                     app.Execute("v(1:toIndex) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(None, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice Some int64, Some int64 vector``(v : float[]) =
+    let ``SetSlice Some int64, Some int64 vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) |> int64
                                     let toIndex = rnd.Next(v.Length) |> int64
                                     setScalar app "fromIndex" (float(fromIndex + 1L))
                                     setScalar app "toIndex" (float(toIndex + 1L))
                                     let a =
                                         if toIndex >= fromIndex then
-                                            rand rng (toIndex - fromIndex + 1L)
-                                        else Vector.Empty
-                                    setVector app "a" (a.ToArray())
+                                            new BoolVector(Array.init (int(toIndex - fromIndex + 1L)) (fun i -> rnd.NextDouble() < 0.5))
+                                        else BoolVector.Empty
+                                    setBoolVector app "a" (a.ToArray())
                                     app.Execute("v(fromIndex:toIndex) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(Some fromIndex, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice Some int64, None vector``(v : float[]) =
+    let ``SetSlice Some int64, None vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) |> int64
-                                    let v = new Vector(v)
+                                    let v = new BoolVector(v)
                                     setScalar app "fromIndex" (float(fromIndex + 1L))
-                                    let a : Vector =  rand rng (v.LongLength - fromIndex)
-                                    setVector app "a" (a.ToArray())
+                                    let a : BoolVector =  new BoolVector(Array.init (int(v.LongLength - fromIndex)) (fun i -> rnd.NextDouble() < 0.5))
+                                    setBoolVector app "a" (a.ToArray())
                                     app.Execute("v(fromIndex:end) = a;") |> ignore
-                                    let res = getVector app "v"
+                                    let res = getBoolVector app "v"
                                     v.SetSlice(Some fromIndex, None, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice None, Some int64 vector``(v : float[]) =
+    let ``SetSlice None, Some int64 vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let toIndex = rnd.Next(v.Length) |> int64
                                     setScalar app "toIndex" (float(toIndex + 1L))
                                     let a =
                                         if toIndex >= 0L then
-                                            rand rng (toIndex + 1L)
-                                        else Vector.Empty
-                                    setVector app "a" (a.ToArray())
+                                            new BoolVector(Array.init (int(toIndex + 1L)) (fun i -> rnd.NextDouble() < 0.5))
+                                        else BoolVector.Empty
+                                    setBoolVector app "a" (a.ToArray())
                                     app.Execute("v(1:toIndex) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(None, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice Some int, Some int vector``(v : float[]) =
+    let ``SetSlice Some int, Some int vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) 
                                     let toIndex = rnd.Next(v.Length) 
                                     setScalar app "fromIndex" (float(fromIndex + 1))
                                     setScalar app "toIndex" (float(toIndex + 1))
                                     let a =
                                         if toIndex >= fromIndex then
-                                            rand rng (toIndex - fromIndex + 1)
-                                        else Vector.Empty
-                                    setVector app "a" (a.ToArray())
+                                            new BoolVector(Array.init (toIndex - fromIndex + 1) (fun i -> rnd.NextDouble() < 0.5))
+                                        else BoolVector.Empty
+                                    setBoolVector app "a" (a.ToArray())
                                     app.Execute("v(fromIndex:toIndex) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(Some fromIndex, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice Some int, None vector``(v : float[]) =
+    let ``SetSlice Some int, None vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let fromIndex = rnd.Next(v.Length) 
-                                    let v = new Vector(v)
+                                    let v = new BoolVector(v)
                                     setScalar app "fromIndex" (float(fromIndex + 1))
-                                    let a : Vector =  rand rng (v.Length - fromIndex)
-                                    setVector app "a" (a.ToArray())
+                                    let a : BoolVector = new BoolVector(Array.init (v.Length - fromIndex) (fun i -> rnd.NextDouble() < 0.5))
+                                    setBoolVector app "a" (a.ToArray())
                                     app.Execute("v(fromIndex:end) = a;") |> ignore
-                                    let res = getVector app "v"
+                                    let res = getBoolVector app "v"
                                     v.SetSlice(Some fromIndex, None, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetSlice None, Some int vector``(v : float[]) =
+    let ``SetSlice None, Some int vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let toIndex = rnd.Next(v.Length) 
                                     setScalar app "toIndex" (float(toIndex + 1))
                                     let a =
                                         if toIndex >= 0 then
-                                            rand rng (toIndex + 1)
-                                        else Vector.Empty
-                                    setVector app "a" (a.ToArray())
+                                            new BoolVector(Array.init (toIndex + 1) (fun i -> rnd.NextDouble() < 0.5))
+                                        else BoolVector.Empty
+                                    setBoolVector app "a" (a.ToArray())
                                     app.Execute("v(1:toIndex) = a;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     v.SetSlice(None, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.ToArray() = res       
                                     )
 
     [<Property>]
-    let ``GetItem bool vector``(v : float[]) =
+    let ``GetItem bool vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let b = Array.init v.Length (fun i -> rnd.NextDouble() < 0.5)
                                     setBoolVector app "b" b
                                     app.Execute("res = v(b);") |> ignore
-                                    let res = getVector app "res"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "res"
+                                    let v = new BoolVector(v)
                                     let b = new BoolVector(b)
-                                    epsEqual 0.0 (v.[b].ToArray()) res       
+                                    v.[b].ToArray() = res       
                                     )
 
     [<Property>]
-    let ``SetItem bool vector``(v : float[]) =
+    let ``SetItem bool vector``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
-                                    setVector app "v" v
+                                    setBoolVector app "v" v
                                     let b = Array.init v.Length (fun i -> rnd.NextDouble() < 0.5)
                                     let trueB = b |> Array.filter id
-                                    let y = trueB |> Array.map (fun x -> rnd.NextDouble())
+                                    let y = trueB |> Array.map (fun x -> rnd.NextDouble() < 0.5)
                                     setBoolVector app "b" b
-                                    setVector app "y" y
+                                    setBoolVector app "y" y
                                     app.Execute("v(b) = y;") |> ignore
-                                    let res = getVector app "v"
-                                    let v = new Vector(v)
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
                                     let b = new BoolVector(b)
-                                    v.[b] <- new Vector(y)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    v.[b] <- new BoolVector(y)
+                                    v.ToArray() = res       
                                     )
-
 
