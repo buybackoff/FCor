@@ -8,13 +8,12 @@ open System.Runtime.InteropServices
 open System.Reflection
 open FCore
 open FCore.BasicStats
+open FCore.Random
 open FCore.Math
 open FCore.MatlabTests
 open FCore.MatlabTests.Util
 
 let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
-let rnd = new Random()
-let app = new MLAppClass()
-let v = [|true; false|]
-setBoolVector app "v" v
-let res = getBoolVector app "v"
+let nstr = 0x7fffffff
+let rng = new SOBOLRng(10)
+rng.LeapFrog(2, nstr)

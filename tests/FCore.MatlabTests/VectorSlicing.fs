@@ -462,4 +462,28 @@ module VectorSlicing =
                                     epsEqual 0.0 (v.ToArray()) res       
                                     )
 
+    [<Property>]
+    let ``View int64``(v : float[]) =
+        (v.LongLength > 0L) ==> lazy(
+                                    let v = new Vector(v)
+                                    let fromIndex = rnd.Next(v.Length) |> int64
+                                    let length = rnd.Next(1, v.Length - int(fromIndex) + 1) |> int64
+                                    let view = v.View(fromIndex, length)                    
+                                    let y = new Vector(Array.init (int(length)) (fun i -> rnd.NextDouble()))
+                                    v.SetSlice(Some fromIndex, Some (fromIndex + length - 1L), y)
+                                    view.ToArray() = v.[fromIndex..(fromIndex + length - 1L)].ToArray() && view.IsView
+                                    )
+
+    [<Property>]
+    let ``View int``(v : float[]) =
+        (v.LongLength > 0L) ==> lazy(
+                                    let v = new Vector(v)
+                                    let fromIndex = rnd.Next(v.Length)
+                                    let length = rnd.Next(1, v.Length - fromIndex + 1)
+                                    let view = v.View(fromIndex, length)                    
+                                    let y = new Vector(Array.init length (fun i -> rnd.NextDouble()))
+                                    v.SetSlice(Some fromIndex, Some (fromIndex + length - 1), y)
+                                    view.ToArray() = v.[fromIndex..(fromIndex + length - 1)].ToArray() && view.IsView
+                                    )
+
 

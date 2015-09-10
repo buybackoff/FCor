@@ -86,6 +86,7 @@ type internal MklFunctions() =
         match code with
             | -1 -> raise (new OutOfMemoryException())
             | -9 -> raise (new ArgumentException("Vector length mismatch"))
+            | -7 -> raise (new ArgumentException("VSL error"))
             | 0 -> ()
             | _ -> raise (new ArgumentException()) 
 

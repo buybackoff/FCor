@@ -73,10 +73,10 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     member this.View
         with get(fromIndex, length) =
-            if length = 0L then
+            if fromIndex < 0L || (fromIndex + length > this.LongLength) then raise (new IndexOutOfRangeException())
+            if length <= 0L then
                 BoolVector.Empty
             else
-                if fromIndex < 0L || length < 0L || (fromIndex + length > this.LongLength) then raise (new IndexOutOfRangeException())
                 let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + fromIndex) |> NativePtr.ofNativeInt<bool>
                 new BoolVector(length, offsetAddr, IntPtr.Zero, true, Some this)
 
@@ -844,10 +844,10 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     member this.View
         with get(fromIndex, length) =
-            if length = 0L then
+            if fromIndex < 0L || (fromIndex + length > this.LongLength) then raise (new IndexOutOfRangeException())
+            if length <= 0L then
                 Vector.Empty
             else
-                if fromIndex < 0L || length < 0L || (fromIndex + length > this.LongLength) then raise (new IndexOutOfRangeException())
                 let sizeof = sizeof<float> |> int64
                 let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + fromIndex*sizeof) |> NativePtr.ofNativeInt<float>
                 new Vector(length, offsetAddr, IntPtr.Zero, true, Some this)

@@ -596,7 +596,7 @@ type MklRng =
         if isDisposing then GC.SuppressFinalize(this)
         MklFunctions.Delete_Rng(this.streamPtr)
 
-    override this.Finalize() = this.DoDispose(false)
+    override this.Finalize() = try this.DoDispose(false) with _ -> ()
 
 type MCG31Rng =
     inherit MklRng
@@ -619,7 +619,7 @@ type MCG31Rng =
         MklFunctions.Skipahead_Rng(this.streamPtr, nSkip)
 
     member this.SkipAhead(nSkip : int) =
-        MklFunctions.Skipahead_Rng(this.streamPtr, nSkip |> int64)
+        this.SkipAhead(nSkip |> int64)
 
 
 type R250Rng =
@@ -655,7 +655,7 @@ type MRG32K3ARng =
         MklFunctions.Skipahead_Rng(this.streamPtr, nSkip)
 
     member this.SkipAhead(nSkip : int) =
-        MklFunctions.Skipahead_Rng(this.streamPtr, nSkip |> int64)
+        this.SkipAhead(nSkip |> int64)
 
 
 type MCG59Rng =
@@ -679,7 +679,7 @@ type MCG59Rng =
         MklFunctions.Skipahead_Rng(this.streamPtr, nSkip)
 
     member this.SkipAhead(nSkip : int) =
-        MklFunctions.Skipahead_Rng(this.streamPtr, nSkip |> int64)
+        this.SkipAhead(nSkip |> int64)
 
 
 type WHRng =
@@ -709,7 +709,7 @@ type WHRng =
         MklFunctions.Skipahead_Rng(this.streamPtr, nSkip)
 
     member this.SkipAhead(nSkip : int) =
-        MklFunctions.Skipahead_Rng(this.streamPtr, nSkip |> int64)
+        this.SkipAhead(nSkip |> int64)
 
 
 type MT19937Rng =
@@ -730,7 +730,7 @@ type MT19937Rng =
         MklFunctions.Skipahead_Rng(this.streamPtr, nSkip)
 
     member this.SkipAhead(nSkip : int) =
-        MklFunctions.Skipahead_Rng(this.streamPtr, nSkip |> int64)
+        this.SkipAhead(nSkip |> int64)
 
 
 type SFMT19937Rng =
@@ -751,7 +751,7 @@ type SFMT19937Rng =
         MklFunctions.Skipahead_Rng(this.streamPtr, nSkip)
 
     member this.SkipAhead(nSkip : int) =
-        MklFunctions.Skipahead_Rng(this.streamPtr, nSkip |> int64)
+        this.SkipAhead(nSkip |> int64)
 
 
 type MT2203Rng =
@@ -787,14 +787,15 @@ type SOBOLRng =
     member this.Copy() =
         new SOBOLRng(MklFunctions.Copy_Rng(this.streamPtr)) 
 
-    member this.LeapFrog(k, nStreams) =
+    member this.LeapFrog(k) =
+        let nStreams = 0x7fffffff
         MklFunctions.Leapfrog_Rng(this.streamPtr, k, nStreams)
 
     member this.SkipAhead(nSkip : int64) =
         MklFunctions.Skipahead_Rng(this.streamPtr, nSkip)
 
     member this.SkipAhead(nSkip : int) =
-        MklFunctions.Skipahead_Rng(this.streamPtr, nSkip |> int64)
+        this.SkipAhead(nSkip |> int64)
 
 type NIEDERRRng =
     inherit MklRng
@@ -808,14 +809,15 @@ type NIEDERRRng =
     member this.Copy() =
         new NIEDERRRng(MklFunctions.Copy_Rng(this.streamPtr)) 
 
-    member this.LeapFrog(k, nStreams) =
+    member this.LeapFrog(k) =
+        let nStreams = 0x7fffffff
         MklFunctions.Leapfrog_Rng(this.streamPtr, k, nStreams)
 
     member this.SkipAhead(nSkip : int64) =
         MklFunctions.Skipahead_Rng(this.streamPtr, nSkip)
 
     member this.SkipAhead(nSkip : int) =
-        MklFunctions.Skipahead_Rng(this.streamPtr, nSkip |> int64)
+        this.SkipAhead(nSkip |> int64)
 
 
 
