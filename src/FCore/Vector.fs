@@ -841,6 +841,9 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static member op_Explicit(v : Vector) = v
 
+    static member op_Explicit(v : Vector) =
+        v.[0]
+
 
     member this.View
         with get(fromIndex, length) =
