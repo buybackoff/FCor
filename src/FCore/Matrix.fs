@@ -11,6 +11,10 @@ type MatrixAxis = | RowAxis | ColumnAxis
 
 type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVector) =
 
+    let mutable rowCount = rowCount
+
+    let mutable colCount = colCount
+
     static let empty = new BoolMatrix(0L, 0L, BoolVector.Empty)
 
     new(colMajorDataVector : BoolVector) =
@@ -868,6 +872,9 @@ and BoolMatrixExpr =
 
 and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
+    let mutable rowCount = rowCount
+    let mutable colCount = colCount
+
     static let empty = new Matrix(0L, 0L, Vector.Empty)
 
     new(colMajorDataVector : Vector) =
@@ -1152,6 +1159,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             rowIndices |> Array.iteri (fun i rowIndex ->
                                            colIndices |> Array.iteri (fun j colIndex -> res.[i, j] <- this.[rowIndex, colIndex])
                                       )
+            res
+
         and set (rowIndices : int64 seq, colIndices : int64 seq) (value : Matrix) =
             let rowIndices = rowIndices |> Seq.toArray
             let colIndices = colIndices |> Seq.toArray
@@ -1171,6 +1180,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             rowIndices |> Array.iteri (fun i rowIndex ->
                                            colIndices |> Array.iteri (fun j colIndex -> res.[i, j] <- this.[rowIndex, colIndex])
                                       )
+            res
+
         and set (rowIndices : int seq, colIndices : int seq) (value : Matrix) =
             let rowIndices = rowIndices |> Seq.toArray
             let colIndices = colIndices |> Seq.toArray
@@ -1194,7 +1205,12 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         with get() = MatrixExpr.Var(this)
 
     member this.Transpose() =
+        let r = rowCount
+        let c = colCount
         MklFunctions.D_Transpose_In_Place(rowCount, colCount, colMajorDataVector.NativeArray)
+        rowCount <- c
+        colCount <- r
+
 
     static member Identity(rows : int64, cols : int64) =
         let res = new Matrix(rows, cols, 0.0)
@@ -1844,20 +1860,30 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member Chol(matrix: Matrix) =
-        let res = Matrix.Copy(matrix)
-        MklFunctions.D_Cholesky_Factor(res.LongRowCount, res.ColMajorDataVector.NativeArray)
-        res
+        if matrix == Matrix.Empty then Matrix.Empty
+        else
+            if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix is not square"))
+            let res = Matrix.Copy(matrix)
+            MklFunctions.D_Cholesky_Factor(res.LongRowCount, res.ColMajorDataVector.NativeArray)
+            res
 
     static member CholInv(matrix: Matrix) =
-        let res = Matrix.Copy(matrix)
-        MklFunctions.D_Cholesky_Inverse(res.LongRowCount, res.ColMajorDataVector.NativeArray)
-        res
+        if matrix == Matrix.Empty then Matrix.Empty
+        else
+            if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix is not square"))
+            let res = Matrix.Copy(matrix)
+            MklFunctions.D_Cholesky_Inverse(res.LongRowCount, res.ColMajorDataVector.NativeArray)
+            res
 
     static member CholSolve(a : Matrix, b : Matrix) =
-        use a = Matrix.Copy(a)
-        let b = Matrix.Copy(b)
-        MklFunctions.D_Cholesky_Solve(b.LongRowCount, b.LongRowCount, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray)
-        b
+        if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
+        if a.LongRowCount <> a.LongColCount then raise (new ArgumentException("Matrix is not square"))
+        if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0)
+        else
+            use a = Matrix.Copy(a)
+            let b = Matrix.Copy(b)
+            MklFunctions.D_Cholesky_Solve(a.LongRowCount, b.LongColCount, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray)
+            b
 
     static member Lu(matrix: Matrix) =
         let m = matrix.LongRowCount
@@ -1877,91 +1903,119 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         (L, U, pivot)
 
     static member LuInv(matrix: Matrix) =
-        let res = Matrix.Copy(matrix)
-        MklFunctions.D_Lu_Inverse(res.LongRowCount, res.ColMajorDataVector.NativeArray)
-        res
+        if matrix == Matrix.Empty then Matrix.Empty
+        else
+            if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix is not square"))
+            let res = Matrix.Copy(matrix)
+            MklFunctions.D_Lu_Inverse(res.LongRowCount, res.ColMajorDataVector.NativeArray)
+            res
 
     static member LuSolve(a : Matrix, b : Matrix) =
-        use a = Matrix.Copy(a)
-        let b = Matrix.Copy(b)
-        MklFunctions.D_Lu_Solve(b.LongRowCount, b.LongRowCount, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray)
-        b
+        if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
+        if a.LongRowCount <> a.LongColCount then raise (new ArgumentException("Matrix is not square"))
+        if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0)
+        else
+            use a = Matrix.Copy(a)
+            let b = Matrix.Copy(b)
+            MklFunctions.D_Lu_Solve(a.LongRowCount, b.LongColCount, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray)
+            b
 
     static member Qr(matrix: Matrix) =
-        let m = matrix.LongRowCount
-        let n = matrix.LongColCount
-        let Q =
-            if m > n then
-                Matrix.Copy(matrix)
-            else
-                new Matrix(n, n, 0.0)
-        let R = 
-            if m > n then
-                new Matrix(m, m, 0.0)
-            else
-                Matrix.Copy(matrix)
-        MklFunctions.D_Qr_Factor(m, n, matrix.ColMajorDataVector.NativeArray, Q.ColMajorDataVector.NativeArray, R.ColMajorDataVector.NativeArray)
-        (Q, R)
+        if matrix == Matrix.Empty then Matrix.Empty, Matrix.Empty
+        else
+            let m = matrix.LongRowCount
+            let n = matrix.LongColCount
+            let Q =
+                if m > n then
+                    Matrix.Copy(matrix)
+                else
+                    new Matrix(m, m, 0.0)
+            let R = 
+                if m > n then
+                    new Matrix(n, n, 0.0)
+                else
+                    Matrix.Copy(matrix)
+            MklFunctions.D_Qr_Factor(m, n, matrix.ColMajorDataVector.NativeArray, Q.ColMajorDataVector.NativeArray, R.ColMajorDataVector.NativeArray)
+            (Q, R)
 
     static member QrSolveFull(a : Matrix, b : Matrix) =
-        let m = a.LongRowCount
-        let n = a.LongColCount
-        let nrhs = b.LongColCount
-        use a = Matrix.Copy(a)
-        let x = new Matrix(n, nrhs, 0.0)
-        MklFunctions.D_Qr_Solve_Full(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray)
-        x
+        if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
+        if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0)
+        else
+            let m = a.LongRowCount
+            let n = a.LongColCount
+            let nrhs = b.LongColCount
+            use a = Matrix.Copy(a)
+            let x = new Matrix(n, nrhs, 0.0)
+            MklFunctions.D_Qr_Solve_Full(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray)
+            x
 
     static member QrSolve(a : Matrix, b : Matrix, tol : float) =
-        let m = a.LongRowCount
-        let n = a.LongColCount
-        let nrhs = b.LongColCount
-        use a = Matrix.Copy(a)
-        let x = new Matrix(n, nrhs, 0.0)
-        let mutable rank = 0
-        MklFunctions.D_Qr_Solve(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray, &&rank, tol)
-        (x, rank)
+        if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
+        if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0), 0
+        else
+            let m = a.LongRowCount
+            let n = a.LongColCount
+            let nrhs = b.LongColCount
+            use a = Matrix.Copy(a)
+            let x = new Matrix(n, nrhs, 0.0)
+            let mutable rank = 0
+            MklFunctions.D_Qr_Solve(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray, &&rank, tol)
+            (x, rank)
 
     static member SvdSolve(a : Matrix, b : Matrix, tol : float) =
-        let m = a.LongRowCount
-        let n = a.LongColCount
-        let nrhs = b.LongColCount
-        use a = Matrix.Copy(a)
-        let x = new Matrix(n, nrhs, 0.0)
-        let mutable rank = 0
-        MklFunctions.D_Svd_Solve(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray, &&rank, tol)
-        (x, rank)
+        if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
+        if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0), 0
+        else
+            let m = a.LongRowCount
+            let n = a.LongColCount
+            let nrhs = b.LongColCount
+            use a = Matrix.Copy(a)
+            let x = new Matrix(n, nrhs, 0.0)
+            let mutable rank = 0
+            MklFunctions.D_Svd_Solve(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray, &&rank, tol)
+            (x, rank)
 
     static member SvdValues(matrix : Matrix) =
-        let m = matrix.LongRowCount
-        let n = matrix.LongColCount
-        let res = new Vector(min m n, 0.0)
-        use matrix = Matrix.Copy(matrix)
-        MklFunctions.D_Svd_Values(m, n, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-        res
+        if matrix == Matrix.Empty then Vector.Empty
+        else
+            let m = matrix.LongRowCount
+            let n = matrix.LongColCount
+            let res = new Vector(min m n, 0.0)
+            use matrix = Matrix.Copy(matrix)
+            MklFunctions.D_Svd_Values(m, n, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+            res
 
     static member Svd(matrix : Matrix) =
-        let m = matrix.LongRowCount
-        let n = matrix.LongColCount
-        let U = new Matrix(m, min m n, 0.0)
-        let S = new Vector(min m n, 0.0)
-        let Vt = new Matrix(min m n, n, 0.0)
-        use matrix = Matrix.Copy(matrix)
-        MklFunctions.D_Svd_Factor(m, n, matrix.ColMajorDataVector.NativeArray, U.ColMajorDataVector.NativeArray, S.NativeArray, Vt.ColMajorDataVector.NativeArray)
-        (U, S, Vt)
+        if matrix == Matrix.Empty then Matrix.Empty, Vector.Empty, Matrix.Empty
+        else
+            let m = matrix.LongRowCount
+            let n = matrix.LongColCount
+            let U = new Matrix(m, min m n, 0.0)
+            let S = new Vector(min m n, 0.0)
+            let Vt = new Matrix(min m n, n, 0.0)
+            use matrix = Matrix.Copy(matrix)
+            MklFunctions.D_Svd_Factor(m, n, matrix.ColMajorDataVector.NativeArray, U.ColMajorDataVector.NativeArray, S.NativeArray, Vt.ColMajorDataVector.NativeArray)
+            (U, S, Vt)
 
     static member Eig(matrix : Matrix) =
-        let n = matrix.LongRowCount
-        let Z = Matrix.Copy(matrix)
-        let D = new Vector(n, 0.0)
-        MklFunctions.D_Eigen_Factor(n, Z.ColMajorDataVector.NativeArray, D.NativeArray)
-        (Z, D)
+        if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix must be square"))
+        if matrix == Matrix.Empty then Matrix.Empty, Vector.Empty
+        else
+            let n = matrix.LongRowCount
+            let Z = Matrix.Copy(matrix)
+            let D = new Vector(n, 0.0)
+            MklFunctions.D_Eigen_Factor(n, Z.ColMajorDataVector.NativeArray, D.NativeArray)
+            (Z, D)
 
     static member EigValues(matrix : Matrix) =
-        let n = matrix.LongRowCount
-        let D = new Vector(n, 0.0)
-        MklFunctions.D_Eigen_Values(n, matrix.ColMajorDataVector.NativeArray, D.NativeArray)
-        D
+        if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix must be square"))
+        if matrix == Matrix.Empty then Vector.Empty
+        else
+            let n = matrix.LongRowCount
+            let D = new Vector(n, 0.0)
+            MklFunctions.D_Eigen_Values(n, matrix.ColMajorDataVector.NativeArray, D.NativeArray)
+            D
 
     override this.ToString() = 
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<float>() 0.0, null)

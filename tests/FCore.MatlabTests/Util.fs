@@ -168,6 +168,12 @@ module Util =
         else (a.Length = b.Length) && (b |> Array.zip a |> Array.map (fun (x,y) -> epsEqual x y eps) |> Array.fold (&&) true)
 
 
-
+    let inline epsEqualArray2D (a : 'T[,]) (b : 'T[,]) (epsEqual : 'T -> 'T -> 'S -> bool) (eps : 'S) =
+        if a.Length = 0 && b.Length = 0 then true
+        else
+            let s1 = seq{for col in 0..a.GetLength(1)-1 do for row in 0..a.GetLength(0)-1 do yield a.[row,col]}
+            let s2 = seq{for col in 0..b.GetLength(1)-1 do for row in 0..b.GetLength(0)-1 do yield b.[row,col]}
+            (a.GetLength(0) = b.GetLength(0)) && (a.GetLength(1) = b.GetLength(1)) &&
+            (s2 |> Seq.zip s1 |> Seq.map (fun (x,y) -> epsEqual x y eps) |> Seq.fold (&&) true)
         
 
