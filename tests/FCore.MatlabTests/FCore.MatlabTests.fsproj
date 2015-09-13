@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Util.fs" />
     <Compile Include="BoolVectorOperators.fs" />
+    <Compile Include="BoolMatrixOperators.fs" />
     <Compile Include="VectorOperators.fs" />
     <Compile Include="VectorFunctions.fs" />
     <Compile Include="VectorBasicStats.fs" />

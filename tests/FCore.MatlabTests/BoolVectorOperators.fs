@@ -13,7 +13,12 @@ module BoolVectorOperators =
     [<Property>]
     let ``X == X`` (x : bool[]) =
         let X = new BoolVector(x)
-        (X == X)
+        (X == X) .&. (X == BoolVector.Copy(X))
+
+    [<Property>]
+    let ``X = X`` (x : bool[]) =
+        let X = new BoolVector(x)
+        (X = X) .&. (X = BoolVector.Copy(X))
 
     [<Property(MaxTest=1000)>]
     let ``X != Y if not same length and data`` (x : bool[]) (y :  bool[]) =
@@ -22,10 +27,22 @@ module BoolVectorOperators =
         x <> y ==> (X != Y)
 
     [<Property(MaxTest=1000)>]
+    let ``X <> Y if not same length and data`` (x : bool[]) (y :  bool[]) =
+        let X = new BoolVector(x)
+        let Y = new BoolVector(y)
+        x <> y ==> (X <> Y)
+
+    [<Property(MaxTest=1000)>]
     let ``X == Y = not X != Y`` (x : bool[]) (y :  bool[]) =
         let X = new BoolVector(x)
         let Y = new BoolVector(y)
         (X == Y) = not (X != Y)
+
+    [<Property(MaxTest=1000)>]
+    let ``X = Y = not X <> Y`` (x : bool[]) (y :  bool[]) =
+        let X = new BoolVector(x)
+        let Y = new BoolVector(y)
+        (X = Y) = not (X <> Y)
 
     [<Property>]
     let ``BoolVector(a) == a`` (a : bool) =

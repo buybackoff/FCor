@@ -200,15 +200,17 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
                             ) 0L |> ignore
         res
 
+    static member Copy(vector : BoolVector) =
+        let res = new BoolVector(vector.LongLength, false)
+        MklFunctions.B_Copy_Array(vector.LongLength, vector.NativeArray, res.NativeArray)
+        res
+
 
     static member (==) (vector1: BoolVector, vector2: BoolVector) =
-        if vector1.LongLength = 0L && vector2.LongLength = 0L then true
-        elif vector1.LongLength <> vector2.LongLength then false
-        else 
-            MklFunctions.B_Arrays_Are_Equal(vector1.LongLength, vector1.NativeArray, vector2.NativeArray)
+        vector1 = vector2
 
     static member (!=) (vector1: BoolVector, vector2: BoolVector) =
-        not (vector1 == vector2)
+        vector1 <> vector2
 
     static member (==) (vector: BoolVector, a : bool) =
         vector.LongLength = 1L && vector.[0L] = a
@@ -396,6 +398,17 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     override this.ToString() = 
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<bool>() true, null)
+
+    override x.Equals(yobj) =
+        match yobj with
+        | :? BoolVector as y ->
+            if x.LongLength = 0L && y.LongLength = 0L then true
+            elif x.LongLength <> y.LongLength then false
+            else 
+                MklFunctions.B_Arrays_Are_Equal(x.LongLength, x.NativeArray, y.NativeArray)
+        | _ -> false
+ 
+    override x.GetHashCode() = hash (x.LongLength, x.NativeArray)
 
     interface IFormattable with
         member this.ToString(format, provider) = 
@@ -976,15 +989,17 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
                             ) 0L |> ignore
         res
 
+    static member Copy(vector : Vector) =
+        let res = new Vector(vector.LongLength, 0.0)
+        MklFunctions.D_Copy_Array(vector.LongLength, vector.NativeArray, res.NativeArray)
+        res
+
 
     static member (==) (vector1: Vector, vector2: Vector) =
-        if vector1.LongLength = 0L && vector2.LongLength = 0L then true
-        elif vector1.LongLength <> vector2.LongLength then false
-        else 
-        MklFunctions.D_Arrays_Are_Equal(vector1.LongLength, vector1.NativeArray, vector2.NativeArray)
+        vector1 = vector2
 
     static member (!=) (vector1: Vector, vector2: Vector) =
-        not (vector1 == vector2)
+        vector1 <> vector2
 
     static member (==) (vector: Vector, a : float) =
         vector.LongLength = 1L && vector.[0L] = a
@@ -1517,6 +1532,17 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     override this.ToString() = 
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<float>() 0.0, null)
+
+    override x.Equals(yobj) =
+        match yobj with
+        | :? Vector as y ->
+            if x.LongLength = 0L && y.LongLength = 0L then true
+            elif x.LongLength <> y.LongLength then false
+            else 
+                MklFunctions.D_Arrays_Are_Equal(x.LongLength, x.NativeArray, y.NativeArray)
+        | _ -> false
+ 
+    override x.GetHashCode() = hash (x.LongLength, x.NativeArray)
 
     interface IFormattable with
         member this.ToString(format, provider) = 

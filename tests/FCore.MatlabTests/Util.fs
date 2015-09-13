@@ -175,5 +175,11 @@ module Util =
             let s2 = seq{for col in 0..b.GetLength(1)-1 do for row in 0..b.GetLength(0)-1 do yield b.[row,col]}
             (a.GetLength(0) = b.GetLength(0)) && (a.GetLength(1) = b.GetLength(1)) &&
             (s2 |> Seq.zip s1 |> Seq.map (fun (x,y) -> epsEqual x y eps) |> Seq.fold (&&) true)
+
+    let array2DZip (x : 'T[,]) (y : 'T[,]) =
+        if x.GetLength(0) <> y.GetLength(0) || x.GetLength(1) <> y.GetLength(1) then
+            raise (new ArgumentException())
+        else
+            Array2D.init (x.GetLength(0)) (x.GetLength(1)) (fun i j -> x.[i, j], y.[i, j])
         
 

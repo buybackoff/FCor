@@ -22,7 +22,13 @@ module VectorOperators =
     let ``X == X`` (x : float[]) =
         let X = new Vector(x)
         let hasNaN = x |> Array.exists Double.IsNaN
-        (X == X) = not hasNaN
+        ((X == X) = not hasNaN) .&. ((X == Vector.Copy(X)) = not hasNaN)
+
+    [<Property>]
+    let ``X = X`` (x : float[]) =
+        let X = new Vector(x)
+        let hasNaN = x |> Array.exists Double.IsNaN
+        ((X = X) = not hasNaN) .&. ((X = Vector.Copy(X)) = not hasNaN)
 
     [<Property(MaxTest=1000)>]
     let ``X != Y if not same length and data`` (x : float[]) (y :  float[]) =
@@ -31,10 +37,22 @@ module VectorOperators =
         x <> y ==> (X != Y)
 
     [<Property(MaxTest=1000)>]
+    let ``X <> Y if not same length and data`` (x : float[]) (y :  float[]) =
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        x <> y ==> (X <> Y)
+
+    [<Property(MaxTest=1000)>]
     let ``X == Y = not X != Y`` (x : float[]) (y :  float[]) =
         let X = new Vector(x)
         let Y = new Vector(y)
         (X == Y) = not (X != Y)
+
+    [<Property(MaxTest=1000)>]
+    let ``X = Y = not X <> Y`` (x : float[]) (y :  float[]) =
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        (X = Y) = not (X <> Y)
 
     [<Property>]
     let ``Vector(a) == a`` (a : float) =

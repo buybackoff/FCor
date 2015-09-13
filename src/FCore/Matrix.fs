@@ -76,6 +76,14 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     member this.ColMajorDataVector = colMajorDataVector
 
+    member this.LongLength = colMajorDataVector.LongLength
+
+    member this.Length = colMajorDataVector.Length
+
+    member this.LongSize = rowCount, colCount
+
+    member this.Size = (int rowCount), (int colCount)
+
     member this.IsDisposed = colMajorDataVector.IsDisposed
 
     member this.IsScalar = rowCount = 1L && colCount = 1L
@@ -329,15 +337,22 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
     static member Identity(rows : int, cols : int) =
         BoolMatrix.Identity(rows |> int64, cols |> int64)
 
+    static member Copy(matrix : BoolMatrix) =
+        let rows = matrix.LongRowCount
+        let cols = matrix.LongColCount
+        let res = new BoolMatrix(rows, cols, false)
+        MklFunctions.B_Copy_Array(matrix.ColMajorDataVector.LongLength, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+        res
+
     member this.AsExpr
         with get() = BoolMatrixExpr.Var(this)
 
 
     static member (==) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        matrix1.ColMajorDataVector == matrix2.ColMajorDataVector
+        matrix1 = matrix2
 
     static member (!=) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        not (matrix1 == matrix2)
+        matrix1 <> matrix2
 
     static member (==) (matrix: BoolMatrix, a : bool) =
         matrix.ColMajorDataVector == a
@@ -353,33 +368,39 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
 
     static member (.<) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .< matrix2.ColMajorDataVector)
 
     static member (.<=) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .<= matrix2.ColMajorDataVector)
 
     static member (.>) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .> matrix2.ColMajorDataVector)
 
     static member (.>=) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .>= matrix2.ColMajorDataVector)
 
     static member (.=) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .= matrix2.ColMajorDataVector)
 
     static member (.<>) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .<> matrix2.ColMajorDataVector)
 
 
@@ -425,13 +446,15 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
 
     static member Max(matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, BoolVector.Max(matrix1.ColMajorDataVector, matrix2.ColMajorDataVector))
 
     static member Min(matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, BoolVector.Min(matrix1.ColMajorDataVector, matrix2.ColMajorDataVector))
 
     static member Max(matrix : BoolMatrix, a : bool) =
@@ -449,13 +472,15 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         BoolMatrix.Min(matrix, a)
 
     static member (.&&) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .&& matrix2.ColMajorDataVector)
 
     static member (.||) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .|| matrix2.ColMajorDataVector)
 
     static member (.&&) (matrix : BoolMatrix, a : bool) =
@@ -485,6 +510,17 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     override this.ToString() = 
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<bool>() true, null)
+
+    override x.Equals(yobj) =
+        match yobj with
+        | :? BoolMatrix as y ->
+            if x.LongLength = 0L && y.LongLength = 0L then true
+            elif x.LongRowCount <> y.LongRowCount || x.LongColCount <> y.LongColCount then false
+            else 
+                x.ColMajorDataVector = y.ColMajorDataVector
+        | _ -> false
+ 
+    override x.GetHashCode() = hash (x.LongRowCount, x.LongColCount, x.ColMajorDataVector.NativeArray)
 
     interface IFormattable with
         member this.ToString(format, provider) = 
@@ -936,6 +972,14 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
     member this.ColMajorDataVector = colMajorDataVector
 
+    member this.LongLength = colMajorDataVector.LongLength
+
+    member this.Length = colMajorDataVector.Length
+
+    member this.LongSize = rowCount, colCount
+
+    member this.Size = (int rowCount), (int colCount)
+
     member this.IsDisposed = colMajorDataVector.IsDisposed
 
     member this.IsScalar = rowCount = 1L && colCount = 1L
@@ -1242,10 +1286,10 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         Matrix.LowerTri(matrix, offset |> int64)
 
     static member (==) (matrix1: Matrix, matrix2: Matrix) =
-        matrix1.ColMajorDataVector == matrix2.ColMajorDataVector
+        matrix1 = matrix2
 
     static member (!=) (matrix1: Matrix, matrix2: Matrix) =
-        not (matrix1 == matrix2)
+        matrix1 <> matrix2
 
     static member (==) (matrix: Matrix, a : float) =
         matrix.ColMajorDataVector == a
@@ -2019,6 +2063,17 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
     override this.ToString() = 
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<float>() 0.0, null)
+
+    override x.Equals(yobj) =
+        match yobj with
+        | :? Matrix as y ->
+            if x.LongRowCount * x.LongColCount = 0L && y.LongRowCount * y.LongColCount = 0L then true
+            elif x.LongRowCount <> y.LongRowCount || x.LongColCount <> y.LongColCount then false
+            else 
+                x.ColMajorDataVector = y.ColMajorDataVector
+        | _ -> false
+ 
+    override x.GetHashCode() = hash (x.LongRowCount, x.LongColCount, x.ColMajorDataVector.NativeArray)
 
     interface IFormattable with
         member this.ToString(format, provider) = 
