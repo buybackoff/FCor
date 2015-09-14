@@ -96,7 +96,7 @@ module VectorBasicStats =
         app.Execute("res = skewness(v);") |> ignore
         let res = getVector app "res"
         let v = new Vector(v)
-        ((v.Length > 1) ==> lazy(epsEqual 1e-12 [|skewness(v)|] res))
+        ((v.Length > 1) ==> lazy(epsEqual 1e-10 [|skewness(v)|] res))
 
     [<Property>]
     let ``kurtosis``(v : float[]) =
@@ -105,7 +105,7 @@ module VectorBasicStats =
         app.Execute("res = kurtosis(v);") |> ignore
         let res = getVector app "res"
         let v = new Vector(v)
-        ((v.Length > 1) ==> lazy(epsEqual 1e-12 [|kurtosis(v)|] res))
+        ((v.Length > 1) ==> lazy(epsEqual 1e-10 [|kurtosis(v)|] res))
 
     [<Fact>]
     let ``quantile``() =

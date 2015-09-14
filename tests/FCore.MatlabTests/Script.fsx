@@ -16,11 +16,13 @@ open FCore.MatlabTests.Util
 
 let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
 
-let rng = new MT19937Rng()
+let n = 2
+let tmp = float(2)/float(2-1)
+let factor = (tmp*tmp).ToString("N16")
 
-let x = Array2D.create 0 0 false
-let y = Array2D.create 1 0 false
-let X = new BoolMatrix(x)
-let Y = new BoolMatrix(y)
-x = y
-X = Y
+let rng = new MT19937Rng()
+let v = new Matrix([[1.0;Double.NaN]
+                    [Double.NaN;1.0]])
+let k = v * v
+
+

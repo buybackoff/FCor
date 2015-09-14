@@ -1305,33 +1305,39 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member (.<) (matrix1: Matrix, matrix2: Matrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .< matrix2.ColMajorDataVector)
 
     static member (.<=) (matrix1: Matrix, matrix2: Matrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .<= matrix2.ColMajorDataVector)
 
     static member (.>) (matrix1: Matrix, matrix2: Matrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .> matrix2.ColMajorDataVector)
 
     static member (.>=) (matrix1: Matrix, matrix2: Matrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .>= matrix2.ColMajorDataVector)
 
     static member (.=) (matrix1: Matrix, matrix2: Matrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .= matrix2.ColMajorDataVector)
 
     static member (.<>) (matrix1: Matrix, matrix2: Matrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .<> matrix2.ColMajorDataVector)
 
 
@@ -1376,13 +1382,15 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member Max(matrix1: Matrix, matrix2: Matrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new Matrix(rowCount, colCount, Vector.Max(matrix1.ColMajorDataVector, matrix2.ColMajorDataVector))
 
     static member Min(matrix1: Matrix, matrix2: Matrix) =
-        let rowCount = max matrix1.LongRowCount matrix2.LongRowCount
-        let colCount = max matrix1.LongColCount matrix2.LongColCount
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
+        let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new Matrix(rowCount, colCount, Vector.Min(matrix1.ColMajorDataVector, matrix2.ColMajorDataVector))
 
     static member Max(matrix : Matrix, a : float) =
@@ -1406,10 +1414,13 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         let n = matrix2.LongColCount
         let m = matrix1.LongRowCount
         let k = matrix1.LongColCount
-        let res = new Matrix(m, n, 0.0)
-        MklFunctions.D_Multiply_Matrices(matrix1.ColMajorDataVector.NativeArray, matrix2.ColMajorDataVector.NativeArray, 
-                                         res.ColMajorDataVector.NativeArray, n, m, k, false)
-        res  
+        if k <> matrix2.LongRowCount then raise (new ArgumentException("Matrix size mismatch"))
+        if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
+        else
+            let res = new Matrix(m, n, 0.0)
+            MklFunctions.D_Multiply_Matrices(matrix1.ColMajorDataVector.NativeArray, matrix2.ColMajorDataVector.NativeArray, 
+                                             res.ColMajorDataVector.NativeArray, n, m, k, false)
+            res  
 
     static member (*) (matrix : Matrix, vector : Vector) =
         let m = new Matrix(vector)
@@ -1419,10 +1430,13 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         let n = matrix2.LongColCount
         let k = matrix1.LongRowCount
         let m = matrix1.LongColCount
-        let res = new Matrix(m, n, 0.0)
-        MklFunctions.D_Multiply_Matrices(matrix1.ColMajorDataVector.NativeArray, matrix2.ColMajorDataVector.NativeArray, 
-                                         res.ColMajorDataVector.NativeArray, n, m, k, true)
-        res  
+        if k <> matrix2.LongRowCount then raise (new ArgumentException("Matrix size mismatch"))
+        if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
+        else
+            let res = new Matrix(m, n, 0.0)
+            MklFunctions.D_Multiply_Matrices(matrix1.ColMajorDataVector.NativeArray, matrix2.ColMajorDataVector.NativeArray, 
+                                             res.ColMajorDataVector.NativeArray, n, m, k, true)
+            res  
 
 
     static member (.*) (a: float, matrix : Matrix) =
@@ -1432,12 +1446,15 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         a .* matrix
 
     static member (.*) (matrix1 : Matrix, matrix2 : Matrix) =
-        if matrix1.ColMajorDataVector.LongLength = 1L then
-            matrix1.[0] .* matrix2
-        elif matrix2.ColMajorDataVector.LongLength = 1L then
-            matrix2.[0] .* matrix1
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
-           new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector .* matrix2.ColMajorDataVector)
+            if matrix1.ColMajorDataVector.LongLength = 1L then
+                matrix1.[0] .* matrix2
+            elif matrix2.ColMajorDataVector.LongLength = 1L then
+                matrix2.[0] .* matrix1
+            else
+               new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector .* matrix2.ColMajorDataVector)
 
     static member (+) (a: float, matrix : Matrix) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, a + matrix.ColMajorDataVector)
@@ -1446,12 +1463,15 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         a + matrix
 
     static member (+) (matrix1 : Matrix, matrix2 : Matrix) =
-        if matrix1.ColMajorDataVector.LongLength = 1L then
-            matrix1.[0] + matrix2
-        elif matrix2.ColMajorDataVector.LongLength = 1L then
-            matrix2.[0] + matrix1
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
-           new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector + matrix2.ColMajorDataVector)
+            if matrix1.ColMajorDataVector.LongLength = 1L then
+                matrix1.[0] + matrix2
+            elif matrix2.ColMajorDataVector.LongLength = 1L then
+                matrix2.[0] + matrix1
+            else
+               new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector + matrix2.ColMajorDataVector)
 
     static member (./) (a: float, matrix : Matrix) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, a ./ matrix.ColMajorDataVector)
@@ -1460,12 +1480,15 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector ./ a)
 
     static member (./) (matrix1 : Matrix, matrix2 : Matrix) =
-        if matrix1.ColMajorDataVector.LongLength = 1L then
-            matrix1.[0] ./ matrix2
-        elif matrix2.ColMajorDataVector.LongLength = 1L then
-            matrix1 ./ matrix2.[0]
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
-           new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector ./ matrix2.ColMajorDataVector)
+            if matrix1.ColMajorDataVector.LongLength = 1L then
+                matrix1.[0] ./ matrix2
+            elif matrix2.ColMajorDataVector.LongLength = 1L then
+                matrix1 ./ matrix2.[0]
+            else
+               new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector ./ matrix2.ColMajorDataVector)
 
     static member (-) (a: float, matrix : Matrix) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, a - matrix.ColMajorDataVector)
@@ -1474,12 +1497,15 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector - a)
 
     static member (-) (matrix1 : Matrix, matrix2 : Matrix) =
-        if matrix1.ColMajorDataVector.LongLength = 1L then
-            matrix1.[0] - matrix2
-        elif matrix2.ColMajorDataVector.LongLength = 1L then
-            matrix1 - matrix2.[0]
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
-           new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector - matrix2.ColMajorDataVector)
+            if matrix1.ColMajorDataVector.LongLength = 1L then
+                matrix1.[0] - matrix2
+            elif matrix2.ColMajorDataVector.LongLength = 1L then
+                matrix1 - matrix2.[0]
+            else
+               new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector - matrix2.ColMajorDataVector)
 
     static member (~-) (matrix : Matrix) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, -matrix.ColMajorDataVector)
@@ -1491,12 +1517,15 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector .^ a) 
 
     static member (.^) (matrix1 : Matrix, matrix2 : Matrix) =
-        if matrix1.ColMajorDataVector.LongLength = 1L then
-            matrix1.[0] .^ matrix2
-        elif matrix2.ColMajorDataVector.LongLength = 1L then
-            matrix1 .^ matrix2.[0]
+        ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
+        if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
-           new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector .^ matrix2.ColMajorDataVector)
+            if matrix1.ColMajorDataVector.LongLength = 1L then
+                matrix1.[0] .^ matrix2
+            elif matrix2.ColMajorDataVector.LongLength = 1L then
+                matrix1 .^ matrix2.[0]
+            else
+               new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector .^ matrix2.ColMajorDataVector)
 
 
     static member Abs(matrix : Matrix) =

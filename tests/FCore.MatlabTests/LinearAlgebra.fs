@@ -55,7 +55,7 @@ module LinearAlgebra =
         let a = new Matrix(x)
         let b = new Matrix(y)
         let res = chol a
-        epsEqual 1e-14 (res.ToArray2D()) y |> should be True
+        epsEqual 1e-13 (res.ToArray2D()) y |> should be True
 
     [<Fact>]
     let ``cholinv``() =
@@ -70,23 +70,23 @@ module LinearAlgebra =
 
     [<Fact>]
     let ``cholSolve``() =
+        use rng = new MT19937Rng(1u)
+        let b = rand rng 100 1
+        setMatrix app "b" (b.ToArray2D())
         let r = app.Execute("a = gallery('lehmer', 100);
-                             b = rand(100, 1);
                              c = a \ b;")
         let x = getMatrix app "a"
-        let y = getMatrix app "b"
         let z = getMatrix app "c"
         let a = new Matrix(x)
-        let b = new Matrix(y)
         let c = new Matrix(z)
         let res = cholSolve a  b
-        epsEqual 1e-11 (res.ToArray2D()) z |> should be True
+        epsEqual 1e-10 (res.ToArray2D()) z |> should be True
 
     [<Property>]
     let ``lu``(a : float[,]) =
         (a.Length > 0) ==> 
                           lazy(
-                                let a = a |> Array2D.map (fun x -> if Double.IsNaN(x) || Double.IsInfinity(x) then 1.0 else x)
+                                let a = a |> Array2D.map (fun x -> if Double.IsNaN(x) || Double.IsInfinity(x) || x = Double.MaxValue || x = Double.MinValue then 1.0 else x)
                                 setMatrix app "a" a
                                 let r = app.Execute("[l, u, p] = lu(a);")
                                 let x = new Matrix(a)
@@ -97,63 +97,65 @@ module LinearAlgebra =
                                 let rows = x.RowCount
                                 let eye : Matrix = I rows rows
                                 let v = eye.[p, {0..rows-1}]
-                                (epsEqual 1e-14 (l.ToArray2D()) y) && (epsEqual 1e-13 (u.ToArray2D()) z) && (epsEqual 0.0 (v.ToArray2D()) s)                          
+                                (epsEqual 1e-10 (l.ToArray2D()) y) && (epsEqual 1e-10 (u.ToArray2D()) z) && (epsEqual 0.0 (v.ToArray2D()) s)                          
                               )
 
 
     [<Fact>]
     let ``luInv``() =
-        let r = app.Execute("a = rand(200,200);
-                             b = inv(a);")
-        let x = getMatrix app  "a"
+        use rng = new MT19937Rng(1u)
+        let a = rand rng 200 200
+        setMatrix app "a" (a.ToArray2D())
+        let r = app.Execute("b = inv(a);")
         let y = getMatrix app  "b"
-        let a = new Matrix(x)
         let res = luInv a
-        epsEqual 1e-11 (res.ToArray2D()) y |> should be True
+        epsEqual 1e-9 (res.ToArray2D()) y |> should be True
 
     [<Fact>]
     let ``luSolve``() =
-        let r = app.Execute("a = rand(100, 100);
-                             b = rand(100, 1);
-                             c = a \ b;")
-        let x = getMatrix app  "a"
-        let y = getMatrix app  "b"
+        use rng = new MT19937Rng(1u)
+        let a = rand rng 100 100
+        setMatrix app "a" (a.ToArray2D())
+        let b = rand rng 100 1
+        setMatrix app "b" (b.ToArray2D())
+        let r = app.Execute("c = a \ b;")
         let z = getMatrix app  "c"
-        let a = new Matrix(x)
-        let b = new Matrix(y)
         let res = luSolve a b
         epsEqual 1e-11 (res.ToArray2D()) z |> should be True   
         
     [<Fact>]
     let ``QR more rows`` () =
-        let r = app.Execute("a = rand(1000,100);
-                             [q, r] = qr(a, 0);")
-        let x = getMatrix app  "a"
+        use rng = new MT19937Rng(1u)
+        let a = rand rng 1000 100
+        setMatrix app "a" (a.ToArray2D())
+        let r = app.Execute("[q, r] = qr(a, 0);")
         let y = getMatrix app  "q"
         let z = getMatrix app  "r"
-        let (q, r) = qr (new Matrix(x))
-        ((epsEqual 1e-10 (q.ToArray2D()) y) && (epsEqual 1e-10 (r.ToArray2D()) z)) |> should be True
+        let (q, r) = qr a
+        ((epsEqual 1e-8 (q.ToArray2D()) y) && (epsEqual 1e-8 (r.ToArray2D()) z)) |> should be True
 
     [<Fact>]
     let ``QR more cols`` () =
-        let r = app.Execute("a = rand(100,1000);
-                             [q, r] = qr(a, 0);")
-        let x = getMatrix app  "a"
+        use rng = new MT19937Rng(1u)
+        let a = rand rng 100 1000
+        setMatrix app "a" (a.ToArray2D())
+        let r = app.Execute("[q, r] = qr(a, 0);")
         let y = getMatrix app  "q"
         let z = getMatrix app  "r"
-        let (q, r) = qr (new Matrix(x))
-        ((epsEqual 1e-10 (q.ToArray2D()) y) && (epsEqual 1e-10 (r.ToArray2D()) z)) |> should be True
+        let (q, r) = qr a
+        ((epsEqual 1e-8 (q.ToArray2D()) y) && (epsEqual 1e-8 (r.ToArray2D()) z)) |> should be True
 
     [<Fact>]
     let ``QR solveFull`` () =
-        let r = app.Execute("a = rand(500, 100);
-                             b = rand(500, 1);
-                             c = a \ b;")
-        let x = getMatrix app  "a"
-        let y = getMatrix app  "b"
+        use rng = new MT19937Rng(1u)
+        let a = rand rng 500 100
+        setMatrix app "a" (a.ToArray2D())
+        let b = rand rng 500 1
+        setMatrix app "b" (b.ToArray2D())
+        let r = app.Execute("c = a \ b;")
         let z = getMatrix app  "c"
-        let res = qrSolveFull (new Matrix(x)) (new Matrix(y))
-        epsEqual 1e-13 (res.ToArray2D()) z |> should be True
+        let res = qrSolveFull a b
+        epsEqual 1e-10 (res.ToArray2D()) z |> should be True
 
     [<Fact>]
     let ``QR solve`` () =
@@ -164,9 +166,9 @@ module LinearAlgebra =
         let x = getMatrix app  "a"
         let y = getMatrix app  "b"
         let z = getMatrix app  "c"
-        let (res, rank) = qrSolve (new Matrix(x)) (new Matrix(y)) 1e-15
+        let (res, rank) = qrSolve (new Matrix(x)) (new Matrix(y)) 1e-14
         rank |> should equal 2
-        res == new Matrix(z) |> should be True
+        epsEqual 1e-10 (res.ToArray2D()) z |> should be True
 
     [<Fact>]
     let ``Svd solve`` () =

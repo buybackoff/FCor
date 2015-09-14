@@ -335,7 +335,7 @@ extern "C" __declspec(dllexport) int d_skewness_matrix(bool byRows, MKL_INT varC
 
 extern "C" __declspec(dllexport) int s_skewness_matrix(bool byRows, MKL_INT varCount, MKL_INT obsCount, float* x, float* res)
 {
-	double factor = pow((double)obsCount / (obsCount - 1), 1.5);
+	double factor = pow((double)obsCount / double(obsCount - 1), 1.5);
 	VSLSSTaskPtr task;
 	float* c2;
 	float* c3;
@@ -448,12 +448,24 @@ extern "C" __declspec(dllexport) int d_kurtosis_matrix(bool byRows, MKL_INT varC
 	status = vsldSSCompute(task, VSL_SS_MEAN | VSL_SS_2R_MOM | VSL_SS_3R_MOM | VSL_SS_4R_MOM | VSL_SS_2C_MOM | VSL_SS_3C_MOM | VSL_SS_4C_MOM | VSL_SS_KURTOSIS, VSL_SS_METHOD_FAST);
 	status = vslSSDeleteTask( &task );
 
-	double tmp = (double)obsCount/(obsCount-1);
-	double factor = tmp*tmp;
-	for (MKL_INT i = 0; i < varCount; i++)
+	if (obsCount == 2)
 	{
-		res[i] = (3+res[i]) * factor;
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			res[i] = 12.0 + res[i] * 4.0;
+		}
 	}
+	else
+	{
+		double N = (double)obsCount;
+		double tmp = N/(N-1.0);
+		double factor = tmp*tmp;
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			res[i] = (3.0+res[i]) * factor;
+		}
+	}
+
 
 	free(mean);
 	free(c2);

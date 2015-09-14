@@ -339,8 +339,8 @@ Target "All" DoNothing
   ==> "BuildMatlabTests"
   ==> "RunTests_x86"
   ==> "RunTests_x64"
-//  ==> "RunMatlabTests_x86"
-//  ==> "RunMatlabTests_x64"
+  ==> "RunMatlabTests_x86"
+  ==> "RunMatlabTests_x64"
   ==> "GenerateHelp"
   ==> "ReleaseDocs"
 

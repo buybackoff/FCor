@@ -181,5 +181,12 @@ module Util =
             raise (new ArgumentException())
         else
             Array2D.init (x.GetLength(0)) (x.GetLength(1)) (fun i j -> x.[i, j], y.[i, j])
+
+    let array2DExists (pred : 'T -> bool) (x : 'T[,])=
+        seq{for i in 0..x.GetLength(0)-1 do for j in 0..x.GetLength(1)-1 do yield x.[i, j]} |> Seq.exists pred
+
+    let fixEmpty (a : 'T[,]) =
+        if a.Length = 0 then Array2D.zeroCreate<'T> 0 0 
+        else a
         
 

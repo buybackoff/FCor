@@ -11,10 +11,6 @@ open Util
 
 module BoolMatrixOperators = 
 
-    let fixEmpty (a : bool[,]) =
-        if a.Length = 0 then Array2D.create 0 0 false
-        else a
-
     [<Property>]
     let ``X == X`` (x : bool[,]) =
         let X = new BoolMatrix(x)

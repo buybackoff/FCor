@@ -53,6 +53,7 @@
     <Compile Include="BoolVectorOperators.fs" />
     <Compile Include="BoolMatrixOperators.fs" />
     <Compile Include="VectorOperators.fs" />
+    <Compile Include="MatrixOperators.fs" />
     <Compile Include="VectorFunctions.fs" />
     <Compile Include="VectorBasicStats.fs" />
     <Compile Include="VectorSlicing.fs" />
