@@ -62,6 +62,7 @@
     <Compile Include="BoolVectorSlicing.fs" />
     <Compile Include="BoolMatrixSlicing.fs" />
     <Compile Include="RandomVector.fs" />
+    <Compile Include="RandomMatrix.fs" />
     <Compile Include="LinearAlgebra.fs" />
     <None Include="paket.references" />
     <None Include="Script.fsx" />
