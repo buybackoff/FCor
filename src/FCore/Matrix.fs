@@ -210,9 +210,14 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
         if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
 
-        let sliceColCount = toColIndex - fromColIndex + 1L
-        for i in 0L..sliceColCount - 1L do
-            this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
+        if (fromRowIndex > toRowIndex || fromColIndex > toColIndex) && value.LongLength = 0L then ()
+        else
+            let sliceRowCount = toRowIndex - fromRowIndex + 1L
+            let sliceColCount = toColIndex - fromColIndex + 1L
+            if sliceRowCount <> value.LongRowCount || sliceColCount <> value.LongColCount then
+                raise (new ArgumentException())
+            for i in 0L..sliceColCount - 1L do
+                this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : BoolMatrix) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -1048,21 +1053,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
         if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-        if fromRowIndex > toRowIndex then raise (new IndexOutOfRangeException())
 
         let fromColIndex = defaultArg fromColIndex 0L
         let toColIndex = defaultArg toColIndex (colCount - 1L)
         if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
         if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
-        if fromColIndex > toColIndex then raise (new IndexOutOfRangeException())
 
-        let sliceRowCount = toRowIndex - fromRowIndex + 1L
-        let sliceColCount = toColIndex - fromColIndex + 1L
+        if fromRowIndex > toRowIndex || fromColIndex > toColIndex then Matrix.Empty
+        else
+            let sliceRowCount = toRowIndex - fromRowIndex + 1L
+            let sliceColCount = toColIndex - fromColIndex + 1L
 
-        let slice = new Matrix(sliceRowCount, sliceColCount, 0.0)
-        for i in 0L..sliceColCount - 1L do
-            slice.ColView(i).SetSlice(Some(0L), None, this.View((fromColIndex + i) * rowCount + fromRowIndex, sliceRowCount))
-        slice 
+            let slice = new Matrix(sliceRowCount, sliceColCount, 0.0)
+            for i in 0L..sliceColCount - 1L do
+                slice.ColView(i).SetSlice(Some(0L), None, this.View((fromColIndex + i) * rowCount + fromRowIndex, sliceRowCount))
+            slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
         this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex)
@@ -1084,18 +1089,14 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
         if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-        if fromRowIndex > toRowIndex then raise (new IndexOutOfRangeException())
 
         let fromColIndex = defaultArg fromColIndex 0L
         let toColIndex = defaultArg toColIndex (colCount - 1L)
         if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
         if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
-        if fromColIndex > toColIndex then raise (new IndexOutOfRangeException())
 
-        let sliceRowCount = toRowIndex - fromRowIndex + 1L
-        let sliceColCount = toColIndex - fromColIndex + 1L
-        for i in 0L..sliceColCount - 1L do
-            this.ColView(i).SetSlice(Some(0L), None, value)
+        for i in fromColIndex..toColIndex do
+            this.ColView(i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value)
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : float) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -1117,18 +1118,20 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
         if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-        if fromRowIndex > toRowIndex then raise (new IndexOutOfRangeException())
 
         let fromColIndex = defaultArg fromColIndex 0L
         let toColIndex = defaultArg toColIndex (colCount - 1L)
         if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
         if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
-        if fromColIndex > toColIndex then raise (new IndexOutOfRangeException())
 
-        let sliceRowCount = toRowIndex - fromRowIndex + 1L
-        let sliceColCount = toColIndex - fromColIndex + 1L
-        for i in 0L..sliceColCount - 1L do
-            this.ColView(i).SetSlice(Some(0L), None, value.ColView(i))
+        if (fromRowIndex > toRowIndex || fromColIndex > toColIndex) && value.LongLength = 0L then ()
+        else
+            let sliceRowCount = toRowIndex - fromRowIndex + 1L
+            let sliceColCount = toColIndex - fromColIndex + 1L
+            if sliceRowCount <> value.LongRowCount || sliceColCount <> value.LongColCount then
+                raise (new ArgumentException())
+            for i in 0L..sliceColCount - 1L do
+                this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : Matrix) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)

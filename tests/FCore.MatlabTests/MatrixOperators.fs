@@ -323,7 +323,7 @@ module MatrixOperators =
         let b = new Matrix(b)
         let r = app.Execute("c = a' * b;")
         let z = getMatrix app "c"
-        epsEqual 1e-13 ((a ^* b).ToArray2D()) z
+        epsEqual 1e-12 ((a ^* b).ToArray2D()) z
 
 
                     
