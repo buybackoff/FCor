@@ -140,23 +140,20 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
         if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-        if fromRowIndex > toRowIndex then raise (new IndexOutOfRangeException())
-
         let fromColIndex = defaultArg fromColIndex 0L
         let toColIndex = defaultArg toColIndex (colCount - 1L)
         if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
         if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
-        if fromColIndex > toColIndex then raise (new IndexOutOfRangeException())
 
-        let sliceRowCount = toRowIndex - fromRowIndex + 1L
-        let sliceColCount = toColIndex - fromColIndex + 1L
+        if fromRowIndex > toRowIndex || fromColIndex > toColIndex then BoolMatrix.Empty
+        else
+            let sliceRowCount = toRowIndex - fromRowIndex + 1L
+            let sliceColCount = toColIndex - fromColIndex + 1L
 
-        let slice = new BoolMatrix(sliceRowCount, sliceColCount, false)
-        for i in 0L..sliceColCount - 1L do
-            let v = slice.ColView(i)
-            //slice.ColView(i).[0L..] <- this.View(fromColIndex * rowCount + fromRowIndex, sliceRowCount)
-            slice.ColView(i).SetSlice(Some(0L), None, this.View((fromColIndex + i) * rowCount + fromRowIndex, sliceRowCount))
-        slice 
+            let slice = new BoolMatrix(sliceRowCount, sliceColCount, false)
+            for i in 0L..sliceColCount - 1L do
+                slice.ColView(i).SetSlice(Some(0L), None, this.View((fromColIndex + i) * rowCount + fromRowIndex, sliceRowCount))
+            slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
         this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex)
@@ -178,18 +175,14 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
         if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-        if fromRowIndex > toRowIndex then raise (new IndexOutOfRangeException())
 
         let fromColIndex = defaultArg fromColIndex 0L
         let toColIndex = defaultArg toColIndex (colCount - 1L)
         if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
         if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
-        if fromColIndex > toColIndex then raise (new IndexOutOfRangeException())
 
-        let sliceRowCount = toRowIndex - fromRowIndex + 1L
-        let sliceColCount = toColIndex - fromColIndex + 1L
-        for i in 0L..sliceColCount - 1L do
-            this.ColView(i).SetSlice(Some(0L), None, value)
+        for i in fromColIndex..toColIndex do
+            this.ColView(i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value)
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : bool) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -211,18 +204,15 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
         if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-        if fromRowIndex > toRowIndex then raise (new IndexOutOfRangeException())
 
         let fromColIndex = defaultArg fromColIndex 0L
         let toColIndex = defaultArg toColIndex (colCount - 1L)
         if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
         if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
-        if fromColIndex > toColIndex then raise (new IndexOutOfRangeException())
 
-        let sliceRowCount = toRowIndex - fromRowIndex + 1L
         let sliceColCount = toColIndex - fromColIndex + 1L
         for i in 0L..sliceColCount - 1L do
-            this.ColView(i).SetSlice(Some(0L), None, value.ColView(i))
+            this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : BoolMatrix) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -291,6 +281,8 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
             rowIndices |> Array.iteri (fun i rowIndex ->
                                            colIndices |> Array.iteri (fun j colIndex -> res.[i, j] <- this.[rowIndex, colIndex])
                                       )
+            res
+
         and set (rowIndices : int64 seq, colIndices : int64 seq) (value : BoolMatrix) =
             let rowIndices = rowIndices |> Seq.toArray
             let colIndices = colIndices |> Seq.toArray
@@ -310,6 +302,8 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
             rowIndices |> Array.iteri (fun i rowIndex ->
                                            colIndices |> Array.iteri (fun j colIndex -> res.[i, j] <- this.[rowIndex, colIndex])
                                       )
+            res
+
         and set (rowIndices : int seq, colIndices : int seq) (value : BoolMatrix) =
             let rowIndices = rowIndices |> Seq.toArray
             let colIndices = colIndices |> Seq.toArray

@@ -21,8 +21,17 @@ let tmp = float(2)/float(2-1)
 let factor = (tmp*tmp).ToString("N16")
 
 let rng = new MT19937Rng()
-let v = new Matrix([[1.0;Double.NaN]
-                    [Double.NaN;1.0]])
-let k = v * v
+let rnd = new Random()
+let app = new MLAppClass()
+let v = Array2D.init 1 1 (fun i j -> rnd.NextDouble() < 0.5)
+setBoolMatrix app "v" v
+let fromIndex = rnd.Next(v.Length) |> int64
+let toIndex = rnd.Next(v.Length) |> int64
+setScalar app "fromIndex" (float(fromIndex + 1L))
+setScalar app "toIndex" (float(toIndex + 1L))
+app.Execute("res = v(fromIndex:toIndex);") |> ignore
+let res = getBoolVector app "res"
+let V = new BoolMatrix(v)
+V.[fromIndex..toIndex].ToArray() = res 
 
 

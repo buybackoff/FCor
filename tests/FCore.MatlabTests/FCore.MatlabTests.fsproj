@@ -55,9 +55,11 @@
     <Compile Include="VectorOperators.fs" />
     <Compile Include="MatrixOperators.fs" />
     <Compile Include="VectorFunctions.fs" />
+    <Compile Include="MatrixFunctions.fs" />
     <Compile Include="VectorBasicStats.fs" />
     <Compile Include="VectorSlicing.fs" />
     <Compile Include="BoolVectorSlicing.fs" />
+    <Compile Include="BoolMatrixSlicing.fs" />
     <Compile Include="RandomVector.fs" />
     <Compile Include="LinearAlgebra.fs" />
     <None Include="paket.references" />

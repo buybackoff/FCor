@@ -62,9 +62,12 @@ module Util =
                         match m with
                             | :? float as v -> Array.create 1 v
                             | :? Array as v ->
-                                if v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
+                                if v.GetLength(0) > 1 && v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
                                 let v = v:?>float[,]
-                                Array.init (v.GetLength(0)) (fun i -> v.[i, 0])
+                                if v.GetLength(0) > v.GetLength(1) then
+                                    Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[i, 0])
+                                else
+                                    Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[0, i])
                             | :? System.Reflection.Missing -> Array.create 0 0.0
                             | _ -> raise (InvalidOperationException())
                 | :? Array as v ->
@@ -76,9 +79,12 @@ module Util =
                         match m with
                             | :? float as v -> Array.create 1 v
                             | :? Array as v ->
-                                if v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
+                                if v.GetLength(0) > 1 && v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
                                 let v = v:?>float[,]
-                                Array.init (v.GetLength(0)) (fun i -> v.[i, 0])
+                                if v.GetLength(0) > v.GetLength(1) then
+                                    Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[i, 0])
+                                else
+                                    Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[0, i])
                             | :? System.Reflection.Missing -> Array.create 0 0.0
                             | _ -> raise (InvalidOperationException())
                 | :? System.Reflection.Missing -> Array.create 0 0.0
@@ -93,9 +99,12 @@ module Util =
             match m with
                 | :? bool as v -> Array.create 1 v
                 | :? Array as v ->
-                    if v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
+                    if v.GetLength(0) > 1 && v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
                     let v = v:?>bool[,]
-                    Array.init (v.GetLength(0)) (fun i -> v.[i, 0])
+                    if v.GetLength(0) > v.GetLength(1) then
+                        Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[i, 0])
+                    else
+                        Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[0, i])
                 | :? System.Reflection.Missing -> Array.create 0 false
                 | _ -> raise (InvalidOperationException())            
 
@@ -184,6 +193,9 @@ module Util =
 
     let array2DExists (pred : 'T -> bool) (x : 'T[,])=
         seq{for i in 0..x.GetLength(0)-1 do for j in 0..x.GetLength(1)-1 do yield x.[i, j]} |> Seq.exists pred
+
+    let array2DFilter (pred : 'T -> bool) (x : 'T[,])=
+        seq{for i in 0..x.GetLength(0)-1 do for j in 0..x.GetLength(1)-1 do yield x.[i, j]} |> Seq.filter pred |> Seq.toArray
 
     let fixEmpty (a : 'T[,]) =
         if a.Length = 0 then Array2D.zeroCreate<'T> 0 0 
