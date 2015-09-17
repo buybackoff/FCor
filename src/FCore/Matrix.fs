@@ -156,19 +156,19 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
             slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
-        this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex)
+        this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex).ColMajorDataVector
 
     member this.GetSlice(rowIndex : int64, fromColIndex : int64 option, toColIndex : int64 option) =
-        this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex)
+        this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex).ColMajorDataVector
 
     member this.GetSlice(fromRowIndex : int option, toRowIndex : int option, fromColIndex : int option, toColIndex : int option) =
         this.GetSlice(fromRowIndex |> Option.map int64, toRowIndex |> Option.map int64, fromColIndex |> Option.map int64, toColIndex |> Option.map int64)
 
     member this.GetSlice(fromRowIndex : int option, toRowIndex : int option, colIndex) =
-        this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex)
+        this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex).ColMajorDataVector
 
     member this.GetSlice(rowIndex : int, fromColIndex : int option, toColIndex : int option) =
-        this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex)
+        this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex).ColMajorDataVector
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option, value : bool) =
         let fromRowIndex = defaultArg fromRowIndex 0L
@@ -200,38 +200,45 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option, value : BoolMatrix) =
-        let fromRowIndex = defaultArg fromRowIndex 0L
-        let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
-        if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-        if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-
-        let fromColIndex = defaultArg fromColIndex 0L
-        let toColIndex = defaultArg toColIndex (colCount - 1L)
-        if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
-        if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
-
-        if (fromRowIndex > toRowIndex || fromColIndex > toColIndex) && value.LongLength = 0L then ()
+        if value.LongLength = 1L then
+            this.SetSlice(fromRowIndex, toRowIndex, fromColIndex, toColIndex, (value.[0L]:bool))
         else
-            let sliceRowCount = toRowIndex - fromRowIndex + 1L
-            let sliceColCount = toColIndex - fromColIndex + 1L
-            if sliceRowCount <> value.LongRowCount || sliceColCount <> value.LongColCount then
-                raise (new ArgumentException())
-            for i in 0L..sliceColCount - 1L do
-                this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
+            let fromRowIndex = defaultArg fromRowIndex 0L
+            let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
+            if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
+            if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
 
-    member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : BoolMatrix) =
+            let fromColIndex = defaultArg fromColIndex 0L
+            let toColIndex = defaultArg toColIndex (colCount - 1L)
+            if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
+            if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
+
+            if (fromRowIndex > toRowIndex || fromColIndex > toColIndex) && value.LongLength = 0L then ()
+            else
+                let sliceRowCount = toRowIndex - fromRowIndex + 1L
+                let sliceColCount = toColIndex - fromColIndex + 1L
+                if sliceRowCount <> value.LongRowCount || sliceColCount <> value.LongColCount then
+                    raise (new ArgumentException())
+                for i in 0L..sliceColCount - 1L do
+                    this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
+
+    member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : BoolVector) =
+        let value = new BoolMatrix(value)
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
 
-    member this.SetSlice(rowIndex : int64, fromColIndex : int64 option, toColIndex : int64 option, value : BoolMatrix) =
+    member this.SetSlice(rowIndex : int64, fromColIndex : int64 option, toColIndex : int64 option, value : BoolVector) =
+        let value = new BoolMatrix(1L, value.LongLength, value)
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
     member this.SetSlice(fromRowIndex : int option, toRowIndex : int option, fromColIndex : int option, toColIndex : int option, value : BoolMatrix) =
        this.SetSlice(fromRowIndex |> Option.map int64, toRowIndex |> Option.map int64, fromColIndex |> Option.map int64, toColIndex |> Option.map int64, value)
 
-    member this.SetSlice(fromRowIndex : int option, toRowIndex : int option, colIndex : int, value : BoolMatrix) =
+    member this.SetSlice(fromRowIndex : int option, toRowIndex : int option, colIndex : int, value : BoolVector) =
+        let value = new BoolMatrix(value)
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
 
-    member this.SetSlice(rowIndex : int, fromColIndex : int option, toColIndex : int option, value : BoolMatrix) =
+    member this.SetSlice(rowIndex : int, fromColIndex : int option, toColIndex : int option, value : BoolVector) =
+        let value = new BoolMatrix(1L, value.LongLength, value)
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
     member this.Item
@@ -291,32 +298,54 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         and set (rowIndices : int64 seq, colIndices : int64 seq) (value : BoolMatrix) =
             let rowIndices = rowIndices |> Seq.toArray
             let colIndices = colIndices |> Seq.toArray
-            if value.LongRowCount * value.LongColCount = 1L then
+            if value.LongLength = 1L then
                 let value = value.[0L]
                 rowIndices |> Array.iteri (fun i rowIndex -> colIndices |> Array.iteri (fun j colIndex -> this.[rowIndex, colIndex] <- value))
             else
                 rowIndices |> Array.iteri (fun i rowIndex -> colIndices |> Array.iteri (fun j colIndex -> this.[rowIndex, colIndex] <- value.[i, j]))
 
     member this.Item
+        with get(rowIndex : int64, colIndices : int64 seq) = 
+            this.[[|rowIndex|], colIndices].ColMajorDataVector
+
+        and set (rowIndex : int64, colIndices : int64 seq) (value : BoolVector) =
+            let value = new BoolMatrix(1L, value.LongLength, value)
+            this.[[|rowIndex|], colIndices] <- value
+
+    member this.Item
+        with get(rowIndices : int64 seq, colIndex : int64) = 
+            this.[rowIndices, [|colIndex|]].ColMajorDataVector
+
+        and set (rowIndices : int64 seq, colIndex : int64) (value : BoolVector) =
+            let value = new BoolMatrix(value)
+            this.[rowIndices, [|colIndex|]] <- value
+
+    member this.Item
         with get(rowIndices : int seq, colIndices : int seq) = 
-            let rowIndices = rowIndices |> Seq.toArray
-            let rowCount = rowIndices.GetLongLength(0)
-            let colIndices = colIndices |> Seq.toArray
-            let colCount = colIndices.GetLongLength(0)
-            let res = new BoolMatrix(rowCount, colCount, false)
-            rowIndices |> Array.iteri (fun i rowIndex ->
-                                           colIndices |> Array.iteri (fun j colIndex -> res.[i, j] <- this.[rowIndex, colIndex])
-                                      )
-            res
+            let rowIndices = rowIndices |> Seq.map int64
+            let colIndices = colIndices |> Seq.map int64
+            this.[rowIndices, colIndices]
 
         and set (rowIndices : int seq, colIndices : int seq) (value : BoolMatrix) =
-            let rowIndices = rowIndices |> Seq.toArray
-            let colIndices = colIndices |> Seq.toArray
-            if value.LongRowCount * value.LongColCount = 1L then
-                let value = value.[0L]
-                rowIndices |> Array.iteri (fun i rowIndex -> colIndices |> Array.iteri (fun j colIndex -> this.[rowIndex, colIndex] <- value))
-            else
-                rowIndices |> Array.iteri (fun i rowIndex -> colIndices |> Array.iteri (fun j colIndex -> this.[rowIndex, colIndex] <- value.[i, j]))
+            let rowIndices = rowIndices |> Seq.map int64
+            let colIndices = colIndices |> Seq.map int64
+            this.[rowIndices, colIndices] <- value
+
+    member this.Item
+        with get(rowIndex : int, colIndices : int seq) = 
+            this.[[|rowIndex|], colIndices].ColMajorDataVector
+
+        and set (rowIndex : int, colIndices : int seq) (value : BoolVector) =
+            let value = new BoolMatrix(1L, value.LongLength, value)
+            this.[[|rowIndex|], colIndices] <- value
+
+    member this.Item
+        with get(rowIndices : int seq, colIndex : int) = 
+            this.[rowIndices, [|colIndex|]].ColMajorDataVector
+
+        and set (rowIndices : int seq, colIndex : int) (value : BoolVector) =
+            let value = new BoolMatrix(value)
+            this.[rowIndices, [|colIndex|]] <- value
 
     member this.Item
         with get(boolMatrix : BoolMatrix) = 
@@ -1070,19 +1099,19 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
-        this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex)
+        this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex).ColMajorDataVector
 
     member this.GetSlice(rowIndex : int64, fromColIndex : int64 option, toColIndex : int64 option) =
-        this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex)
+        this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex).ColMajorDataVector
 
     member this.GetSlice(fromRowIndex : int option, toRowIndex : int option, fromColIndex : int option, toColIndex : int option) =
         this.GetSlice(fromRowIndex |> Option.map int64, toRowIndex |> Option.map int64, fromColIndex |> Option.map int64, toColIndex |> Option.map int64)
 
     member this.GetSlice(fromRowIndex : int option, toRowIndex : int option, colIndex) =
-        this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex)
+        this.GetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex).ColMajorDataVector
 
     member this.GetSlice(rowIndex : int, fromColIndex : int option, toColIndex : int option) =
-        this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex)
+        this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex).ColMajorDataVector
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option, value : float) =
         let fromRowIndex = defaultArg fromRowIndex 0L
@@ -1114,38 +1143,45 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option, value : Matrix) =
-        let fromRowIndex = defaultArg fromRowIndex 0L
-        let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
-        if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-        if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
-
-        let fromColIndex = defaultArg fromColIndex 0L
-        let toColIndex = defaultArg toColIndex (colCount - 1L)
-        if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
-        if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
-
-        if (fromRowIndex > toRowIndex || fromColIndex > toColIndex) && value.LongLength = 0L then ()
+        if value.LongLength = 1L then
+            this.SetSlice(fromRowIndex, toRowIndex, fromColIndex, toColIndex, (value.[0L]:float))
         else
-            let sliceRowCount = toRowIndex - fromRowIndex + 1L
-            let sliceColCount = toColIndex - fromColIndex + 1L
-            if sliceRowCount <> value.LongRowCount || sliceColCount <> value.LongColCount then
-                raise (new ArgumentException())
-            for i in 0L..sliceColCount - 1L do
-                this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
+            let fromRowIndex = defaultArg fromRowIndex 0L
+            let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
+            if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
+            if toRowIndex < 0L || toRowIndex >= rowCount then raise (new IndexOutOfRangeException())
 
-    member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : Matrix) =
+            let fromColIndex = defaultArg fromColIndex 0L
+            let toColIndex = defaultArg toColIndex (colCount - 1L)
+            if fromColIndex < 0L || fromColIndex >= colCount then raise (new IndexOutOfRangeException())
+            if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
+
+            if (fromRowIndex > toRowIndex || fromColIndex > toColIndex) && value.LongLength = 0L then ()
+            else
+                let sliceRowCount = toRowIndex - fromRowIndex + 1L
+                let sliceColCount = toColIndex - fromColIndex + 1L
+                if sliceRowCount <> value.LongRowCount || sliceColCount <> value.LongColCount then
+                    raise (new ArgumentException())
+                for i in 0L..sliceColCount - 1L do
+                    this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
+
+    member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : Vector) =
+        let value = new Matrix(value)
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
 
-    member this.SetSlice(rowIndex : int64, fromColIndex : int64 option, toColIndex : int64 option, value : Matrix) =
+    member this.SetSlice(rowIndex : int64, fromColIndex : int64 option, toColIndex : int64 option, value : Vector) =
+        let value = new Matrix(1L, value.LongLength, value)
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
     member this.SetSlice(fromRowIndex : int option, toRowIndex : int option, fromColIndex : int option, toColIndex : int option, value : Matrix) =
        this.SetSlice(fromRowIndex |> Option.map int64, toRowIndex |> Option.map int64, fromColIndex |> Option.map int64, toColIndex |> Option.map int64, value)
 
-    member this.SetSlice(fromRowIndex : int option, toRowIndex : int option, colIndex : int, value : Matrix) =
+    member this.SetSlice(fromRowIndex : int option, toRowIndex : int option, colIndex : int, value : Vector) =
+        let value = new Matrix(value)
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
 
-    member this.SetSlice(rowIndex : int, fromColIndex : int option, toColIndex : int option, value : Matrix) =
+    member this.SetSlice(rowIndex : int, fromColIndex : int option, toColIndex : int option, value : Vector) =
+        let value = new Matrix(1L, value.LongLength, value)
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
     member this.Item
@@ -1212,25 +1248,47 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 rowIndices |> Array.iteri (fun i rowIndex -> colIndices |> Array.iteri (fun j colIndex -> this.[rowIndex, colIndex] <- value.[i, j]))
 
     member this.Item
+        with get(rowIndex : int64, colIndices : int64 seq) = 
+            this.[[|rowIndex|], colIndices].ColMajorDataVector
+
+        and set (rowIndex : int64, colIndices : int64 seq) (value : Vector) =
+            let value = new Matrix(1L, value.LongLength, value)
+            this.[[|rowIndex|], colIndices] <- value
+
+    member this.Item
+        with get(rowIndices : int64 seq, colIndex : int64) = 
+            this.[rowIndices, [|colIndex|]].ColMajorDataVector
+
+        and set (rowIndices : int64 seq, colIndex : int64) (value : Vector) =
+            let value = new Matrix(value)
+            this.[rowIndices, [|colIndex|]] <- value
+
+    member this.Item
         with get(rowIndices : int seq, colIndices : int seq) = 
-            let rowIndices = rowIndices |> Seq.toArray
-            let rowCount = rowIndices.GetLongLength(0)
-            let colIndices = colIndices |> Seq.toArray
-            let colCount = colIndices.GetLongLength(0)
-            let res = new Matrix(rowCount, colCount, 0.0)
-            rowIndices |> Array.iteri (fun i rowIndex ->
-                                           colIndices |> Array.iteri (fun j colIndex -> res.[i, j] <- this.[rowIndex, colIndex])
-                                      )
-            res
+            let rowIndices = rowIndices |> Seq.map int64
+            let colIndices = colIndices |> Seq.map int64
+            this.[rowIndices, colIndices]
 
         and set (rowIndices : int seq, colIndices : int seq) (value : Matrix) =
-            let rowIndices = rowIndices |> Seq.toArray
-            let colIndices = colIndices |> Seq.toArray
-            if value.LongRowCount * value.LongColCount = 1L then
-                let value = value.[0L]
-                rowIndices |> Array.iteri (fun i rowIndex -> colIndices |> Array.iteri (fun j colIndex -> this.[rowIndex, colIndex] <- value))
-            else
-                rowIndices |> Array.iteri (fun i rowIndex -> colIndices |> Array.iteri (fun j colIndex -> this.[rowIndex, colIndex] <- value.[i, j]))
+            let rowIndices = rowIndices |> Seq.map int64
+            let colIndices = colIndices |> Seq.map int64
+            this.[rowIndices, colIndices] <- value
+
+    member this.Item
+        with get(rowIndex : int, colIndices : int seq) = 
+            this.[[|rowIndex|], colIndices].ColMajorDataVector
+
+        and set (rowIndex : int, colIndices : int seq) (value : Vector) =
+            let value = new Matrix(1L, value.LongLength, value)
+            this.[[|rowIndex|], colIndices] <- value
+
+    member this.Item
+        with get(rowIndices : int seq, colIndex : int) = 
+            this.[rowIndices, [|colIndex|]].ColMajorDataVector
+
+        and set (rowIndices : int seq, colIndex : int) (value : Vector) =
+            let value = new Matrix(value)
+            this.[rowIndices, [|colIndex|]] <- value
 
     member this.Item
         with get(boolMatrix : BoolMatrix) = 
@@ -1736,15 +1794,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Sum_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Sum_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Sum_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Sum_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
 
     static member Prod(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1752,15 +1816,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Sum_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Prod_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Prod_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Prod_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
 
     static member CumSum(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1768,15 +1838,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
-                    MklFunctions.D_CumSum_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
-                    res
+                    if obsCount = 0L then Matrix.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix)
+                    else
+                        let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
+                        MklFunctions.D_CumSum_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
-                    MklFunctions.D_CumSum_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
-                    res
+                    if obsCount = 0L then Matrix.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix)
+                    else
+                        let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
+                        MklFunctions.D_CumSum_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+                        res
 
     static member CumProd(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1784,15 +1860,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
-                    MklFunctions.D_CumProd_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
-                    res
+                    if obsCount = 0L then Matrix.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix)
+                    else
+                        let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
+                        MklFunctions.D_CumProd_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
-                    MklFunctions.D_CumProd_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
-                    res
+                    if obsCount = 0L then Matrix.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix)
+                    else
+                        let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
+                        MklFunctions.D_CumProd_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+                        res
 
     static member Min(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1800,15 +1882,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Min_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Min_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Min_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Min_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
 
     static member Max(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1816,15 +1904,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Max_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Max_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
-                    let obsCount = matrix.LongRowCount 
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Max_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    let obsCount = matrix.LongRowCount
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else 
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Max_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
 
     static member Mean(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1832,15 +1926,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Mean_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Mean_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Mean_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then Matrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Mean_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
 
     static member Variance(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1848,15 +1948,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Variance_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then new Vector(varCount, 0.0)
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Variance_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Variance_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then new Vector(varCount, 0.0)
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Variance_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
 
     static member Skewness(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1864,15 +1970,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Skewness_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then new Vector(varCount, Double.NaN)
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Skewness_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Skewness_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then new Vector(varCount, Double.NaN)
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Skewness_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
 
     static member Kurtosis(matrix : Matrix) =
         fun (matrixAxis : MatrixAxis) ->
@@ -1880,15 +1992,21 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Kurtosis_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then new Vector(varCount, Double.NaN)
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Kurtosis_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Vector(varCount, 0.0)
-                    MklFunctions.D_Kurtosis_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
-                    res
+                    if obsCount = 0L then Vector.Empty
+                    elif obsCount = 1L then new Vector(varCount, Double.NaN)
+                    else
+                        let res = new Vector(varCount, 0.0)
+                        MklFunctions.D_Kurtosis_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
 
     static member Quantile(matrix : Matrix) =
         fun (quantileOrders : Vector) (matrixAxis : MatrixAxis) ->
@@ -1896,30 +2014,44 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
                     let obsCount = matrix.LongColCount
-                    let res = new Matrix(varCount, quantileOrders.LongLength, 0.0)
-                    MklFunctions.D_Quantiles_Matrix(true, varCount, obsCount, quantileOrders.LongLength, matrix.ColMajorDataVector.NativeArray, quantileOrders.NativeArray, res.ColMajorDataVector.NativeArray)
-                    res
+                    if quantileOrders.LongLength = 0L then raise (new ArgumentException("Quantile orders vector must not be empty"))
+                    if obsCount = 0L then Matrix.Empty
+                    else
+                        let res = new Matrix(varCount, quantileOrders.LongLength, 0.0)
+                        MklFunctions.D_Quantiles_Matrix(true, varCount, obsCount, quantileOrders.LongLength, matrix.ColMajorDataVector.NativeArray, quantileOrders.NativeArray, res.ColMajorDataVector.NativeArray)
+                        res
                 | ColumnAxis ->
                     let varCount = matrix.LongColCount
                     let obsCount = matrix.LongRowCount 
-                    let res = new Matrix(quantileOrders.LongLength, varCount, 0.0)
-                    MklFunctions.D_Quantiles_Matrix(false, varCount, obsCount, quantileOrders.LongLength, matrix.ColMajorDataVector.NativeArray, quantileOrders.NativeArray, res.ColMajorDataVector.NativeArray)
-                    res
+                    if quantileOrders.LongLength = 0L then raise (new ArgumentException("Quantile orders vector must not be empty"))
+                    if obsCount = 0L then Matrix.Empty
+                    else
+                        let res = new Matrix(quantileOrders.LongLength, varCount, 0.0)
+                        MklFunctions.D_Quantiles_Matrix(false, varCount, obsCount, quantileOrders.LongLength, matrix.ColMajorDataVector.NativeArray, quantileOrders.NativeArray, res.ColMajorDataVector.NativeArray)
+                        res
 
 
     static member Corr(matrix : Matrix) =
-        let varCount = matrix.LongColCount
-        let obsCount = matrix.LongRowCount 
-        let res = new Matrix(varCount, varCount, 0.0)
-        MklFunctions.D_Corr_Matrix(varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
-        res
+        if matrix.LongLength = 0L then Matrix.Empty
+        else
+            let varCount = matrix.LongColCount
+            let obsCount = matrix.LongRowCount 
+            if obsCount = 1L then new Matrix(varCount, varCount, Double.NaN)
+            else
+                let res = new Matrix(varCount, varCount, 0.0)
+                MklFunctions.D_Corr_Matrix(varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+                res
 
     static member Cov(matrix : Matrix) =
-        let varCount = matrix.LongColCount
-        let obsCount = matrix.LongRowCount 
-        let res = new Matrix(varCount, varCount, 0.0)
-        MklFunctions.D_Cov_Matrix(varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
-        res
+        if matrix.LongLength = 0L then Matrix.Empty
+        else
+            let varCount = matrix.LongColCount
+            let obsCount = matrix.LongRowCount 
+            if obsCount = 1L then new Matrix(varCount, varCount, 0.0)
+            else
+                let res = new Matrix(varCount, varCount, 0.0)
+                MklFunctions.D_Cov_Matrix(varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+                res
 
     static member Copy(matrix : Matrix) =
         let rows = matrix.LongRowCount

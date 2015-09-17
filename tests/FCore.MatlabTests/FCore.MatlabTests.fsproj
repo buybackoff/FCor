@@ -57,6 +57,7 @@
     <Compile Include="VectorFunctions.fs" />
     <Compile Include="MatrixFunctions.fs" />
     <Compile Include="VectorBasicStats.fs" />
+    <Compile Include="MatrixBasicStats.fs" />
     <Compile Include="VectorSlicing.fs" />
     <Compile Include="MatrixSlicing.fs" />
     <Compile Include="BoolVectorSlicing.fs" />

@@ -755,7 +755,7 @@ extern "C" __declspec(dllexport) int d_cov_matrix(MKL_INT varCount, MKL_INT obsC
 {
 	intptr_t xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
 	VSLSSTaskPtr task;
-	double* mean = (double*)malloc(varCount*sizeof(double));
+	double* mean = (double*)calloc(varCount, sizeof(double));
 	if (mean == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -799,26 +799,36 @@ extern "C" __declspec(dllexport) int d_corr_matrix(MKL_INT varCount, MKL_INT obs
 {
 	intptr_t xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
 	VSLSSTaskPtr task;
-	double* mean = (double*)malloc(varCount*sizeof(double));
-	if (mean == nullptr)
+	double* mean = (double*)calloc(varCount, sizeof(double));
+	double* cov = (double*)calloc(varCount*varCount, sizeof(double));
+	if (cov == nullptr || mean == nullptr)
 	{
-		return OUTOFMEMORY;
-	}
-	double* cov = (double*)malloc(varCount*varCount*sizeof(double));
-	if (cov == nullptr)
-	{
+		free(cov);
+		free(mean);
 		return OUTOFMEMORY;
 	}
 	int status = vsldSSNewTask( &task, &varCount, &obsCount, &xstorage, x, 0, 0 );
-	MKL_INT covStorage = VSL_SS_MATRIX_STORAGE_FULL;
-	status = vsldSSEditCovCor(task, mean, cov, &covStorage, res, &covStorage);
-	status = vsldSSCompute(task, VSL_SS_COR, VSL_SS_METHOD_FAST );
+	MKL_INT corrStorage = VSL_SS_MATRIX_STORAGE_FULL;
+	status = vsldSSEditCovCor(task, mean, cov, &corrStorage, res, &corrStorage);
+	status = vsldSSCompute(task, VSL_SS_COV|VSL_SS_COR, VSL_SS_METHOD_FAST);
 	status = vslSSDeleteTask( &task );
 	free(mean);
 	free(cov);
 	if (status != 0)
 	{
 		return VSLERROR;
+	}
+	MKL_INT step = varCount + 1;
+	for (MKL_INT i = 0; i < varCount; i++)
+	{
+		if (res[i * step] == 0.0)
+		{
+			res[i * step] = nan("");
+		}
+		else
+		{
+		    res[i * step] = 1.0;
+		}
 	}
 	return status;
 }

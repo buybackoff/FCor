@@ -109,8 +109,8 @@ module VectorBasicStats =
 
     [<Fact>]
     let ``quantile``() =
-        let v = new Vector([|1000.0..(-1.0)..0.0|])
+        use v : Vector = unifRnd rng 0.0 1000.0 10000000L
         let q = new Vector([|1.0..(-0.1)..0.0|])
         let res = [|1000.0..(-100.)..0.0|]
-        epsEqual 1e-14 ((quantile v q).ToArray()) res |> should be True
+        epsEqual 1e-3 ((quantile v q).ToArray()) res |> should be True
 

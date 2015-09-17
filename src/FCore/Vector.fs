@@ -903,17 +903,20 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
     member this.SetSlice(fromIndex : int option, toIndex : int option, value : float) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
 
-    member this.SetSlice(fromIndex, toIndex, value: Vector) =
-        let fromIndex = defaultArg fromIndex 0L
-        let toIndex = defaultArg toIndex (length - 1L)
-        if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
-        if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
-        if fromIndex > toIndex && value.LongLength = 0L then ()
+    member this.SetSlice(fromIndex : int64 option, toIndex : int64 option, value: Vector) =
+        if value.LongLength = 1L then
+            this.SetSlice(fromIndex, toIndex, (value.[0L]:float))
         else
-            let length = toIndex - fromIndex + 1L
-            if value.LongLength <> length then raise (new ArgumentException())
-            let view = this.View(fromIndex, length)
-            MklFunctions.D_Copy_Array(length, value.NativeArray, view.NativeArray)
+            let fromIndex = defaultArg fromIndex 0L
+            let toIndex = defaultArg toIndex (length - 1L)
+            if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
+            if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
+            if fromIndex > toIndex && value.LongLength = 0L then ()
+            else
+                let length = toIndex - fromIndex + 1L
+                if value.LongLength <> length then raise (new ArgumentException())
+                let view = this.View(fromIndex, length)
+                MklFunctions.D_Copy_Array(length, value.NativeArray, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value: Vector) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)

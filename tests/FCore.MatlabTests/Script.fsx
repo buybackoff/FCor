@@ -20,18 +20,23 @@ let n = 2
 let tmp = float(2)/float(2-1)
 let factor = (tmp*tmp).ToString("N16")
 
+
 let rng = new MT19937Rng()
 let rnd = new Random()
 let app = new MLAppClass()
-let v = Array2D.init 1 1 (fun i j -> rnd.NextDouble() < 0.5)
-setBoolMatrix app "v" v
-let fromIndex = rnd.Next(v.Length) |> int64
-let toIndex = rnd.Next(v.Length) |> int64
-setScalar app "fromIndex" (float(fromIndex + 1L))
-setScalar app "toIndex" (float(toIndex + 1L))
-app.Execute("res = v(fromIndex:toIndex);") |> ignore
-let res = getBoolVector app "res"
-let V = new BoolMatrix(v)
-V.[fromIndex..toIndex].ToArray() = res 
 
+let axisNum (axis :  MatrixAxis) =
+    match axis with | ColumnAxis -> 1.0 | RowAxis -> 2.0
 
+let v = new Matrix([[41.0;42.0]
+                    [97.0;97.3333333] 
+                   ])
+setMatrix app "v" (v.ToArray2D())
+app.Execute("res = skewness(v);") |> ignore
+let res = getVector app "res"
+let res2 = skewness v RowAxis
+epsEqualArray res (res2.ToArray()) epsEqualFloat 1e-6
+res.[1]
+res2.[1]
+
+abs(res.[1] - res2.[1])
