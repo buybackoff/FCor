@@ -19,11 +19,14 @@ module VectorBasicStats =
     do app.Visible <- 0
 
     let rng = new MT19937Rng()
-
+    let rnd = new Random()
 
     let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
 
     let inline epsEqual eps (x : float[]) (y :float[])  = epsEqualArray x y epsEqualFloat eps
+
+    let regDouble x =
+        if Double.IsNaN(x) || Double.IsNegativeInfinity(x) || Double.IsPositiveInfinity(x) || x = Double.MaxValue ||x = Double.MinValue || x = Double.Epsilon || x = -Double.Epsilon then rnd.NextDouble() else x
 
     [<Property>]
     let ``sum``(v : float[]) =
@@ -91,21 +94,21 @@ module VectorBasicStats =
 
     [<Property>]
     let ``skewness``(v : float[]) =
-        let v = v |> Array.map (fun x -> if Double.IsNaN(x) then 0.0 else x)
+        let v = v |> Array.map regDouble
         setVector app "v" v
         app.Execute("res = skewness(v);") |> ignore
         let res = getVector app "res"
         let v = new Vector(v)
-        ((v.Length > 1) ==> lazy(epsEqual 1e-10 [|skewness(v)|] res))
+        ((v.Length > 1) ==> lazy(epsEqual 1e-5 [|skewness(v)|] res))
 
     [<Property>]
     let ``kurtosis``(v : float[]) =
-        let v = v |> Array.map (fun x -> if Double.IsNaN(x) then 0.0 else x)
+        let v = v |> Array.map regDouble
         setVector app "v" v
         app.Execute("res = kurtosis(v);") |> ignore
         let res = getVector app "res"
         let v = new Vector(v)
-        ((v.Length > 1) ==> lazy(epsEqual 1e-10 [|kurtosis(v)|] res))
+        ((v.Length > 1) ==> lazy(epsEqual 1e-5 [|kurtosis(v)|] res))
 
     [<Fact>]
     let ``quantile``() =

@@ -1480,8 +1480,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static member Min(vector : Vector) =
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
-        if vector.LongLength = 1L && Double.IsNaN(vector.[0]) then
-            Double.NaN
+        if vector.LongLength = 1L then
+            vector.[0]
         else 
             let mutable res = 0.0
             MklFunctions.D_Min_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
@@ -1489,8 +1489,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static member Max(vector : Vector) =
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
-        if vector.LongLength = 1L && Double.IsNaN(vector.[0]) then
-            Double.NaN
+        if vector.LongLength = 1L then
+            vector.[0]
         else
             let mutable res = 0.0
             MklFunctions.D_Max_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)

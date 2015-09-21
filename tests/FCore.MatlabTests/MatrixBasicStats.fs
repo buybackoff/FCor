@@ -19,13 +19,16 @@ module MatrixBasicStats =
     do app.Visible <- 0
 
     let rng = new MT19937Rng()
-
+    let rnd = new Random()
 
     let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
 
     let inline epsEqual eps (x : float[]) (y :float[])  = epsEqualArray x y epsEqualFloat eps
 
     let inline epsEqual2D eps (x : float[,]) (y :float[,])  = epsEqualArray2D x y epsEqualFloat eps
+
+    let regDouble x =
+        if Double.IsNaN(x) || Double.IsNegativeInfinity(x) || Double.IsPositiveInfinity(x) || x = Double.MaxValue ||x = Double.MinValue || x = Double.Epsilon || x = -Double.Epsilon then rnd.NextDouble() else x
 
     let axisNum (axis :  MatrixAxis) =
         match axis with | ColumnAxis -> 1.0 | RowAxis -> 2.0
@@ -115,7 +118,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``skewness``(v : float[,]) (axis : MatrixAxis) =
-        let v = v |> Array2D.map (fun x -> if Double.IsNaN(x) || Double.IsInfinity(x) || abs(x) = Double.MaxValue || abs(x) = Double.Epsilon then 1.0 else x)
+        let v = v |> Array2D.map regDouble
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -126,7 +129,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``kurtosis``(v : float[,]) (axis : MatrixAxis) =
-        let v = v |> Array2D.map (fun x -> if Double.IsNaN(x) || Double.IsInfinity(x) || abs(x) = Double.MaxValue || abs(x) = Double.Epsilon then 1.0 else x)
+        let v = v |> Array2D.map regDouble
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -175,16 +178,16 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``cov``(v : float[,]) =
-        let v = v |> Array2D.map (fun x -> if Double.IsInfinity(x) || abs(x) = Double.MaxValue || abs(x) = Double.Epsilon then 1.0 else x)
+        let v = v |> Array2D.map regDouble
         setMatrix app "v" v
         app.Execute("res = cov(v);") |> ignore
         let res = getMatrix app "res"
         let v = new Matrix(v)
-        ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(epsEqual2D 1e-10 ((cov v).ToArray2D()) res))
+        ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(epsEqual2D 1e-8 ((cov v).ToArray2D()) res))
 
     [<Property>]
     let ``corr``(v : float[,]) =
-        let v = v |> Array2D.map (fun x -> if Double.IsNaN(x) then 1.0 elif Double.IsInfinity(x) then 2.0 elif x = Double.MaxValue then 3.0 elif x = Double.MinValue then 4.0 elif abs(x) = Double.Epsilon then 5.0 else x)
+        let v = v |> Array2D.map regDouble
         setMatrix app "v" v
         app.Execute("res = corr(v);") |> ignore
         let res = getMatrix app "res"

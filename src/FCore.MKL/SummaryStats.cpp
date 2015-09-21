@@ -20,15 +20,32 @@ extern "C" __declspec(dllexport) int d_min_matrix(bool byRows, MKL_INT varCount,
 	if (byRows)
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_COLS;
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			if (x[i] != x[i])
+			{
+				res[i] = INFINITY;
+			}
+			else
+			{
+				res[i] = x[i];
+			}
+		}
 	}
 	else
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
-	}
-
-	for (MKL_INT i = 0; i < varCount; i++)
-	{
-		res[i] = INFINITY;
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			if (x[i*obsCount] != x[i*obsCount])
+			{
+				res[i] = INFINITY;
+			}
+			else
+			{
+				res[i] = x[i*obsCount];
+			}
+		}
 	}
 
 	status = vsldSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
@@ -39,6 +56,42 @@ extern "C" __declspec(dllexport) int d_min_matrix(bool byRows, MKL_INT varCount,
 	if (status != 0)
 	{
 		return VSLERROR;
+	}
+	if (byRows)
+	{
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			if (res[i] == INFINITY)
+			{
+				res[i] = nan("");
+				for (MKL_INT j = 0; j < obsCount; j++)
+				{
+					if (x[j*varCount + i] == INFINITY)
+					{
+						res[i] = INFINITY;
+						break;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			if (res[i] == INFINITY)
+			{
+				res[i] = nan("");
+				for (MKL_INT j = 0; j < obsCount; j++)
+				{
+					if (x[i*obsCount + j] == INFINITY)
+					{
+						res[i] = INFINITY;
+						break;
+					}
+				}
+			}
+		}
 	}
 	return status;
 }
@@ -71,6 +124,13 @@ extern "C" __declspec(dllexport) int s_min_matrix(bool byRows, MKL_INT varCount,
 	{
 		return VSLERROR;
 	}
+	for (MKL_INT i = 0; i < varCount; i++)
+	{
+		if (res[i] == INFINITY)
+		{
+			res[i] = nan("");
+		}
+	}
 	return status;
 }
 
@@ -82,15 +142,32 @@ extern "C" __declspec(dllexport) int d_max_matrix(bool byRows, MKL_INT varCount,
 	if (byRows)
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_COLS;
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			if (x[i] != x[i])
+			{
+				res[i] = -INFINITY;
+			}
+			else
+			{
+				res[i] = x[i];
+			}
+		}
 	}
 	else
 	{
 		xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
-	}
-
-	for (MKL_INT i = 0; i < varCount; i++)
-	{
-		res[i] = -INFINITY;
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			if (x[i*obsCount] != x[i*obsCount])
+			{
+				res[i] = -INFINITY;
+			}
+			else
+			{
+				res[i] = x[i*obsCount];
+			}
+		}
 	}
 
 	status = vsldSSNewTask(&task, &varCount, &obsCount, &xstorage, x, 0, 0);
@@ -101,6 +178,43 @@ extern "C" __declspec(dllexport) int d_max_matrix(bool byRows, MKL_INT varCount,
 	if (status != 0)
 	{
 		return VSLERROR;
+	}
+
+	if (byRows)
+	{
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			if (res[i] == -INFINITY)
+			{
+				res[i] = nan("");
+				for (MKL_INT j = 0; j < obsCount; j++)
+				{
+					if (x[j*varCount + i] == -INFINITY)
+					{
+						res[i] = -INFINITY;
+						break;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			if (res[i] == -INFINITY)
+			{
+				res[i] = nan("");
+				for (MKL_INT j = 0; j < obsCount; j++)
+				{
+					if (x[i*obsCount + j] == -INFINITY)
+					{
+						res[i] = -INFINITY;
+						break;
+					}
+				}
+			}
+		}
 	}
 	return status;
 }
@@ -132,6 +246,13 @@ extern "C" __declspec(dllexport) int s_max_matrix(bool byRows, MKL_INT varCount,
 	if (status != 0)
 	{
 		return VSLERROR;
+	}
+	for (MKL_INT i = 0; i < varCount; i++)
+	{
+		if (res[i] == -INFINITY)
+		{
+			res[i] = nan("");
+		}
 	}
 	return status;
 }

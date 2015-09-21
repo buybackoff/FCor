@@ -28,15 +28,10 @@ let app = new MLAppClass()
 let axisNum (axis :  MatrixAxis) =
     match axis with | ColumnAxis -> 1.0 | RowAxis -> 2.0
 
-let v = new Matrix([[41.0;42.0]
-                    [97.0;97.3333333] 
+let v = new Matrix([[Double.PositiveInfinity;Double.PositiveInfinity;Double.PositiveInfinity;Double.PositiveInfinity;Double.PositiveInfinity]
+                    [Double.NaN;Double.NaN;Double.NaN;Double.NaN;Double.NaN] 
                    ])
 setMatrix app "v" (v.ToArray2D())
-app.Execute("res = skewness(v);") |> ignore
+app.Execute("res = min(v);") |> ignore
 let res = getVector app "res"
-let res2 = skewness v RowAxis
-epsEqualArray res (res2.ToArray()) epsEqualFloat 1e-6
-res.[1]
-res2.[1]
-
-abs(res.[1] - res2.[1])
+let res2 = min v ColumnAxis
