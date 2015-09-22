@@ -444,25 +444,13 @@ and BoolVectorExpr =
     | BinaryVectorFunction of VectorExpr * VectorExpr * (Vector -> Vector -> BoolVector -> unit)
     | IfFunction of BoolVectorExpr * BoolVectorExpr * BoolVectorExpr
 
-    member this.MaxLength
-        with get() =
-            let rec getMaxLength = function
-                | Var(v) -> v.LongLength
-                | UnaryFunction(v, _) -> getMaxLength v
-                | BinaryFunction(v1, v2, _) -> 
-                    let len1 = getMaxLength v1
-                    let len2 = getMaxLength v2
-                    max len1 len2 
-                | BinaryVectorFunction(v1, v2, _) ->
-                    let len1 = v1.MaxLength
-                    let len2 = v2.MaxLength
-                    max len1 len2                  
-                | IfFunction(v1, v2, v3) -> 
-                    let len1 = getMaxLength v1
-                    let len2 = getMaxLength v2
-                    let len3 = getMaxLength v3
-                    max len1 (max len2 len3)
-            getMaxLength this
+    member this.Length =
+        match this with
+            | Var(v) -> Some v.LongLength
+            | UnaryFunction(v, _) -> v.Length    
+            | BinaryFunction(v1, v2, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length
+            | BinaryVectorFunction(v1, v2, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length               
+            | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseLengthIf v1.Length v2.Length v3.Length
 
     static member internal DeScalar(boolVectorExpr : BoolVectorExpr) = 
         match boolVectorExpr with
@@ -499,124 +487,88 @@ and BoolVectorExpr =
                     IfFunction(BoolVectorExpr.Var(v1), Var(v2), Var(v3))
             | IfFunction(v1, v2, v3) -> IfFunction(BoolVectorExpr.DeScalar(v1), BoolVectorExpr.DeScalar(v2), BoolVectorExpr.DeScalar(v3))
 
-    static member internal EvalSlice (boolVectorExpr : BoolVectorExpr) (sliceStart : int64) (sliceLen : int64)
-                                     (usedPool : List<Vector>) (freePool : List<Vector>) (usedBoolPool : List<BoolVector>) (freeBoolPool : List<BoolVector>) : BoolVector * List<Vector> * List<Vector> * List<BoolVector> * List<BoolVector> = 
+    static member internal EvalSlice (boolVectorExpr : BoolVectorExpr) (sliceStart : int64) (sliceLen : int64) (memPool : MemoryPool) : BoolVector * MemoryPool = 
         match boolVectorExpr with
             | Var(v) ->
                 if v.LongLength = 1L then
-                    v, usedPool, freePool, usedBoolPool, freeBoolPool
+                    v, memPool
                 else
-                    v.View(sliceStart, sliceLen), usedPool, freePool, usedBoolPool, freeBoolPool
+                    v.View(sliceStart, sliceLen), memPool
             | UnaryFunction(v, f) -> 
-                let v, usedPool, freePool, usedBoolPool, freeBoolPool = BoolVectorExpr.EvalSlice v sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedBoolPool.Contains(v) then
+                let v, memPool = BoolVectorExpr.EvalSlice v sliceStart sliceLen memPool
+                if memPool.Contains(v) then
                     f v v
-                    v, usedPool, freePool, usedBoolPool, freeBoolPool
+                    v, memPool
                 else
-                    if freeBoolPool.Count = 0 then
-                        freeBoolPool.Add(new BoolVector(sliceLen, false))
-                    let res = freeBoolPool.[0]
-                    usedBoolPool.Add(res)
-                    freeBoolPool.RemoveAt(0)
+                    let res = memPool.GetBoolVector(sliceLen)
                     f v res
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+                    res, memPool
             | BinaryFunction(v1, v2, f) -> 
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedBoolPool.Contains(v1) then
+                let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen memPool
+                let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen memPool
+                if memPool.Contains(v1) then
                     f v1 v2 v1
-                    if usedBoolPool.Contains(v2) then
-                        freeBoolPool.Add(v2)
-                        usedBoolPool.Remove(v2) |> ignore
-                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
-                elif usedBoolPool.Contains(v2) then
+                    memPool.UnUse(v2)
+                    v1, memPool
+                elif memPool.Contains(v2) then
                     f v1 v2 v2
-                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
+                    v2, memPool
                 else
-                    if freeBoolPool.Count = 0 then
-                        freeBoolPool.Add(new BoolVector(sliceLen, false))
-                    let res = freeBoolPool.[0]
-                    usedBoolPool.Add(res)
-                    freeBoolPool.RemoveAt(0)
+                    let res = memPool.GetBoolVector(sliceLen)
                     f v1 v2 res
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+                    res, memPool
             | BinaryVectorFunction(v1, v2, f) -> 
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = VectorExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = VectorExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if freeBoolPool.Count = 0 then
-                    freeBoolPool.Add(new BoolVector(sliceLen, false))
-                let res = freeBoolPool.[0]
-                usedBoolPool.Add(res)
-                freeBoolPool.RemoveAt(0)
+                let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
+                let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
+                let res = memPool.GetBoolVector(sliceLen)
                 f v1 v2 res
-                if usedPool.Contains(v1) then
-                    freePool.Add(v1)
-                    usedPool.Remove(v1) |> ignore
-                if usedPool.Contains(v2) then
-                    freePool.Add(v2)
-                    usedPool.Remove(v2) |> ignore
-                res, usedPool, freePool, usedBoolPool, freeBoolPool
+                memPool.UnUse(v1:Vector)
+                memPool.UnUse(v2)
+                res, memPool
             | IfFunction(b, v1, v2) -> 
-                let boolVector, usedPool, freePool, usedBoolPool, freeBoolPool = BoolVectorExpr.EvalSlice b sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedBoolPool.Contains(v1) then
-                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v1.NativeArray)
-                    if usedBoolPool.Contains(v2) then
-                        freeBoolPool.Add(v2)
-                        usedBoolPool.Remove(v2) |> ignore
-                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
-                elif usedBoolPool.Contains(v2) then
-                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v2.NativeArray)
-                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
+                let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart sliceLen memPool
+                let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen memPool
+                let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen memPool
+                if memPool.Contains(v1) then
+                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v1.NativeArray)
+                    memPool.UnUse v2
+                    v1, memPool
+                elif memPool.Contains(v2) then
+                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v2.NativeArray)
+                    v2, memPool
                 else
-                    if freeBoolPool.Count = 0 then
-                        freeBoolPool.Add(new BoolVector(sliceLen, false))
-                    let res = freeBoolPool.[0]
-                    usedBoolPool.Add(res)
-                    freeBoolPool.RemoveAt(0)
-                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, res.NativeArray)
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+                    let res = memPool.GetBoolVector(sliceLen)
+                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, res.NativeArray)
+                    res, memPool
 
 
     static member EvalIn(vectorExpr : BoolVectorExpr, res : BoolVector option) =
-        let vectorExpr = BoolVectorExpr.DeScalar(vectorExpr)
-        let n = 1000000L
-        let len = vectorExpr.MaxLength
-        let res = defaultArg res (new BoolVector(len, false))
-        let m = len / n
-        let k = len % n
-        let freePool = new List<Vector>()
-        let usedPool = new List<Vector>()
-        let freeBoolPool = new List<BoolVector>()
-        let usedBoolPool = new List<BoolVector>()
+        let length = vectorExpr.Length
+        let res = 
+            match length with
+                | None -> raise (new ArgumentException("Elementwise length mismatch"))
+                | Some(len) ->
+                    match res with
+                        | Some(v) when len <> v.LongLength -> raise (new ArgumentException("Elementwise length mismatch")) 
+                        | Some(v) -> v
+                        | None -> new BoolVector(len, false)
+        if res.LongLength <> 0L then
+            let vectorExpr = BoolVectorExpr.DeScalar(vectorExpr)
+            let n = 1000000L
+            let len = res.LongLength
+            let m = len / n
+            let k = len % n
+            use memPool = new MemoryPool()
+            for i in 0L..(m-1L) do
+                let sliceStart = i * n
+                let v, _ = BoolVectorExpr.EvalSlice vectorExpr sliceStart n memPool
+                res.View(sliceStart, n).SetSlice(Some(0L), None, v)
+                memPool.UnUseAll()
 
-        for i in 0L..(m-1L) do
-            let sliceStart = i * n
-            let v, _, _, _, _ = BoolVectorExpr.EvalSlice vectorExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
-            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
-            freePool.AddRange(usedPool)
-            usedPool.Clear()
-            freeBoolPool.AddRange(usedBoolPool)
-            usedBoolPool.Clear()
-
-        if k > 0L then
-            freeBoolPool.AddRange(usedBoolPool)
-            usedBoolPool.Clear()
-            freePool.AddRange(usedPool)
-            usedPool.Clear()
-            let freeBoolPool' = new List<BoolVector>(freeBoolPool |> Seq.map (fun v -> v.View(0L, k)))
-            let freePool' = new List<Vector>(freePool |> Seq.map (fun v -> v.View(0L, k)))
-            let sliceStart = m * n
-            let v, _, _, _, _ = BoolVectorExpr.EvalSlice vectorExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
-            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
-            freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-            freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-
-        freeBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        usedBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        freePool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        usedPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+            if k > 0L then
+                let sliceStart = m * n
+                let v, _ = BoolVectorExpr.EvalSlice vectorExpr sliceStart k memPool
+                res.View(sliceStart, k).SetSlice(Some(0L), None, v)
         res
 
     static member (.<) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
@@ -1580,21 +1532,12 @@ and VectorExpr =
     | BinaryFunction of VectorExpr * VectorExpr * (Vector -> Vector -> Vector -> unit)
     | IfFunction of BoolVectorExpr * VectorExpr * VectorExpr
 
-    member this.MaxLength
-        with get() =
-            let rec getMaxLength = function
-                | Var(v) -> v.LongLength
-                | UnaryFunction(v, _) -> getMaxLength v
-                | BinaryFunction(v1, v2, _) -> 
-                    let len1 = getMaxLength v1
-                    let len2 = getMaxLength v2
-                    max len1 len2 
-                | IfFunction(v1, v2, v3) -> 
-                    let len1 = v1.MaxLength 
-                    let len2 = getMaxLength v2
-                    let len3 = getMaxLength v3
-                    max len1 (max len2 len3)
-            getMaxLength this
+    member this.Length =
+        match this with
+            | Var(v) -> Some v.LongLength
+            | UnaryFunction(v, _) -> v.Length
+            | BinaryFunction(v1, v2, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length
+            | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseLengthIf v1.Length v2.Length v3.Length
 
     static member internal DeScalar(vectorExpr : VectorExpr) =
         match vectorExpr with
@@ -1624,117 +1567,83 @@ and VectorExpr =
             | IfFunction(v1, v2, v3) -> IfFunction(BoolVectorExpr.DeScalar(v1), VectorExpr.DeScalar(v2), VectorExpr.DeScalar(v3))
 
 
-    static member internal EvalSlice (vectorExpr : VectorExpr) (sliceStart : int64) (sliceLen : int64) (usedPool : List<Vector>) (freePool : List<Vector>) 
-                                     (usedBoolPool : List<BoolVector>) (freeBoolPool : List<BoolVector>) =
+    static member internal EvalSlice (vectorExpr : VectorExpr) (sliceStart : int64) (sliceLen : int64) (memPool : MemoryPool) =
         match vectorExpr with
             | Var(v) ->
                 if v.LongLength = 1L then
-                    v, usedPool, freePool, usedBoolPool, freeBoolPool
+                    v, memPool
                 else
-                    v.View(sliceStart, sliceLen), usedPool, freePool, usedBoolPool, freeBoolPool
+                    v.View(sliceStart, sliceLen), memPool
             | UnaryFunction(v, f) -> 
-                let v, usedPool, freePool, usedBoolPool, freeBoolPool = VectorExpr.EvalSlice v sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedPool.Contains(v) then
+                let v, memPool = VectorExpr.EvalSlice v sliceStart sliceLen memPool
+                if memPool.Contains(v) then
                     f v v
-                    v, usedPool, freePool, usedBoolPool, freeBoolPool
+                    v, memPool
                 else
-                    if freePool.Count = 0 then
-                        freePool.Add(new Vector(sliceLen, 0.0))
-                    let res = freePool.[0]
-                    usedPool.Add(res)
-                    freePool.RemoveAt(0)
+                    let res = memPool.GetVector(sliceLen)
                     f v res
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+                    res, memPool
             | BinaryFunction(v1, v2, f) -> 
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = VectorExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = VectorExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedPool.Contains(v1) then
+                let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
+                let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
+                if memPool.Contains(v1) then
                     f v1 v2 v1
-                    if usedPool.Contains(v2) then
-                        freePool.Add(v2)
-                        usedPool.Remove(v2) |> ignore
-                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
-                elif usedPool.Contains(v2) then
+                    memPool.UnUse v2
+                    v1, memPool
+                elif memPool.Contains(v2) then
                     f v1 v2 v2
-                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
+                    v2, memPool
                 else
-                    if freePool.Count = 0 then
-                        freePool.Add(new Vector(sliceLen, 0.0))
-                    let res = freePool.[0]
-                    usedPool.Add(res)
-                    freePool.RemoveAt(0)
+                    let res = memPool.GetVector(sliceLen)
                     f v1 v2 res
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+                    res, memPool
             | IfFunction(b, v1, v2) -> 
-                let boolVector, usedPool, freePool, usedBoolPool, freeBoolPool = BoolVectorExpr.EvalSlice b sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = VectorExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = VectorExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedPool.Contains(v1) then
-                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v1.NativeArray)
-                    if usedPool.Contains(v2) then
-                        freePool.Add(v2)
-                        usedPool.Remove(v2) |> ignore
-                    if usedBoolPool.Contains(boolVector) then
-                        freeBoolPool.Add(boolVector)
-                        usedBoolPool.Remove(boolVector) |> ignore
-                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
-                elif usedPool.Contains(v2) then
-                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v2.NativeArray)
-                    if usedBoolPool.Contains(boolVector) then
-                        freeBoolPool.Add(boolVector)
-                        usedBoolPool.Remove(boolVector) |> ignore
-                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
+                let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart sliceLen memPool
+                let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
+                let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
+                if memPool.Contains(v1) then
+                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v1.NativeArray)
+                    memPool.UnUse v2
+                    memPool.UnUse boolVector
+                    v1, memPool
+                elif memPool.Contains(v2) then
+                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v2.NativeArray)
+                    memPool.UnUse boolVector
+                    v2, memPool
                 else
-                    if freePool.Count = 0 then
-                        freePool.Add(new Vector(sliceLen, 0.0))
-                    let res = freePool.[0]
-                    usedPool.Add(res)
-                    freePool.RemoveAt(0)
-                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, res.NativeArray)
-                    if usedBoolPool.Contains(boolVector) then
-                        freeBoolPool.Add(boolVector)
-                        usedBoolPool.Remove(boolVector) |> ignore
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+                    let res = memPool.GetVector(sliceLen)
+                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, res.NativeArray)
+                    memPool.UnUse boolVector
+                    res, memPool
 
 
     static member EvalIn(vectorExpr : VectorExpr, res : Vector option) =
-        let vectorExpr = VectorExpr.DeScalar(vectorExpr)
-        let n = 1000000L
-        let len = vectorExpr.MaxLength
-        let res = defaultArg res (new Vector(len, 0.0))
-        let m = len / n
-        let k = len % n
-        let freePool = new List<Vector>()
-        let usedPool = new List<Vector>()
-        let freeBoolPool = new List<BoolVector>()
-        let usedBoolPool = new List<BoolVector>()
+        let length = vectorExpr.Length
+        let res = 
+            match length with
+                | None -> raise (new ArgumentException("Elementwise length mismatch"))
+                | Some(len) ->
+                    match res with
+                        | Some(v) when len <> v.LongLength -> raise (new ArgumentException("Elementwise length mismatch")) 
+                        | Some(v) -> v
+                        | None -> new Vector(len, 0.0)
+        if res.LongLength <> 0L then
+            let vectorExpr = VectorExpr.DeScalar(vectorExpr)
+            let n = 1000000L
+            let len = res.LongLength
+            let m = len / n
+            let k = len % n
+            use memPool = new MemoryPool()
+            for i in 0L..(m-1L) do
+                let sliceStart = i * n
+                let v, _ = VectorExpr.EvalSlice vectorExpr sliceStart n memPool
+                res.View(sliceStart, n).SetSlice(Some(0L), None, v)
+                memPool.UnUseAll()
 
-        for i in 0L..(m-1L) do
-            let sliceStart = i * n
-            let v, _, _, _, _ = VectorExpr.EvalSlice vectorExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
-            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
-            freePool.AddRange(usedPool)
-            usedPool.Clear()
-            freeBoolPool.AddRange(usedBoolPool)
-            usedBoolPool.Clear()
-
-        if k > 0L then
-            freePool.AddRange(usedPool)
-            usedPool.Clear()
-            freeBoolPool.AddRange(usedBoolPool)
-            usedBoolPool.Clear()
-            let freePool' = new List<Vector>(freePool |> Seq.map (fun v -> v.View(0L, k)))
-            let freeBoolPool' = new List<BoolVector>(freeBoolPool |> Seq.map (fun v -> v.View(0L, k)))
-            let sliceStart = m * n
-            let v, _, _, _, _ = VectorExpr.EvalSlice vectorExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
-            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
-            freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-            freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-
-        freePool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        usedPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        freeBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        usedBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+            if k > 0L then
+                let sliceStart = m * n
+                let v, _ = VectorExpr.EvalSlice vectorExpr sliceStart k memPool
+                res.View(sliceStart, k).SetSlice(Some(0L), None, v)
         res
 
     static member (.<) (vector1 : VectorExpr, vector2 : VectorExpr) =
@@ -1832,6 +1741,39 @@ and VectorExpr =
 
     static member (.<>) (a : float, vector : VectorExpr) =
         Var(new Vector(a)) .<> vector
+
+
+    static member Min (vector1 : VectorExpr, vector2 : VectorExpr) =
+        BinaryFunction(vector1, vector2, 
+                       fun v1 v2 res -> MklFunctions.D_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+
+    static member Min (vector1 : VectorExpr, vector2 : Vector) =
+       VectorExpr.Min(vector1, Var(vector2))
+
+    static member Min (vector1 : Vector, vector2 : VectorExpr) =
+        VectorExpr.Min(Var(vector1), vector2)
+
+    static member Min (vector : VectorExpr, a : float) =
+        VectorExpr.Min(vector, Var(new Vector(a)))
+
+    static member Min (a : float, vector : VectorExpr) =
+        VectorExpr.Min(Var(new Vector(a)), vector)
+
+    static member Max (vector1 : VectorExpr, vector2 : VectorExpr) =
+        BinaryFunction(vector1, vector2, 
+                       fun v1 v2 res -> MklFunctions.D_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+
+    static member Max (vector1 : VectorExpr, vector2 : Vector) =
+       VectorExpr.Max(vector1, Var(vector2))
+
+    static member Max (vector1 : Vector, vector2 : VectorExpr) =
+        VectorExpr.Max(Var(vector1), vector2)
+
+    static member Max (vector : VectorExpr, a : float) =
+        VectorExpr.Max(vector, Var(new Vector(a)))
+
+    static member Max (a : float, vector : VectorExpr) =
+        VectorExpr.Max(Var(new Vector(a)), vector)
 
 
 
@@ -2040,3 +1982,61 @@ and VectorExpr =
 
     static member Truncate(vectorExpr : VectorExpr) =
         UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Trunc_Array(v.LongLength, v.NativeArray, res.NativeArray))
+
+and MemoryPool() =
+    let boolVectorPool = new Dictionary<nativeptr<bool>, BoolVector*bool>() // bool: is in use
+    let vectorPool = new Dictionary<nativeptr<float>, Vector*bool>()
+
+    member this.GetBoolVector(length : int64) =
+        match boolVectorPool.Values |> Seq.tryFind (fun (v, isUsed) -> not isUsed && v.LongLength >= length) with
+            | Some(v,_) -> 
+                 boolVectorPool.[v.NativeArray] <- (v, true)
+                 if v.LongLength <> length then
+                     v.View(0L, length)
+                 else
+                     v
+            | None ->
+                let v = new BoolVector(length, false)
+                boolVectorPool.Add(v.NativeArray, (v, true))
+                v
+
+    member this.GetVector(length : int64) =
+        match vectorPool.Values |> Seq.tryFind (fun (v, isUsed) -> not isUsed && v.LongLength >= length) with
+            | Some(v,_) -> 
+                 vectorPool.[v.NativeArray] <- (v, true)
+                 if v.LongLength <> length then
+                     v.View(0L, length)
+                 else
+                     v
+            | None ->
+                let v = new Vector(length, 0.0)
+                vectorPool.Add(v.NativeArray, (v, true))
+                v
+
+    member this.Contains(boolVector : BoolVector) =
+        boolVectorPool.ContainsKey(boolVector.NativeArray)
+
+    member this.Contains(vector : Vector) =
+        vectorPool.ContainsKey(vector.NativeArray)
+
+    member this.UnUse(boolVector : BoolVector) =
+        if this.Contains(boolVector) then
+            boolVectorPool.[boolVector.NativeArray] <- (fst boolVectorPool.[boolVector.NativeArray], false)
+
+    member this.UnUse(vector : Vector) =
+        if this.Contains(vector) then
+            vectorPool.[vector.NativeArray] <- (fst vectorPool.[vector.NativeArray], false)
+
+    member this.UnUseAll() =
+       for kv in boolVectorPool do
+           boolVectorPool.[kv.Key] <- (fst boolVectorPool.[kv.Key], false)
+       for kv in vectorPool do
+           vectorPool.[kv.Key] <- (fst vectorPool.[kv.Key], false)   
+           
+    interface IDisposable with
+        member this.Dispose() = 
+             boolVectorPool |> Seq.iter (fun kv -> let vector = fst kv.Value in (vector:>IDisposable).Dispose())  
+             vectorPool |> Seq.iter (fun kv -> let vector = fst kv.Value in (vector:>IDisposable).Dispose())  
+              
+
+        

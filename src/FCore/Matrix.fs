@@ -570,200 +570,234 @@ and BoolMatrixExpr =
     | BinaryMatrixFunction of MatrixExpr * MatrixExpr * (Vector -> Vector -> BoolVector -> unit)
     | IfFunction of BoolMatrixExpr * BoolMatrixExpr * BoolMatrixExpr
 
-    member this.MaxLength
-        with get() =
-            let rec getMaxLength = function
-                | Var(v) -> v.ColMajorDataVector.LongLength
-                | UnaryFunction(v, _) -> getMaxLength v
-                | BinaryFunction(v1, v2, _) -> 
-                    let len1 = getMaxLength v1
-                    let len2 = getMaxLength v2
-                    max len1 len2 
-                | BinaryMatrixFunction(v1, v2, _) ->
-                    let len1 = v1.MaxLength
-                    let len2 = v2.MaxLength
-                    max len1 len2                  
-                | IfFunction(v1, v2, v3) -> 
-                    let len1 = getMaxLength v1
-                    let len2 = getMaxLength v2
-                    let len3 = getMaxLength v3
-                    max len1 (max len2 len3)
-            getMaxLength this
+    member this.AsBoolVectorExpr =
+        match this with
+            | Var(v) -> BoolVectorExpr.Var(v.ColMajorDataVector)
+            | UnaryFunction(expr, f) -> BoolVectorExpr.UnaryFunction(expr.AsBoolVectorExpr, f)
+            | BinaryFunction(expr1, expr2, f) -> BoolVectorExpr.BinaryFunction(expr1.AsBoolVectorExpr, expr2.AsBoolVectorExpr, f)
+            | BinaryMatrixFunction(expr1, expr2, f) -> BoolVectorExpr.BinaryVectorFunction(expr1.AsVectorExpr, expr2.AsVectorExpr, f) 
+            | IfFunction(ifExpr, trueExpr, falseExpr) -> BoolVectorExpr.IfFunction(ifExpr.AsBoolVectorExpr, trueExpr.AsBoolVectorExpr, falseExpr.AsBoolVectorExpr)
 
-    member this.MaxSize
-        with get() =
-            let rec getMaxSize = function
-                | Var(v) -> v.LongRowCount, v.LongColCount
-                | UnaryFunction(v, _) -> getMaxSize v
-                | BinaryFunction(v1, v2, _) -> 
-                    let r1, c1 = getMaxSize v1
-                    let r2, c2 = getMaxSize v2
-                    max r1 r2, max c1 c2 
-                | BinaryMatrixFunction(v1, v2, _) ->
-                    let r1, c1 = v1.MaxSize
-                    let r2, c2 = v2.MaxSize
-                    max r1 r2, max c1 c2                   
-                | IfFunction(v1, v2, v3) -> 
-                    let r1, c1 = getMaxSize v1
-                    let r2, c2 = getMaxSize v2
-                    let r3, c3 = getMaxSize v3
-                    max r1 (max r2 r3), max c1 (max c2 c3)
-            getMaxSize this
+    member this.Size =
+        match this with
+            | Var(v) -> Some(v.LongRowCount, v.LongColCount)
+            | UnaryFunction(v, _) -> v.Size
+            | BinaryFunction(v1, v2, _) -> 
+                ArgumentChecks.getElementwiseSize v1.Size v2.Size 
+            | BinaryMatrixFunction(v1, v2, _) ->
+                ArgumentChecks.getElementwiseSize v1.Size v2.Size                  
+            | IfFunction(v1, v2, v3) -> 
+                ArgumentChecks.getElementwiseSizeIf v1.Size v2.Size v3.Size  
 
-    static member internal DeScalar(boolMatrixExpr : BoolMatrixExpr) = 
-        match boolMatrixExpr with
-            | Var(v) -> Var(v)
-            | UnaryFunction(Var(v), f) ->
-                if v.IsScalar then
-                    let res = new BoolMatrix(false)
-                    f v.ColMajorDataVector res.ColMajorDataVector
-                    Var(res)
-                else 
-                    UnaryFunction(Var(v), f)
-            | UnaryFunction(v, f) -> UnaryFunction(BoolMatrixExpr.DeScalar(v), f)
-            | BinaryFunction(Var(v1), Var(v2), f) -> 
-                if v1.IsScalar && v2.IsScalar then
-                    let res = new BoolMatrix(false)
-                    f v1.ColMajorDataVector v2.ColMajorDataVector  res.ColMajorDataVector 
-                    Var(res)
-                else
-                  BinaryFunction(Var(v1), Var(v2), f)  
-            | BinaryMatrixFunction(MatrixExpr.Var(v1), MatrixExpr.Var(v2), f) -> 
-                if v1.IsScalar && v2.IsScalar then
-                    let res = new BoolMatrix(false)
-                    f v1.ColMajorDataVector v2.ColMajorDataVector res.ColMajorDataVector
-                    Var(res)
-                else
-                  BinaryMatrixFunction(MatrixExpr.Var(v1), MatrixExpr.Var(v2), f)  
-            | BinaryFunction(v1, v2, f) -> BinaryFunction(BoolMatrixExpr.DeScalar(v1), BoolMatrixExpr.DeScalar(v2), f)
-            | BinaryMatrixFunction(v1, v2, f) -> BinaryMatrixFunction(MatrixExpr.DeScalar(v1), MatrixExpr.DeScalar(v2), f)
-            | IfFunction(BoolMatrixExpr.Var(v1), Var(v2), Var(v3)) -> 
-                if v1.IsScalar && v2.IsScalar && v3.IsScalar then
-                    let res = if v1.[0] then v2.[0] else v3.[0]
-                    Var(new BoolMatrix(res))
-                else
-                    IfFunction(BoolMatrixExpr.Var(v1), Var(v2), Var(v3))
-            | IfFunction(v1, v2, v3) -> IfFunction(BoolMatrixExpr.DeScalar(v1), BoolMatrixExpr.DeScalar(v2), BoolMatrixExpr.DeScalar(v3))
 
-    static member internal EvalSlice (boolMatrixExpr : BoolMatrixExpr) (sliceStart : int64) (sliceLen : int64)
-                                     (usedPool : List<Vector>) (freePool : List<Vector>) (usedBoolPool : List<BoolVector>) (freeBoolPool : List<BoolVector>) : BoolVector * List<Vector> * List<Vector> * List<BoolVector> * List<BoolVector> = 
-        match boolMatrixExpr with
-            | Var(v) ->
-                if v.IsScalar then
-                    v.ColMajorDataVector, usedPool, freePool, usedBoolPool, freeBoolPool
-                else
-                    v.View(sliceStart, sliceLen), usedPool, freePool, usedBoolPool, freeBoolPool
-            | UnaryFunction(v, f) -> 
-                let v, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedBoolPool.Contains(v) then
-                    f v v
-                    v, usedPool, freePool, usedBoolPool, freeBoolPool
-                else
-                    if freeBoolPool.Count = 0 then
-                        freeBoolPool.Add(new BoolVector(sliceLen, false))
-                    let res = freeBoolPool.[0]
-                    usedBoolPool.Add(res)
-                    freeBoolPool.RemoveAt(0)
-                    f v res
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
-            | BinaryFunction(v1, v2, f) -> 
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedBoolPool.Contains(v1) then
-                    f v1 v2 v1
-                    if usedBoolPool.Contains(v2) then
-                        freeBoolPool.Add(v2)
-                        usedBoolPool.Remove(v2) |> ignore
-                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
-                elif usedBoolPool.Contains(v2) then
-                    f v1 v2 v2
-                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
-                else
-                    if freeBoolPool.Count = 0 then
-                        freeBoolPool.Add(new BoolVector(sliceLen, false))
-                    let res = freeBoolPool.[0]
-                    usedBoolPool.Add(res)
-                    freeBoolPool.RemoveAt(0)
-                    f v1 v2 res
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
-            | BinaryMatrixFunction(v1, v2, f) -> 
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if freeBoolPool.Count = 0 then
-                    freeBoolPool.Add(new BoolVector(sliceLen, false))
-                let res = freeBoolPool.[0]
-                usedBoolPool.Add(res)
-                freeBoolPool.RemoveAt(0)
-                f v1 v2 res
-                if usedPool.Contains(v1) then
-                    freePool.Add(v1)
-                    usedPool.Remove(v1) |> ignore
-                if usedPool.Contains(v2) then
-                    freePool.Add(v2)
-                    usedPool.Remove(v2) |> ignore
-                res, usedPool, freePool, usedBoolPool, freeBoolPool
-            | IfFunction(b, v1, v2) -> 
-                let boolVector, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice b sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedBoolPool.Contains(v1) then
-                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v1.NativeArray)
-                    if usedBoolPool.Contains(v2) then
-                        freeBoolPool.Add(v2)
-                        usedBoolPool.Remove(v2) |> ignore
-                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
-                elif usedBoolPool.Contains(v2) then
-                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v2.NativeArray)
-                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
-                else
-                    if freeBoolPool.Count = 0 then
-                        freeBoolPool.Add(new BoolVector(sliceLen, false))
-                    let res = freeBoolPool.[0]
-                    usedBoolPool.Add(res)
-                    freeBoolPool.RemoveAt(0)
-                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, res.NativeArray)
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+
+//    member this.MaxLength
+//        with get() =
+//            let rec getMaxLength = function
+//                | Var(v) -> v.ColMajorDataVector.LongLength
+//                | UnaryFunction(v, _) -> getMaxLength v
+//                | BinaryFunction(v1, v2, _) -> 
+//                    let len1 = getMaxLength v1
+//                    let len2 = getMaxLength v2
+//                    max len1 len2 
+//                | BinaryMatrixFunction(v1, v2, _) ->
+//                    let len1 = v1.MaxLength
+//                    let len2 = v2.MaxLength
+//                    max len1 len2                  
+//                | IfFunction(v1, v2, v3) -> 
+//                    let len1 = getMaxLength v1
+//                    let len2 = getMaxLength v2
+//                    let len3 = getMaxLength v3
+//                    max len1 (max len2 len3)
+//            getMaxLength this
+
+//    member this.MaxSize
+//        with get() =
+//            let rec getMaxSize = function
+//                | Var(v) -> v.LongRowCount, v.LongColCount
+//                | UnaryFunction(v, _) -> getMaxSize v
+//                | BinaryFunction(v1, v2, _) -> 
+//                    let r1, c1 = getMaxSize v1
+//                    let r2, c2 = getMaxSize v2
+//                    max r1 r2, max c1 c2 
+//                | BinaryMatrixFunction(v1, v2, _) ->
+//                    let r1, c1 = v1.MaxSize
+//                    let r2, c2 = v2.MaxSize
+//                    max r1 r2, max c1 c2                   
+//                | IfFunction(v1, v2, v3) -> 
+//                    let r1, c1 = getMaxSize v1
+//                    let r2, c2 = getMaxSize v2
+//                    let r3, c3 = getMaxSize v3
+//                    max r1 (max r2 r3), max c1 (max c2 c3)
+//            getMaxSize this
+//
+//    static member internal DeScalar(boolMatrixExpr : BoolMatrixExpr) = 
+//        match boolMatrixExpr with
+//            | Var(v) -> Var(v)
+//            | UnaryFunction(Var(v), f) ->
+//                if v.IsScalar then
+//                    let res = new BoolMatrix(false)
+//                    f v.ColMajorDataVector res.ColMajorDataVector
+//                    Var(res)
+//                else 
+//                    UnaryFunction(Var(v), f)
+//            | UnaryFunction(v, f) -> UnaryFunction(BoolMatrixExpr.DeScalar(v), f)
+//            | BinaryFunction(Var(v1), Var(v2), f) -> 
+//                if v1.IsScalar && v2.IsScalar then
+//                    let res = new BoolMatrix(false)
+//                    f v1.ColMajorDataVector v2.ColMajorDataVector  res.ColMajorDataVector 
+//                    Var(res)
+//                else
+//                  BinaryFunction(Var(v1), Var(v2), f)  
+//            | BinaryMatrixFunction(MatrixExpr.Var(v1), MatrixExpr.Var(v2), f) -> 
+//                if v1.IsScalar && v2.IsScalar then
+//                    let res = new BoolMatrix(false)
+//                    f v1.ColMajorDataVector v2.ColMajorDataVector res.ColMajorDataVector
+//                    Var(res)
+//                else
+//                  BinaryMatrixFunction(MatrixExpr.Var(v1), MatrixExpr.Var(v2), f)  
+//            | BinaryFunction(v1, v2, f) -> BinaryFunction(BoolMatrixExpr.DeScalar(v1), BoolMatrixExpr.DeScalar(v2), f)
+//            | BinaryMatrixFunction(v1, v2, f) -> BinaryMatrixFunction(MatrixExpr.DeScalar(v1), MatrixExpr.DeScalar(v2), f)
+//            | IfFunction(BoolMatrixExpr.Var(v1), Var(v2), Var(v3)) -> 
+//                if v1.IsScalar && v2.IsScalar && v3.IsScalar then
+//                    let res = if v1.[0] then v2.[0] else v3.[0]
+//                    Var(new BoolMatrix(res))
+//                else
+//                    IfFunction(BoolMatrixExpr.Var(v1), Var(v2), Var(v3))
+//            | IfFunction(v1, v2, v3) -> IfFunction(BoolMatrixExpr.DeScalar(v1), BoolMatrixExpr.DeScalar(v2), BoolMatrixExpr.DeScalar(v3))
+//
+//    static member internal EvalSlice (boolMatrixExpr : BoolMatrixExpr) (sliceStart : int64) (sliceLen : int64)
+//                                     (usedPool : List<Vector>) (freePool : List<Vector>) (usedBoolPool : List<BoolVector>) (freeBoolPool : List<BoolVector>) : BoolVector * List<Vector> * List<Vector> * List<BoolVector> * List<BoolVector> = 
+//        match boolMatrixExpr with
+//            | Var(v) ->
+//                if v.IsScalar then
+//                    v.ColMajorDataVector, usedPool, freePool, usedBoolPool, freeBoolPool
+//                else
+//                    v.View(sliceStart, sliceLen), usedPool, freePool, usedBoolPool, freeBoolPool
+//            | UnaryFunction(v, f) -> 
+//                let v, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                if usedBoolPool.Contains(v) then
+//                    f v v
+//                    v, usedPool, freePool, usedBoolPool, freeBoolPool
+//                else
+//                    if freeBoolPool.Count = 0 then
+//                        freeBoolPool.Add(new BoolVector(sliceLen, false))
+//                    let res = freeBoolPool.[0]
+//                    usedBoolPool.Add(res)
+//                    freeBoolPool.RemoveAt(0)
+//                    f v res
+//                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+//            | BinaryFunction(v1, v2, f) -> 
+//                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                if usedBoolPool.Contains(v1) then
+//                    f v1 v2 v1
+//                    if usedBoolPool.Contains(v2) then
+//                        freeBoolPool.Add(v2)
+//                        usedBoolPool.Remove(v2) |> ignore
+//                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
+//                elif usedBoolPool.Contains(v2) then
+//                    f v1 v2 v2
+//                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
+//                else
+//                    if freeBoolPool.Count = 0 then
+//                        freeBoolPool.Add(new BoolVector(sliceLen, false))
+//                    let res = freeBoolPool.[0]
+//                    usedBoolPool.Add(res)
+//                    freeBoolPool.RemoveAt(0)
+//                    f v1 v2 res
+//                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+//            | BinaryMatrixFunction(v1, v2, f) -> 
+//                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                if freeBoolPool.Count = 0 then
+//                    freeBoolPool.Add(new BoolVector(sliceLen, false))
+//                let res = freeBoolPool.[0]
+//                usedBoolPool.Add(res)
+//                freeBoolPool.RemoveAt(0)
+//                f v1 v2 res
+//                if usedPool.Contains(v1) then
+//                    freePool.Add(v1)
+//                    usedPool.Remove(v1) |> ignore
+//                if usedPool.Contains(v2) then
+//                    freePool.Add(v2)
+//                    usedPool.Remove(v2) |> ignore
+//                res, usedPool, freePool, usedBoolPool, freeBoolPool
+//            | IfFunction(b, v1, v2) -> 
+//                let boolVector, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice b sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                if usedBoolPool.Contains(v1) then
+//                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v1.NativeArray)
+//                    if usedBoolPool.Contains(v2) then
+//                        freeBoolPool.Add(v2)
+//                        usedBoolPool.Remove(v2) |> ignore
+//                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
+//                elif usedBoolPool.Contains(v2) then
+//                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v2.NativeArray)
+//                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
+//                else
+//                    if freeBoolPool.Count = 0 then
+//                        freeBoolPool.Add(new BoolVector(sliceLen, false))
+//                    let res = freeBoolPool.[0]
+//                    usedBoolPool.Add(res)
+//                    freeBoolPool.RemoveAt(0)
+//                    MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, res.NativeArray)
+//                    res, usedPool, freePool, usedBoolPool, freeBoolPool
 
     static member EvalIn(matrixExpr : BoolMatrixExpr, res : BoolMatrix option) =
-        let matrixExpr = BoolMatrixExpr.DeScalar(matrixExpr)
-        let n = 1000000L
-        let len = matrixExpr.MaxLength
-        let r, c = matrixExpr.MaxSize
-        let res = defaultArg res (new BoolMatrix(r, c, false))
-        let m = len / n
-        let k = len % n
-        let freePool = new List<Vector>()
-        let usedPool = new List<Vector>()
-        let freeBoolPool = new List<BoolVector>()
-        let usedBoolPool = new List<BoolVector>()
-
-        for i in 0L..(m-1L) do
-            let sliceStart = i * n
-            let v, _, _, _, _ = BoolMatrixExpr.EvalSlice matrixExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
-            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
-            freePool.AddRange(usedPool)
-            usedPool.Clear()
-            freeBoolPool.AddRange(usedBoolPool)
-            usedBoolPool.Clear()
-
-        if k > 0L then
-            freeBoolPool.AddRange(usedBoolPool)
-            usedBoolPool.Clear()
-            freePool.AddRange(usedPool)
-            usedPool.Clear()
-            let freeBoolPool' = new List<BoolVector>(freeBoolPool |> Seq.map (fun v -> v.View(0L, k)))
-            let freePool' = new List<Vector>(freePool |> Seq.map (fun v -> v.View(0L, k)))
-            let sliceStart = m * n
-            let v, _, _, _, _ = BoolMatrixExpr.EvalSlice matrixExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
-            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
-            freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-            freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-
-        freeBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        usedBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        freePool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        usedPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+        let size = matrixExpr.Size
+        let res = 
+            match size with
+                | None -> raise (new ArgumentException("Elementwise size mismatch"))
+                | Some(r,c) ->
+                    match res with
+                        | Some(v) when (r,c) <> v.LongSize -> raise (new ArgumentException("Elementwise size mismatch")) 
+                        | Some(v) -> v
+                        | None -> new BoolMatrix(r, c, false)
+        if res.LongSize <> (0L, 0L) then
+            BoolVectorExpr.EvalIn(matrixExpr.AsBoolVectorExpr, Some res.ColMajorDataVector) |> ignore
         res
+
+//        let matrixExpr = BoolMatrixExpr.DeScalar(matrixExpr)
+//        let n = 1000000L
+//        let len = matrixExpr.MaxLength
+//        let r, c = matrixExpr.MaxSize
+//        let res = defaultArg res (new BoolMatrix(r, c, false))
+//        let m = len / n
+//        let k = len % n
+//        let freePool = new List<Vector>()
+//        let usedPool = new List<Vector>()
+//        let freeBoolPool = new List<BoolVector>()
+//        let usedBoolPool = new List<BoolVector>()
+//
+//        for i in 0L..(m-1L) do
+//            let sliceStart = i * n
+//            let v, _, _, _, _ = BoolMatrixExpr.EvalSlice matrixExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
+//            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
+//            freePool.AddRange(usedPool)
+//            usedPool.Clear()
+//            freeBoolPool.AddRange(usedBoolPool)
+//            usedBoolPool.Clear()
+//
+//        if k > 0L then
+//            freeBoolPool.AddRange(usedBoolPool)
+//            usedBoolPool.Clear()
+//            freePool.AddRange(usedPool)
+//            usedPool.Clear()
+//            let freeBoolPool' = new List<BoolVector>(freeBoolPool |> Seq.map (fun v -> v.View(0L, k)))
+//            let freePool' = new List<Vector>(freePool |> Seq.map (fun v -> v.View(0L, k)))
+//            let sliceStart = m * n
+//            let v, _, _, _, _ = BoolMatrixExpr.EvalSlice matrixExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
+//            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
+//            freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//            freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//
+//        freeBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//        usedBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//        freePool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//        usedPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//        res
 
     static member (.<) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
@@ -2257,179 +2291,224 @@ and MatrixExpr =
     | BinaryFunction of MatrixExpr * MatrixExpr * (Vector -> Vector -> Vector -> unit)
     | IfFunction of BoolMatrixExpr * MatrixExpr * MatrixExpr
 
-    member this.MaxLength
-        with get() =
-            let rec getMaxLength = function
-                | Var(v) -> v.ColMajorDataVector.LongLength
-                | UnaryFunction(v, _) -> getMaxLength v
-                | BinaryFunction(v1, v2, _) -> 
-                    let len1 = getMaxLength v1
-                    let len2 = getMaxLength v2
-                    max len1 len2 
-                | IfFunction(v1, v2, v3) -> 
-                    let len1 = v1.MaxLength 
-                    let len2 = getMaxLength v2
-                    let len3 = getMaxLength v3
-                    max len1 (max len2 len3)
-            getMaxLength this
+    member this.AsVectorExpr =
+        match this with
+            | Var(v) -> VectorExpr.Var(v.ColMajorDataVector)
+            | UnaryFunction(expr, f) -> VectorExpr.UnaryFunction(expr.AsVectorExpr, f)
+            | BinaryFunction(expr1, expr2, f) -> VectorExpr.BinaryFunction(expr1.AsVectorExpr, expr2.AsVectorExpr, f) 
+            | IfFunction(ifExpr, trueExpr, falseExpr) -> VectorExpr.IfFunction(ifExpr.AsBoolVectorExpr, trueExpr.AsVectorExpr, falseExpr.AsVectorExpr) 
 
-    member this.MaxSize
-        with get() =
-            let rec getMaxSize = function
-                | Var(v) -> v.LongRowCount, v.LongColCount
-                | UnaryFunction(v, _) -> getMaxSize v
-                | BinaryFunction(v1, v2, _) -> 
-                    let r1, c1 = getMaxSize v1
-                    let r2, c2 = getMaxSize v2
-                    max r1 r2, max c1 c2                  
-                | IfFunction(v1, v2, v3) -> 
-                    let r1, c1 = v1.MaxSize
-                    let r2, c2 = getMaxSize v2
-                    let r3, c3 = getMaxSize v3
-                    max r1 (max r2 r3), max c1 (max c2 c3)
-            getMaxSize this
+//    member this.MaxLength
+//        with get() =
+//            let rec getMaxLength = function
+//                | Var(v) -> v.ColMajorDataVector.LongLength
+//                | UnaryFunction(v, _) -> getMaxLength v
+//                | BinaryFunction(v1, v2, _) -> 
+//                    let len1 = getMaxLength v1
+//                    let len2 = getMaxLength v2
+//                    max len1 len2 
+//                | IfFunction(v1, v2, v3) -> 
+//                    let len1 = v1.MaxLength 
+//                    let len2 = getMaxLength v2
+//                    let len3 = getMaxLength v3
+//                    max len1 (max len2 len3)
+//            getMaxLength this
 
-    static member internal DeScalar(matrixExpr : MatrixExpr) =
-        match matrixExpr with
-            | Var(v) -> Var(v)
-            | UnaryFunction(Var(v), f) ->
-                if v.IsScalar then
-                    let res = new Matrix(0.0)
-                    f v.ColMajorDataVector res.ColMajorDataVector
-                    Var(res)
-                else 
-                    UnaryFunction(Var(v), f)
-            | UnaryFunction(v, f) -> UnaryFunction(MatrixExpr.DeScalar(v), f)
-            | BinaryFunction(Var(v1), Var(v2), f) -> 
-                if v1.IsScalar && v2.IsScalar then
-                    let res = new Matrix(0.0)
-                    f v1.ColMajorDataVector v2.ColMajorDataVector res.ColMajorDataVector
-                    Var(res)
-                else
-                  BinaryFunction(Var(v1), Var(v2), f)  
-            | BinaryFunction(v1, v2, f) -> BinaryFunction(MatrixExpr.DeScalar(v1), MatrixExpr.DeScalar(v2), f)
-            | IfFunction(BoolMatrixExpr.Var(v1), Var(v2), Var(v3)) -> 
-                if v1.IsScalar && v2.IsScalar && v3.IsScalar then
-                    let res = if v1.[0] then v2.[0] else v3.[0]
-                    Var(new Matrix(res))
-                else
-                    IfFunction(BoolMatrixExpr.Var(v1), Var(v2), Var(v3))
-            | IfFunction(v1, v2, v3) -> IfFunction(BoolMatrixExpr.DeScalar(v1), MatrixExpr.DeScalar(v2), MatrixExpr.DeScalar(v3))
+//    member this.MaxSize
+//        with get() =
+//            let rec getMaxSize = function
+//                | Var(v) -> v.LongRowCount, v.LongColCount
+//                | UnaryFunction(v, _) -> getMaxSize v
+//                | BinaryFunction(v1, v2, _) -> 
+//                    let r1, c1 = getMaxSize v1
+//                    let r2, c2 = getMaxSize v2
+//                    max r1 r2, max c1 c2                  
+//                | IfFunction(v1, v2, v3) -> 
+//                    let r1, c1 = v1.MaxSize
+//                    let r2, c2 = getMaxSize v2
+//                    let r3, c3 = getMaxSize v3
+//                    max r1 (max r2 r3), max c1 (max c2 c3)
+//            getMaxSize this
 
+    member this.Size = 
+        match this with
+            | Var(v) -> Some(v.LongRowCount, v.LongColCount)
+            | UnaryFunction(v, _) -> v.Size
+            | BinaryFunction(v1, v2, _) -> 
+                ArgumentChecks.getElementwiseSize v1.Size v2.Size
+            | IfFunction(v1, v2, v3) -> 
+                ArgumentChecks.getElementwiseSizeIf v1.Size v2.Size v3.Size
 
-    static member internal EvalSlice (matrixExpr : MatrixExpr) (sliceStart : int64) (sliceLen : int64) (usedPool : List<Vector>) (freePool : List<Vector>) 
-                                     (usedBoolPool : List<BoolVector>) (freeBoolPool : List<BoolVector>) =
-        match matrixExpr with
-            | Var(v) ->
-                if v.IsScalar then
-                    v.ColMajorDataVector, usedPool, freePool, usedBoolPool, freeBoolPool
-                else
-                    v.View(sliceStart, sliceLen), usedPool, freePool, usedBoolPool, freeBoolPool
-            | UnaryFunction(v, f) -> 
-                let v, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedPool.Contains(v) then
-                    f v v
-                    v, usedPool, freePool, usedBoolPool, freeBoolPool
-                else
-                    if freePool.Count = 0 then
-                        freePool.Add(new Vector(sliceLen, 0.0))
-                    let res = freePool.[0]
-                    usedPool.Add(res)
-                    freePool.RemoveAt(0)
-                    f v res
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
-            | BinaryFunction(v1, v2, f) -> 
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedPool.Contains(v1) then
-                    f v1 v2 v1
-                    if usedPool.Contains(v2) then
-                        freePool.Add(v2)
-                        usedPool.Remove(v2) |> ignore
-                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
-                elif usedPool.Contains(v2) then
-                    f v1 v2 v2
-                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
-                else
-                    if freePool.Count = 0 then
-                        freePool.Add(new Vector(sliceLen, 0.0))
-                    let res = freePool.[0]
-                    usedPool.Add(res)
-                    freePool.RemoveAt(0)
-                    f v1 v2 res
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
-            | IfFunction(b, v1, v2) -> 
-                let boolVector, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice b sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
-                if usedPool.Contains(v1) then
-                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v1.NativeArray)
-                    if usedPool.Contains(v2) then
-                        freePool.Add(v2)
-                        usedPool.Remove(v2) |> ignore
-                    if usedBoolPool.Contains(boolVector) then
-                        freeBoolPool.Add(boolVector)
-                        usedBoolPool.Remove(boolVector) |> ignore
-                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
-                elif usedPool.Contains(v2) then
-                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v2.NativeArray)
-                    if usedBoolPool.Contains(boolVector) then
-                        freeBoolPool.Add(boolVector)
-                        usedBoolPool.Remove(boolVector) |> ignore
-                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
-                else
-                    if freePool.Count = 0 then
-                        freePool.Add(new Vector(sliceLen, 0.0))
-                    let res = freePool.[0]
-                    usedPool.Add(res)
-                    freePool.RemoveAt(0)
-                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, res.NativeArray)
-                    if usedBoolPool.Contains(boolVector) then
-                        freeBoolPool.Add(boolVector)
-                        usedBoolPool.Remove(boolVector) |> ignore
-                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+//        with get() =
+//            let rec getSize = function
+//                | Var(v) -> Some(v.LongRowCount, v.LongColCount)
+//                | UnaryFunction(v, _) -> getSize v
+//                | BinaryFunction(v1, v2, _) -> 
+//                    let size1 = getSize v1
+//                    let size2 = getSize v2
+//                    ArgumentChecks.getElementwiseSize size1 size2               
+//                | IfFunction(v1, v2, v3) -> 
+//                    let size1 = v1.Size
+//                    let size2 = getSize v2
+//                    let size3 = getSize v3
+//                    ArgumentChecks.getElementwiseSizeIf size1 size2 size3
+//            getSize this
+
+//    static member internal DeScalar(matrixExpr : MatrixExpr) =
+//        match matrixExpr with
+//            | Var(v) -> Var(v)
+//            | UnaryFunction(Var(v), f) ->
+//                if v.IsScalar then
+//                    let res = new Matrix(0.0)
+//                    f v.ColMajorDataVector res.ColMajorDataVector
+//                    Var(res)
+//                else 
+//                    UnaryFunction(Var(v), f)
+//            | UnaryFunction(v, f) -> UnaryFunction(MatrixExpr.DeScalar(v), f)
+//            | BinaryFunction(Var(v1), Var(v2), f) -> 
+//                if v1.IsScalar && v2.IsScalar then
+//                    let res = new Matrix(0.0)
+//                    f v1.ColMajorDataVector v2.ColMajorDataVector res.ColMajorDataVector
+//                    Var(res)
+//                else
+//                  BinaryFunction(Var(v1), Var(v2), f)  
+//            | BinaryFunction(v1, v2, f) -> BinaryFunction(MatrixExpr.DeScalar(v1), MatrixExpr.DeScalar(v2), f)
+//            | IfFunction(BoolMatrixExpr.Var(v1), Var(v2), Var(v3)) -> 
+//                if v1.IsScalar && v2.IsScalar && v3.IsScalar then
+//                    let res = if v1.[0] then v2.[0] else v3.[0]
+//                    Var(new Matrix(res))
+//                else
+//                    IfFunction(BoolMatrixExpr.Var(v1), Var(v2), Var(v3))
+//            | IfFunction(v1, v2, v3) -> IfFunction(BoolMatrixExpr.DeScalar(v1), MatrixExpr.DeScalar(v2), MatrixExpr.DeScalar(v3))
+//
+//
+//    static member internal EvalSlice (matrixExpr : MatrixExpr) (sliceStart : int64) (sliceLen : int64) (usedPool : List<Vector>) (freePool : List<Vector>) 
+//                                     (usedBoolPool : List<BoolVector>) (freeBoolPool : List<BoolVector>) =
+//        match matrixExpr with
+//            | Var(v) ->
+//                if v.IsScalar then
+//                    v.ColMajorDataVector, usedPool, freePool, usedBoolPool, freeBoolPool
+//                else
+//                    v.View(sliceStart, sliceLen), usedPool, freePool, usedBoolPool, freeBoolPool
+//            | UnaryFunction(v, f) -> 
+//                let v, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                if usedPool.Contains(v) then
+//                    f v v
+//                    v, usedPool, freePool, usedBoolPool, freeBoolPool
+//                else
+//                    if freePool.Count = 0 then
+//                        freePool.Add(new Vector(sliceLen, 0.0))
+//                    let res = freePool.[0]
+//                    usedPool.Add(res)
+//                    freePool.RemoveAt(0)
+//                    f v res
+//                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+//            | BinaryFunction(v1, v2, f) -> 
+//                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                if usedPool.Contains(v1) then
+//                    f v1 v2 v1
+//                    if usedPool.Contains(v2) then
+//                        freePool.Add(v2)
+//                        usedPool.Remove(v2) |> ignore
+//                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
+//                elif usedPool.Contains(v2) then
+//                    f v1 v2 v2
+//                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
+//                else
+//                    if freePool.Count = 0 then
+//                        freePool.Add(new Vector(sliceLen, 0.0))
+//                    let res = freePool.[0]
+//                    usedPool.Add(res)
+//                    freePool.RemoveAt(0)
+//                    f v1 v2 res
+//                    res, usedPool, freePool, usedBoolPool, freeBoolPool
+//            | IfFunction(b, v1, v2) -> 
+//                let boolVector, usedPool, freePool, usedBoolPool, freeBoolPool = BoolMatrixExpr.EvalSlice b sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                let v1, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v1 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                let v2, usedPool, freePool, usedBoolPool, freeBoolPool = MatrixExpr.EvalSlice v2 sliceStart sliceLen usedPool freePool usedBoolPool freeBoolPool
+//                if usedPool.Contains(v1) then
+//                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v1.NativeArray)
+//                    if usedPool.Contains(v2) then
+//                        freePool.Add(v2)
+//                        usedPool.Remove(v2) |> ignore
+//                    if usedBoolPool.Contains(boolVector) then
+//                        freeBoolPool.Add(boolVector)
+//                        usedBoolPool.Remove(boolVector) |> ignore
+//                    v1, usedPool, freePool, usedBoolPool, freeBoolPool
+//                elif usedPool.Contains(v2) then
+//                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, v2.NativeArray)
+//                    if usedBoolPool.Contains(boolVector) then
+//                        freeBoolPool.Add(boolVector)
+//                        usedBoolPool.Remove(boolVector) |> ignore
+//                    v2, usedPool, freePool, usedBoolPool, freeBoolPool
+//                else
+//                    if freePool.Count = 0 then
+//                        freePool.Add(new Vector(sliceLen, 0.0))
+//                    let res = freePool.[0]
+//                    usedPool.Add(res)
+//                    freePool.RemoveAt(0)
+//                    MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.NativeArray, res.NativeArray)
+//                    if usedBoolPool.Contains(boolVector) then
+//                        freeBoolPool.Add(boolVector)
+//                        usedBoolPool.Remove(boolVector) |> ignore
+//                    res, usedPool, freePool, usedBoolPool, freeBoolPool
 
 
     static member EvalIn(matrixExpr : MatrixExpr, res : Matrix option) =
-        let matrixExpr = MatrixExpr.DeScalar(matrixExpr)
-        let n = 1000000L
-        let len = matrixExpr.MaxLength
-        let r, c = matrixExpr.MaxSize
-        let res = defaultArg res (new Matrix(r, c, 0.0))
-        let m = len / n
-        let k = len % n
-        let freePool = new List<Vector>()
-        let usedPool = new List<Vector>()
-        let freeBoolPool = new List<BoolVector>()
-        let usedBoolPool = new List<BoolVector>()
-
-        for i in 0L..(m-1L) do
-            let sliceStart = i * n
-            let v, _, _, _, _ = MatrixExpr.EvalSlice matrixExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
-            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
-            freePool.AddRange(usedPool)
-            usedPool.Clear()
-            freeBoolPool.AddRange(usedBoolPool)
-            usedBoolPool.Clear()
-
-        if k > 0L then
-            freePool.AddRange(usedPool)
-            usedPool.Clear()
-            freeBoolPool.AddRange(usedBoolPool)
-            usedBoolPool.Clear()
-            let freePool' = new List<Vector>(freePool |> Seq.map (fun v -> v.View(0L, k)))
-            let freeBoolPool' = new List<BoolVector>(freeBoolPool |> Seq.map (fun v -> v.View(0L, k)))
-            let sliceStart = m * n
-            let v, _, _, _, _ = MatrixExpr.EvalSlice matrixExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
-            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
-            freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-            freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-
-        freePool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        usedPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        freeBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
-        usedBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+        let size = matrixExpr.Size
+        let res = 
+            match size with
+                | None -> raise (new ArgumentException("Elementwise size mismatch"))
+                | Some(r,c) ->
+                    match res with
+                        | Some(v) when (r,c) <> v.LongSize -> raise (new ArgumentException("Elementwise size mismatch")) 
+                        | Some(v) -> v
+                        | None -> new Matrix(r, c, 0.0)
+        if res.LongSize <> (0L, 0L) then
+            VectorExpr.EvalIn(matrixExpr.AsVectorExpr, Some res.ColMajorDataVector) |> ignore
         res
+
+
+//        let matrixExpr = MatrixExpr.DeScalar(matrixExpr)
+//        let n = 1000000L
+//        let len = matrixExpr.MaxLength
+//        let r, c = matrixExpr.MaxSize
+//        let res = defaultArg res (new Matrix(r, c, 0.0))
+//        let m = len / n
+//        let k = len % n
+//        let freePool = new List<Vector>()
+//        let usedPool = new List<Vector>()
+//        let freeBoolPool = new List<BoolVector>()
+//        let usedBoolPool = new List<BoolVector>()
+//
+//        for i in 0L..(m-1L) do
+//            let sliceStart = i * n
+//            let v, _, _, _, _ = MatrixExpr.EvalSlice matrixExpr sliceStart n usedPool freePool usedBoolPool freeBoolPool
+//            res.View(sliceStart, n).SetSlice(Some(0L), None, v)
+//            freePool.AddRange(usedPool)
+//            usedPool.Clear()
+//            freeBoolPool.AddRange(usedBoolPool)
+//            usedBoolPool.Clear()
+//
+//        if k > 0L then
+//            freePool.AddRange(usedPool)
+//            usedPool.Clear()
+//            freeBoolPool.AddRange(usedBoolPool)
+//            usedBoolPool.Clear()
+//            let freePool' = new List<Vector>(freePool |> Seq.map (fun v -> v.View(0L, k)))
+//            let freeBoolPool' = new List<BoolVector>(freeBoolPool |> Seq.map (fun v -> v.View(0L, k)))
+//            let sliceStart = m * n
+//            let v, _, _, _, _ = MatrixExpr.EvalSlice matrixExpr sliceStart k usedPool freePool' usedBoolPool freeBoolPool'
+//            res.View(sliceStart, k).SetSlice(Some(0L), None, v)
+//            freePool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//            freeBoolPool' |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//
+//        freePool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//        usedPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//        freeBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//        usedBoolPool |> Seq.iter (fun x -> (x:>IDisposable).Dispose())
+//        res
 
     static member (.<) (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryMatrixFunction(matrix1, matrix2, 
@@ -2526,6 +2605,39 @@ and MatrixExpr =
 
     static member (.<>) (a : float, matrix : MatrixExpr) =
         Var(new Matrix(a)) .<> matrix
+
+
+    static member Min (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
+        BinaryFunction(matrix1, matrix2, 
+                       fun v1 v2 res -> MklFunctions.D_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+
+    static member Min (matrix1 : MatrixExpr, matrix2 : Matrix) =
+       MatrixExpr.Min(matrix1, Var(matrix2))
+
+    static member Min (matrix1 : Matrix, matrix2 : MatrixExpr) =
+        MatrixExpr.Min(Var(matrix1), matrix2)
+
+    static member Min (matrix : MatrixExpr, a : float) =
+        MatrixExpr.Min(matrix, Var(new Matrix(a)))
+
+    static member Min (a : float, matrix : MatrixExpr) =
+        MatrixExpr.Min(Var(new Matrix(a)), matrix)
+
+    static member Max (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
+        BinaryFunction(matrix1, matrix2, 
+                       fun v1 v2 res -> MklFunctions.D_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+
+    static member Max (matrix1 : MatrixExpr, matrix2 : Matrix) =
+       MatrixExpr.Max(matrix1, Var(matrix2))
+
+    static member Max (matrix1 : Matrix, matrix2 : MatrixExpr) =
+        MatrixExpr.Max(Var(matrix1), matrix2)
+
+    static member Max (matrix : MatrixExpr, a : float) =
+        MatrixExpr.Max(matrix, Var(new Matrix(a)))
+
+    static member Max (a : float, matrix : MatrixExpr) =
+        MatrixExpr.Max(Var(new Matrix(a)), matrix)
 
 
 

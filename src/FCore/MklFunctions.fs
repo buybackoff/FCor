@@ -170,13 +170,13 @@ type internal MklFunctions() =
     static extern void s_max_arrays(IntPtr nx, float32* x, IntPtr ny, float32* y, float32* result)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern void b_iif_arrays(IntPtr nx, bool* x, IntPtr ny, bool* y, bool* b, bool* result)
+    static extern void b_iif_arrays(IntPtr nx, bool* x, IntPtr ny, bool* y, IntPtr nb, bool* b, bool* result)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern void d_iif_arrays(IntPtr nx, float* x, IntPtr ny, float* y, bool* b, float* result)
+    static extern void d_iif_arrays(IntPtr nx, float* x, IntPtr ny, float* y, IntPtr nb, bool* b, float* result)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern void s_iif_arrays(IntPtr nx, float32* x, IntPtr ny, float32* y, bool* b, float32* result)
+    static extern void s_iif_arrays(IntPtr nx, float32* x, IntPtr ny, float32* y, IntPtr nb, bool* b, float32* result)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void b_and_arrays(IntPtr nx, bool* x, IntPtr ny, bool* y, bool* result)
@@ -944,14 +944,14 @@ type internal MklFunctions() =
     static member D_Max_Arrays(nx : int64, x, ny : int64, y, result) =
         d_max_arrays(new IntPtr(nx), x, new IntPtr(ny), y, result)
 
-    static member B_IIf_Arrays(nx : int64, x, ny : int64, y, b, result) =
-        b_iif_arrays(new IntPtr(nx), x, new IntPtr(ny), y, b, result)
+    static member B_IIf_Arrays(nx : int64, x, ny : int64, y, nb : int64, b, result) =
+        b_iif_arrays(new IntPtr(nx), x, new IntPtr(ny), y, new IntPtr(nb), b, result)
 
-    static member D_IIf_Arrays(nx : int64, x, ny : int64, y, b, result) =
-        d_iif_arrays(new IntPtr(nx), x, new IntPtr(ny), y, b, result)
+    static member D_IIf_Arrays(nx : int64, x, ny : int64, y, nb : int64, b, result) =
+        d_iif_arrays(new IntPtr(nx), x, new IntPtr(ny), y, new IntPtr(nb), b, result)
 
-    static member S_IIf_Arrays(nx : int64, x, ny : int64, y, b, result) =
-        s_iif_arrays(new IntPtr(nx), x, new IntPtr(ny), y, b, result)
+    static member S_IIf_Arrays(nx : int64, x, ny : int64, y, nb : int64, b, result) =
+        s_iif_arrays(new IntPtr(nx), x, new IntPtr(ny), y, new IntPtr(nb), b, result)
 
     static member B_And_Arrays(nx : int64, x, ny : int64, y, result) =
         b_and_arrays(new IntPtr(nx), x, new IntPtr(ny), y, result)
