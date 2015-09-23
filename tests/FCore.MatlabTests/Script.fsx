@@ -23,15 +23,7 @@ let factor = (tmp*tmp).ToString("N16")
 
 let rng = new MT19937Rng()
 let rnd = new Random()
-let app = new MLAppClass()
 
-let axisNum (axis :  MatrixAxis) =
-    match axis with | ColumnAxis -> 1.0 | RowAxis -> 2.0
-
-let v = new Matrix([[Double.PositiveInfinity;Double.PositiveInfinity;Double.PositiveInfinity;Double.PositiveInfinity;Double.PositiveInfinity]
-                    [Double.NaN;Double.NaN;Double.NaN;Double.NaN;Double.NaN] 
-                   ])
-setMatrix app "v" (v.ToArray2D())
-app.Execute("res = min(v);") |> ignore
-let res = getVector app "res"
-let res2 = min v ColumnAxis
+let x = new BoolMatrix(2,3,true)
+let y = new BoolMatrix(3,2,false)
+let res = BoolMatrixExpr.EvalIn(x.AsExpr .&& y, None)

@@ -452,42 +452,7 @@ and BoolVectorExpr =
             | BinaryVectorFunction(v1, v2, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length               
             | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseLengthIf v1.Length v2.Length v3.Length
 
-    static member internal DeScalar(boolVectorExpr : BoolVectorExpr) = 
-        match boolVectorExpr with
-            | Var(v) -> Var(v)
-            | UnaryFunction(Var(v), f) ->
-                if v.LongLength = 1L then
-                    let res = new BoolVector(false)
-                    f v res
-                    Var(res)
-                else 
-                    UnaryFunction(Var(v), f)
-            | UnaryFunction(v, f) -> UnaryFunction(BoolVectorExpr.DeScalar(v), f)
-            | BinaryFunction(Var(v1), Var(v2), f) -> 
-                if v1.LongLength = 1L && v2.LongLength = 1L then
-                    let res = new BoolVector(false)
-                    f v1 v2 res
-                    Var(res)
-                else
-                  BinaryFunction(Var(v1), Var(v2), f)  
-            | BinaryVectorFunction(VectorExpr.Var(v1), VectorExpr.Var(v2), f) -> 
-                if v1.LongLength = 1L && v2.LongLength = 1L then
-                    let res = new BoolVector(false)
-                    f v1 v2 res
-                    Var(res)
-                else
-                  BinaryVectorFunction(VectorExpr.Var(v1), VectorExpr.Var(v2), f)  
-            | BinaryFunction(v1, v2, f) -> BinaryFunction(BoolVectorExpr.DeScalar(v1), BoolVectorExpr.DeScalar(v2), f)
-            | BinaryVectorFunction(v1, v2, f) -> BinaryVectorFunction(VectorExpr.DeScalar(v1), VectorExpr.DeScalar(v2), f)
-            | IfFunction(BoolVectorExpr.Var(v1), Var(v2), Var(v3)) -> 
-                if v1.LongLength = 1L && v2.LongLength = 1L && v3.LongLength = 1L then
-                    let res = if v1.[0] then v2.[0] else v3.[0]
-                    Var(new BoolVector(res))
-                else
-                    IfFunction(BoolVectorExpr.Var(v1), Var(v2), Var(v3))
-            | IfFunction(v1, v2, v3) -> IfFunction(BoolVectorExpr.DeScalar(v1), BoolVectorExpr.DeScalar(v2), BoolVectorExpr.DeScalar(v3))
-
-    static member internal EvalSlice (boolVectorExpr : BoolVectorExpr) (sliceStart : int64) (sliceLen : int64) (memPool : MemoryPool) : BoolVector * MemoryPool = 
+    static member internal EvalSlice (boolVectorExpr : BoolVectorExpr) (sliceStart : int64) (sliceLen : int64) (memPool : MemoryPool) = 
         match boolVectorExpr with
             | Var(v) ->
                 if v.LongLength = 1L then
@@ -500,27 +465,30 @@ and BoolVectorExpr =
                     f v v
                     v, memPool
                 else
-                    let res = memPool.GetBoolVector(sliceLen)
+                    let res = memPool.GetBoolVector(v.LongLength)
                     f v res
                     res, memPool
             | BinaryFunction(v1, v2, f) -> 
                 let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                if memPool.Contains(v1) then
+                if memPool.Contains(v1) && v1.LongLength >= v2.LongLength then
                     f v1 v2 v1
-                    memPool.UnUse(v2)
+                    memPool.UnUse v2
                     v1, memPool
-                elif memPool.Contains(v2) then
+                elif memPool.Contains(v2) && v2.LongLength >= v1.LongLength then
                     f v1 v2 v2
+                    memPool.UnUse v1
                     v2, memPool
                 else
-                    let res = memPool.GetBoolVector(sliceLen)
+                    let res = memPool.GetBoolVector(max v1.LongLength v2.LongLength)
                     f v1 v2 res
+                    memPool.UnUse v1
+                    memPool.UnUse v2
                     res, memPool
             | BinaryVectorFunction(v1, v2, f) -> 
                 let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                let res = memPool.GetBoolVector(sliceLen)
+                let res = memPool.GetBoolVector(max (v1:Vector).LongLength v2.LongLength)
                 f v1 v2 res
                 memPool.UnUse(v1:Vector)
                 memPool.UnUse(v2)
@@ -529,16 +497,19 @@ and BoolVectorExpr =
                 let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart sliceLen memPool
                 let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                if memPool.Contains(v1) then
+                if memPool.Contains(v1) && v1.LongLength = boolVector.LongLength then
                     MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v1.NativeArray)
                     memPool.UnUse v2
                     v1, memPool
-                elif memPool.Contains(v2) then
+                elif memPool.Contains(v2) && v2.LongLength = boolVector.LongLength then
                     MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v2.NativeArray)
+                    memPool.UnUse v1
                     v2, memPool
                 else
-                    let res = memPool.GetBoolVector(sliceLen)
+                    let res = memPool.GetBoolVector(boolVector.LongLength)
                     MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, res.NativeArray)
+                    memPool.UnUse v1
+                    memPool.UnUse v2
                     res, memPool
 
 
@@ -553,7 +524,6 @@ and BoolVectorExpr =
                         | Some(v) -> v
                         | None -> new BoolVector(len, false)
         if res.LongLength <> 0L then
-            let vectorExpr = BoolVectorExpr.DeScalar(vectorExpr)
             let n = 1000000L
             let len = res.LongLength
             let m = len / n
@@ -1539,34 +1509,6 @@ and VectorExpr =
             | BinaryFunction(v1, v2, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length
             | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseLengthIf v1.Length v2.Length v3.Length
 
-    static member internal DeScalar(vectorExpr : VectorExpr) =
-        match vectorExpr with
-            | Var(v) -> Var(v)
-            | UnaryFunction(Var(v), f) ->
-                if v.LongLength = 1L then
-                    let res = new Vector(0.0)
-                    f v res
-                    Var(res)
-                else 
-                    UnaryFunction(Var(v), f)
-            | UnaryFunction(v, f) -> UnaryFunction(VectorExpr.DeScalar(v), f)
-            | BinaryFunction(Var(v1), Var(v2), f) -> 
-                if v1.LongLength = 1L && v2.LongLength = 1L then
-                    let res = new Vector(0.0)
-                    f v1 v2 res
-                    Var(res)
-                else
-                  BinaryFunction(Var(v1), Var(v2), f)  
-            | BinaryFunction(v1, v2, f) -> BinaryFunction(VectorExpr.DeScalar(v1), VectorExpr.DeScalar(v2), f)
-            | IfFunction(BoolVectorExpr.Var(v1), Var(v2), Var(v3)) -> 
-                if v1.LongLength = 1L && v2.LongLength = 1L && v3.LongLength = 1L then
-                    let res = if v1.[0] then v2.[0] else v3.[0]
-                    Var(new Vector(res))
-                else
-                    IfFunction(BoolVectorExpr.Var(v1), Var(v2), Var(v3))
-            | IfFunction(v1, v2, v3) -> IfFunction(BoolVectorExpr.DeScalar(v1), VectorExpr.DeScalar(v2), VectorExpr.DeScalar(v3))
-
-
     static member internal EvalSlice (vectorExpr : VectorExpr) (sliceStart : int64) (sliceLen : int64) (memPool : MemoryPool) =
         match vectorExpr with
             | Var(v) ->
@@ -1580,40 +1522,46 @@ and VectorExpr =
                     f v v
                     v, memPool
                 else
-                    let res = memPool.GetVector(sliceLen)
+                    let res = memPool.GetVector(v.LongLength)
                     f v res
                     res, memPool
             | BinaryFunction(v1, v2, f) -> 
                 let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                if memPool.Contains(v1) then
+                if memPool.Contains(v1) && v1.LongLength >= v2.LongLength then
                     f v1 v2 v1
                     memPool.UnUse v2
                     v1, memPool
-                elif memPool.Contains(v2) then
+                elif memPool.Contains(v2) && v2.LongLength >= v1.LongLength then
                     f v1 v2 v2
+                    memPool.UnUse v1
                     v2, memPool
                 else
-                    let res = memPool.GetVector(sliceLen)
+                    let res = memPool.GetVector(max v1.LongLength v2.LongLength)
                     f v1 v2 res
+                    memPool.UnUse v1
+                    memPool.UnUse v2
                     res, memPool
             | IfFunction(b, v1, v2) -> 
                 let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart sliceLen memPool
                 let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                if memPool.Contains(v1) then
+                if memPool.Contains(v1) && v1.LongLength = boolVector.LongLength then
                     MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v1.NativeArray)
                     memPool.UnUse v2
                     memPool.UnUse boolVector
                     v1, memPool
-                elif memPool.Contains(v2) then
+                elif memPool.Contains(v2) && v2.LongLength = boolVector.LongLength then
                     MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v2.NativeArray)
                     memPool.UnUse boolVector
+                    memPool.UnUse v1
                     v2, memPool
                 else
-                    let res = memPool.GetVector(sliceLen)
+                    let res = memPool.GetVector(boolVector.LongLength)
                     MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, res.NativeArray)
                     memPool.UnUse boolVector
+                    memPool.UnUse v1
+                    memPool.UnUse v2
                     res, memPool
 
 
@@ -1628,7 +1576,6 @@ and VectorExpr =
                         | Some(v) -> v
                         | None -> new Vector(len, 0.0)
         if res.LongLength <> 0L then
-            let vectorExpr = VectorExpr.DeScalar(vectorExpr)
             let n = 1000000L
             let len = res.LongLength
             let m = len / n

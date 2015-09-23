@@ -364,3 +364,23 @@ module BoolMatrixExpr =
         let X = new BoolMatrix(x)
         eval (BoolMatrixExpr.Not X.AsExpr) = (BoolMatrix.Not X)
 
+    [<Property>]
+    let ``EvalIn Not BoolMatrixExpr`` (x : bool[,]) =
+        let X = new BoolMatrix(x)
+        let res = BoolMatrix.Not X
+        let evalRes = evalIn X (BoolMatrixExpr.Not X.AsExpr)
+        X = res
+
+    [<Fact>]
+    let ``EvalIn(expr, None) throws arg exn if expr has no matching elementwise size``() =
+        let x = new BoolMatrix(2,3,true)
+        let y = new BoolMatrix(3,2,false)
+        Assert.Throws<ArgumentException>(fun () -> BoolMatrixExpr.EvalIn(x.AsExpr .&& y, None) |> ignore)
+
+    [<Fact>]
+    let ``EvalIn(expr, Some v) throws arg exn if v has no matching elementwise size``() =
+        let x = new BoolMatrix(2,3,true)
+        let y = new BoolMatrix(2,3,false)
+        let res = new BoolMatrix(3,2, false)
+        Assert.Throws<ArgumentException>(fun () -> BoolMatrixExpr.EvalIn(x.AsExpr .&& y, Some res) |> ignore) 
+

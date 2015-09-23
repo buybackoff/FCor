@@ -614,3 +614,23 @@ module MatrixExpr =
         let X = new Matrix(x)
         eval (trunc X.AsExpr) <=> (trunc X)
 
+    [<Property>]
+    let ``EvalIn -MatrixExpr`` (x : float[,]) =
+        let X = new Matrix(x)
+        let res = -X
+        let evalRes = evalIn X (-X.AsExpr)
+        X <=> res
+
+    [<Fact>]
+    let ``EvalIn(expr, None) throws arg exn if expr has no matching elementwise size``() =
+        let x = new Matrix(2,3,0.0)
+        let y = new Matrix(3,2,1.0)
+        Assert.Throws<ArgumentException>(fun () -> MatrixExpr.EvalIn(x.AsExpr .* y, None) |> ignore)
+
+    [<Fact>]
+    let ``EvalIn(expr, Some v) throws arg exn if v has no matching elementwise size``() =
+        let x = new Matrix(2,3,0.0)
+        let y = new Matrix(2,3,1.0)
+        let res = new Matrix(3,2, 0.0)
+        Assert.Throws<ArgumentException>(fun () -> MatrixExpr.EvalIn(x.AsExpr .* y, Some res) |> ignore) 
+
