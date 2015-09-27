@@ -2,6 +2,7 @@
 
 open FCore
 open FCore.Math
+open FCore.ExplicitConversion
 open Xunit
 open FsUnit
 open FsUnit.Xunit
@@ -12,7 +13,11 @@ open Util
 
 module VectorExpr = 
 
+    let rnd = new Random()
+
     let inline (<=>) (x : Vector) (y : Vector) = epsEqualArray (x.ToArray()) (y.ToArray()) epsEqualFloat 0.0
+
+    let inline (<==>) (x : float) (y : float) = epsEqualFloat x y 0.0
 
     [<Property>]
     let ``VectorExpr .< VectorExpr`` (v : (float*float)[]) =
@@ -470,6 +475,11 @@ module VectorExpr =
         eval (-X.AsExpr) <=> (-X)
 
     [<Property>]
+    let ``-(-VectorExpr)`` (x : float[]) =
+        let X = new Vector(x)
+        eval (-(-X.AsExpr)) <=> X
+
+    [<Property>]
     let ``abs VectorExpr`` (x : float[]) =
         let X = new Vector(x)
         eval (abs X.AsExpr) <=> (abs X)
@@ -613,6 +623,104 @@ module VectorExpr =
     let ``trunc VectorExpr`` (x : float[]) =
         let X = new Vector(x)
         eval (trunc X.AsExpr) <=> (trunc X)
+
+    [<Property>]
+    let ``EvalIn -VectorExpr`` (x : float[]) =
+        let X = new Vector(x)
+        let res = -X
+        let evalRes = evalIn X (-X.AsExpr)
+        X <=> res
+
+    [<Fact>]
+    let ``EvalIn(expr, None) throws arg exn if expr has no matching elementwise length``() =
+        let x = new Vector(6,0.0)
+        let y = new Vector(5,1.0)
+        Assert.Throws<ArgumentException>(fun () -> VectorExpr.EvalIn(x.AsExpr .* y, None) |> ignore)
+
+    [<Fact>]
+    let ``EvalIn(expr, Some v) throws arg exn if v has no matching elementwise length``() =
+        let x = new Vector(6,0.0)
+        let y = new Vector(6,1.0)
+        let res = new Vector(5, 0.0)
+        Assert.Throws<ArgumentException>(fun () -> VectorExpr.EvalIn(x.AsExpr .* y, Some res) |> ignore) 
+
+    [<Property>]
+    let ``Eval scalar Var`` (a : float) =
+        let x = new Vector(a)
+        eval x.AsExpr <=> x
+
+    [<Property>]
+    let ``Eval scalar UnaryFunction`` (a : float) =
+        let x = new Vector(a)
+        eval (x.AsExpr |> (~-) |> (~-) |> (~-)) <=> new Vector(a |> (~-) |> (~-) |> (~-))
+
+    [<Property>]
+    let ``Eval scalar BinaryFunction`` (a1 : float) (a2 : float) (b1 : float) (b2 : float) =
+        let x1 = new Vector(a1)
+        let x2 = new Vector(a2)
+        let y1 = new Vector(b1)
+        let y2 = new Vector(b2)
+        let r = (a1 * a2) + (b1 * b2)
+        (not <| Double.IsNaN(r) && not <| Double.IsInfinity(r)) ==> (eval ((x1.AsExpr .* x2) + (y1.AsExpr .* y2)) <=> new Vector( (a1 * a2) + (b1 * b2)))
+
+    [<Property>]
+    let ``Eval scalar IfFunction`` (a : bool) (b : float) (c : float) =
+        let x = new BoolVector(a)
+        let y = new Vector(b)
+        let z = new Vector(c)
+        eval (iif (BoolVectorExpr.Not(x.AsExpr)) (-y.AsExpr) (-z.AsExpr)) <=> new Vector(if not a then -b else -c)
+
+    [<Property>]
+    let ``eval (scalar .* Vector) + Vector`` (v : (float*float)[]) (a : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        (v.Length > 0) ==> lazy(eval ((a .* X.AsExpr) + Y) <=> ((a .* X) + Y))
+
+    [<Property>]
+    let ``eval (Vector * (scalar + Vector)`` (v : (float*float)[]) (a : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        (v.Length > 0) ==> lazy(eval (X .* (a + Y.AsExpr)) <=> (X .* (a + Y)))
+
+    [<Property>]
+    let ``eval iif (a .&& X) Y b`` (v : (bool*float)[]) (a : bool) (b : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new BoolVector(x)
+        let Y = new Vector(y)
+        let aX = a .&& X
+        (v.Length > 0) ==> lazy(let res = eval (iif (a .&& X.AsExpr) Y !!b) in res.ToArray() |> Array.mapi (fun i x -> res.[i] <==> if aX.[i] then Y.[i] else b) |> Array.fold (&&) true)
+
+    [<Property>]
+    let ``eval iif X a (b .* Y)`` (v : (bool*float)[]) (a : float) (b : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new BoolVector(x)
+        let Y = new Vector(y)
+        let bY = b .* Y
+        (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr !!a (b .* Y)) in res.ToArray() |> Array.mapi (fun i x -> res.[i] <==> if X.[i] then a else bY.[i]) |> Array.fold (&&) true)
+
+
+    [<Property>]
+    let ``eval iif X (a .* Y) b`` (v : (bool*float)[]) (a : float) (b : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new BoolVector(x)
+        let Y = new Vector(y)
+        let aY = a .* Y
+        (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr (a .* Y) !!b) in res.ToArray() |> Array.mapi (fun i x -> res.[i] <==> if X.[i] then aY.[i] else b) |> Array.fold (&&) true)
+
+    [<Fact>]
+    let ``eval large vector`` () =
+        use x = new Vector(11234567, fun i -> rnd.NextDouble())
+        use y = new Vector(11234567, fun i -> rnd.NextDouble())
+        eval (VectorExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> (Vector.Min(x .* y, x + y) |> (~-)) 
+
+
 
 
 

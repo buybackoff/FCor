@@ -2,6 +2,7 @@
 
 open FCore
 open FCore.Math
+open FCore.ExplicitConversion
 open Xunit
 open FsUnit
 open FsUnit.Xunit
@@ -12,7 +13,10 @@ open Util
 
 module MatrixExpr = 
 
+    let rnd = new Random()
+
     let inline (<=>) (x : Matrix) (y : Matrix) = epsEqualArray2D (x.ToArray2D()) (y.ToArray2D()) epsEqualFloat 0.0
+    let inline (<==>) (x : float) (y : float) = epsEqualFloat x y 0.0
 
     [<Property>]
     let ``MatrixExpr .< MatrixExpr`` (v : (float*float)[,]) =
@@ -470,6 +474,11 @@ module MatrixExpr =
         eval (-X.AsExpr) <=> (-X)
 
     [<Property>]
+    let ``-(-MatrixExpr)`` (x : float[,]) =
+        let X = new Matrix(x)
+        eval (-(-X.AsExpr)) <=> X
+
+    [<Property>]
     let ``abs MatrixExpr`` (x : float[,]) =
         let X = new Matrix(x)
         eval (abs X.AsExpr) <=> (abs X)
@@ -633,4 +642,81 @@ module MatrixExpr =
         let y = new Matrix(2,3,1.0)
         let res = new Matrix(3,2, 0.0)
         Assert.Throws<ArgumentException>(fun () -> MatrixExpr.EvalIn(x.AsExpr .* y, Some res) |> ignore) 
+
+    [<Property>]
+    let ``Eval scalar Var`` (a : float) =
+        let x = new Matrix(a)
+        eval x.AsExpr <=> x
+
+    [<Property>]
+    let ``Eval scalar UnaryFunction`` (a : float) =
+        let x = new Matrix(a)
+        eval (x.AsExpr |> (~-) |> (~-) |> (~-)) <=> new Matrix(a |> (~-) |> (~-) |> (~-))
+
+    [<Property>]
+    let ``Eval scalar BinaryFunction`` (a1 : float) (a2 : float) (b1 : float) (b2 : float) =
+        let x1 = new Matrix(a1)
+        let x2 = new Matrix(a2)
+        let y1 = new Matrix(b1)
+        let y2 = new Matrix(b2)
+        let r = (a1 * a2) + (b1 * b2)
+        (not <| Double.IsNaN(r) && not <| Double.IsInfinity(r)) ==> (eval ((x1.AsExpr .* x2) + (y1.AsExpr .* y2)) <=> new Matrix( (a1 * a2) + (b1 * b2)))
+
+    [<Property>]
+    let ``Eval scalar IfFunction`` (a : bool) (b : float) (c : float) =
+        let x = new BoolMatrix(a)
+        let y = new Matrix(b)
+        let z = new Matrix(c)
+        eval (iif (BoolMatrixExpr.Not(x.AsExpr)) (-y.AsExpr) (-z.AsExpr)) <=> new Matrix(if not a then -b else -c)
+
+    [<Property>]
+    let ``eval (scalar .* Matrix) + Matrix`` (v : (float*float)[,]) (a : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new Matrix(x)
+        let Y = new Matrix(y)
+        (v.Length > 0) ==> lazy(eval ((a .* X.AsExpr) + Y) <=> ((a .* X) + Y))
+
+    [<Property>]
+    let ``eval (Matrix .* (scalar + Matrix)`` (v : (float*float)[,]) (a : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new Matrix(x)
+        let Y = new Matrix(y)
+        (v.Length > 0) ==> lazy(eval (X .* (a + Y.AsExpr)) <=> (X .* (a + Y)))
+
+    [<Property>]
+    let ``eval iif (a && X) Y b`` (v : (bool*float)[,]) (a : bool) (b : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new BoolMatrix(x)
+        let Y = new Matrix(y)
+        let aX = a .&& X
+        (v.Length > 0) ==> lazy(let res = eval (iif (a .&& X.AsExpr) Y !!b) in res.ToArray2D() |> Array2D.mapi (fun i j x -> res.[i,j] <==> if aX.[i,j] then Y.[i,j] else b) = Array2D.create res.RowCount res.ColCount true)
+
+    [<Property>]
+    let ``eval iif X a (b .* Y)`` (v : (bool*float)[,]) (a : float) (b : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new BoolMatrix(x)
+        let Y = new Matrix(y)
+        let bY = b .* Y
+        (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr !!a (b .* Y)) in res.ToArray2D() |> Array2D.mapi (fun i j x -> res.[i,j] <==> if X.[i,j] then a else bY.[i,j]) = Array2D.create res.RowCount res.ColCount true)
+
+
+    [<Property>]
+    let ``eval iif X (a .* Y) b`` (v : (bool*float)[,]) (a : float) (b : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new BoolMatrix(x)
+        let Y = new Matrix(y)
+        let aY = a .* Y
+        (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr (a .* Y) !!b) in res.ToArray2D() |> Array2D.mapi (fun i j x -> res.[i,j] <==> if X.[i,j] then aY.[i,j] else b) = Array2D.create res.RowCount res.ColCount true)
+
+
+    [<Fact>]
+    let ``eval large vector`` () =
+        use x = new Matrix(2121232, 5, fun i j -> rnd.NextDouble())
+        use y = new Matrix(2121232, 5, fun i j -> rnd.NextDouble())
+        eval (MatrixExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> (Matrix.Min(x .* y, x + y) |> (~-)) 
 

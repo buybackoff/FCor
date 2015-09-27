@@ -46,4 +46,4 @@ module Math =
 
     let inline evalIn (res : 'U) (expr :'S) : 'U = ((^T or ^S) : (static member EvalIn: ^T * ^S * ^U option -> ^U) DummyType, expr, (Some res))
 
-    let inline iif (boolExpr :'S) (trueExpr : 'U) (falseExpr : 'U) : 'U = ((^T or ^S) : (static member IIf: ^T * ^S * ^U * ^U -> ^U) DummyType, boolExpr, trueExpr, falseExpr)
+    let inline iif (boolExpr :'S) (trueExpr : 'U) (falseExpr : 'V) : 'Z = ((^T or ^S) : (static member IIf: ^T * ^S * ^U * ^V -> ^Z) DummyType, boolExpr, trueExpr, falseExpr)
