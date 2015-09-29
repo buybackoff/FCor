@@ -72,17 +72,17 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     static member op_Explicit(v : BoolVector) = v
 
     member this.View
-        with get(fromIndex, length) =
-            if fromIndex < 0L || (fromIndex + length > this.LongLength) then raise (new IndexOutOfRangeException())
-            if length <= 0L then
-                BoolVector.Empty
+        with get(fromIndex, toIndex) =
+            if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
+            if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
+            if fromIndex > toIndex then BoolVector.Empty
             else
+                let length = toIndex - fromIndex + 1L
                 let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + fromIndex) |> NativePtr.ofNativeInt<bool>
                 new BoolVector(length, offsetAddr, IntPtr.Zero, true, Some this)
 
     member this.View
-        with get(fromIndex : int, length : int) = this.View(int64(fromIndex), int64(length))
-
+        with get(fromIndex : int, toIndex : int) = this.View(int64(fromIndex), int64(toIndex))
 
     member this.GetSlice(fromIndex, toIndex) =
         let fromIndex = defaultArg fromIndex 0L
@@ -92,7 +92,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         if fromIndex > toIndex then BoolVector.Empty
         else
             let length = toIndex - fromIndex + 1L
-            let view = this.View(fromIndex, length)
+            let view = this.View(fromIndex, toIndex)
             let mutable arr = IntPtr.Zero
             let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
             MklFunctions.B_Create_Array(length, nativeArrayPtr)
@@ -102,7 +102,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     member this.GetSlice(fromIndex : int option, toIndex : int option) =
         this.GetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64)
 
-    member this.SetSlice(fromIndex, toIndex, value: bool) =
+    member this.SetSlice(fromIndex : int64 option, toIndex : int64 option, value: bool) =
         let fromIndex = defaultArg fromIndex 0L
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
@@ -110,33 +110,36 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         if fromIndex > toIndex then ()
         else
             let length = toIndex - fromIndex + 1L
-            let view = this.View(fromIndex, length)
+            let view = this.View(fromIndex, toIndex)
             MklFunctions.B_Fill_Array(value, length, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value: bool) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
 
-    member this.SetSlice(fromIndex, toIndex, value: BoolVector) =
-        let fromIndex = defaultArg fromIndex 0L
-        let toIndex = defaultArg toIndex (length - 1L)
-        if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
-        if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
-        if fromIndex > toIndex && value.LongLength = 0L then ()
+    member this.SetSlice(fromIndex : Option<int64>, toIndex : Option<int64>, value: BoolVector) =
+        if value.LongLength = 1L then
+            this.SetSlice(fromIndex, toIndex, (value.[0L]:bool))
         else
-            let length = toIndex - fromIndex + 1L
-            if value.LongLength <> length then raise (new ArgumentException())
-            let view = this.View(fromIndex, length)
-            MklFunctions.B_Copy_Array(length, value.NativeArray, view.NativeArray)
+            let fromIndex = defaultArg fromIndex 0L
+            let toIndex = defaultArg toIndex (length - 1L)
+            if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
+            if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
+            if fromIndex > toIndex && value.LongLength = 0L then ()
+            else
+                let length = toIndex - fromIndex + 1L
+                if value.LongLength <> length then raise (new ArgumentException())
+                let view = this.View(fromIndex, toIndex)
+                MklFunctions.B_Copy_Array(length, value.NativeArray, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value: BoolVector) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
 
     member this.Item
         with get(i : int64) =
-            let offsetArray = this.View(i, 1L).NativeArray
+            let offsetArray = this.View(i, i).NativeArray
             NativePtr.read offsetArray  
         and set (i : int64) value =
-            let offsetArray = this.View(i, 1L).NativeArray
+            let offsetArray = this.View(i, i).NativeArray
             NativePtr.write offsetArray value
 
     member this.Item
@@ -192,13 +195,16 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         with get() = BoolVectorExpr.Var(this)
 
     static member Concat(vectors : BoolVector seq) =
-        let length = vectors |> Seq.map (fun v -> v.LongLength) |> Seq.reduce (+)
-        let res = new BoolVector(length, false)
-        vectors |> Seq.fold (fun offset v ->
-                                 res.View(offset, v.LongLength).SetSlice(Some(0L), None, v)
-                                 offset + v.LongLength
-                            ) 0L |> ignore
-        res
+        let vectors = vectors |> Seq.filter (fun v -> v.LongLength <> 0L) |> Seq.toArray
+        if vectors.Length = 0 then BoolVector.Empty
+        else
+            let length = vectors |> Array.map (fun v -> v.LongLength) |> Array.reduce (+)
+            let res = new BoolVector(length, false)
+            vectors |> Array.fold (fun offset v ->
+                                     res.View(offset, offset + v.LongLength - 1L).SetSlice(Some(0L), None, v)
+                                     offset + v.LongLength
+                                ) 0L |> ignore
+            res
 
     static member Copy(vector : BoolVector) =
         let res = new BoolVector(vector.LongLength, false)
@@ -501,7 +507,7 @@ and BoolVectorExpr =
                 if v.LongLength = 1L then
                     v, memPool
                 else
-                    v.View(sliceStart, sliceLen), memPool
+                    v.View(sliceStart, sliceStart + sliceLen - 1L), memPool
             | UnaryFunction(v, f) -> 
                 let v, memPool = BoolVectorExpr.EvalSlice v sliceStart sliceLen memPool
                 if memPool.Contains(v) then
@@ -574,13 +580,13 @@ and BoolVectorExpr =
             for i in 0L..(m-1L) do
                 let sliceStart = i * n
                 let v, _ = BoolVectorExpr.EvalSlice boolVectorExpr sliceStart n memPool
-                res.View(sliceStart, n).SetSlice(Some(0L), None, v)
+                res.View(sliceStart, sliceStart + n - 1L).SetSlice(Some(0L), None, v)
                 memPool.UnUseAll()
 
             if k > 0L then
                 let sliceStart = m * n
                 let v, _ = BoolVectorExpr.EvalSlice boolVectorExpr sliceStart k memPool
-                res.View(sliceStart, k).SetSlice(Some(0L), None, v)
+                res.View(sliceStart, sliceStart + k - 1L).SetSlice(Some(0L), None, v)
         res
 
     static member (.<) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
@@ -821,19 +827,19 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
     static member op_Explicit(v : Vector) =
         v.[0]
 
-
     member this.View
-        with get(fromIndex, length) =
-            if fromIndex < 0L || (fromIndex + length > this.LongLength) then raise (new IndexOutOfRangeException())
-            if length <= 0L then
-                Vector.Empty
+        with get(fromIndex, toIndex) =
+            if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
+            if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
+            if fromIndex > toIndex then Vector.Empty
             else
+                let length = toIndex - fromIndex + 1L
                 let sizeof = sizeof<float> |> int64
                 let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + fromIndex*sizeof) |> NativePtr.ofNativeInt<float>
                 new Vector(length, offsetAddr, IntPtr.Zero, true, Some this)
 
     member this.View
-        with get(fromIndex : int, length : int) = this.View(int64(fromIndex), int64(length))
+        with get(fromIndex : int, toIndex : int) = this.View(int64(fromIndex), int64(toIndex))
 
     member this.GetSlice(fromIndex, toIndex) =
         let fromIndex = defaultArg fromIndex 0L
@@ -843,7 +849,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         if fromIndex > toIndex then Vector.Empty
         else
             let length = toIndex - fromIndex + 1L
-            let view = this.View(fromIndex, length)
+            let view = this.View(fromIndex, toIndex)
             let mutable arr = IntPtr.Zero
             let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
             MklFunctions.D_Create_Array(length, nativeArrayPtr)
@@ -861,7 +867,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         if fromIndex > toIndex then ()
         else
             let length = toIndex - fromIndex + 1L
-            let view = this.View(fromIndex, length)
+            let view = this.View(fromIndex, toIndex)
             MklFunctions.D_Fill_Array(value, length, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value : float) =
@@ -879,7 +885,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             else
                 let length = toIndex - fromIndex + 1L
                 if value.LongLength <> length then raise (new ArgumentException())
-                let view = this.View(fromIndex, length)
+                let view = this.View(fromIndex, toIndex)
                 MklFunctions.D_Copy_Array(length, value.NativeArray, view.NativeArray)
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value: Vector) =
@@ -888,10 +894,10 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     member this.Item
         with get(i : int64) =
-            let offsetArray = this.View(i, 1L).NativeArray
+            let offsetArray = this.View(i, i).NativeArray
             NativePtr.read offsetArray  
         and set (i : int64) value =
-            let offsetArray = this.View(i, 1L).NativeArray
+            let offsetArray = this.View(i, i).NativeArray
             NativePtr.write offsetArray value
 
     member this.Item
@@ -948,13 +954,16 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         with get() = VectorExpr.Var(this)
 
     static member Concat(vectors : Vector seq) =
-        let length = vectors |> Seq.map (fun v -> v.LongLength) |> Seq.reduce (+)
-        let res = new Vector(length, 0.0)
-        vectors |> Seq.fold (fun offset v ->
-                                 res.View(offset, v.LongLength).SetSlice(Some(0L), None, v)
-                                 offset + v.LongLength
-                            ) 0L |> ignore
-        res
+        let vectors = vectors |> Seq.filter (fun v -> v.LongLength <> 0L) |> Seq.toArray
+        if vectors.Length = 0 then Vector.Empty
+        else
+            let length = vectors |> Array.map (fun v -> v.LongLength) |> Array.reduce (+)
+            let res = new Vector(length, 0.0)
+            vectors |> Array.fold (fun offset v ->
+                                     res.View(offset, offset + v.LongLength - 1L).SetSlice(Some(0L), None, v)
+                                     offset + v.LongLength
+                                ) 0L |> ignore
+            res
 
     static member Copy(vector : Vector) =
         let res = new Vector(vector.LongLength, 0.0)
@@ -1587,7 +1596,7 @@ and VectorExpr =
                 if v.LongLength = 1L then
                     v, memPool
                 else
-                    v.View(sliceStart, sliceLen), memPool
+                    v.View(sliceStart, sliceStart + sliceLen - 1L), memPool
             | UnaryFunction(v, f) -> 
                 let v, memPool = VectorExpr.EvalSlice v sliceStart sliceLen memPool
                 if memPool.Contains(v) then
@@ -1650,13 +1659,13 @@ and VectorExpr =
             for i in 0L..(m-1L) do
                 let sliceStart = i * n
                 let v, _ = VectorExpr.EvalSlice vectorExpr sliceStart n memPool
-                res.View(sliceStart, n).SetSlice(Some(0L), None, v)
+                res.View(sliceStart, sliceStart + n - 1L).SetSlice(Some(0L), None, v)
                 memPool.UnUseAll()
 
             if k > 0L then
                 let sliceStart = m * n
                 let v, _ = VectorExpr.EvalSlice vectorExpr sliceStart k memPool
-                res.View(sliceStart, k).SetSlice(Some(0L), None, v)
+                res.View(sliceStart, sliceStart + k - 1L).SetSlice(Some(0L), None, v)
         res
 
     static member (.<) (vector1 : VectorExpr, vector2 : VectorExpr) =
@@ -2013,7 +2022,7 @@ and MemoryPool() =
             | Some(v,_) -> 
                  boolVectorPool.[v.NativeArray] <- (v, true)
                  if v.LongLength <> length then
-                     v.View(0L, length)
+                     v.View(0L, length - 1L)
                  else
                      v
             | None ->
@@ -2026,7 +2035,7 @@ and MemoryPool() =
             | Some(v,_) -> 
                  vectorPool.[v.NativeArray] <- (v, true)
                  if v.LongLength <> length then
-                     v.View(0L, length)
+                     v.View(0L, length - 1L)
                  else
                      v
             | None ->

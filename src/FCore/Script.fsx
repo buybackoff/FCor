@@ -12,7 +12,5 @@ open FCore.Random
 open Overloading
 open BasicStats
 
-let res = var(new Vector([1.0;1e150]))
-
 
 

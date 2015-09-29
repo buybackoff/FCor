@@ -13,10 +13,14 @@ open Util
 
 module VectorFunctions =
 
+    let rnd = new Random()
+
     let app = new MLAppClass()
     do app.Visible <- 0
 
     let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
+
+    let inline (<==>) (x : float[,]) (y :float[,]) = epsEqualArray2D x y epsEqualFloat 0.0
 
     let inline epsEqual eps (x : float[]) (y :float[])  = epsEqualArray x y epsEqualFloat eps
 
@@ -263,5 +267,32 @@ module VectorFunctions =
         let res = getVector app "res"
         let v = new Vector(v)
         trunc(v).ToArray() <=> res
+
+    [<Property>]
+    let ``diag int64``(v : float[]) =
+        (v.Length > 0) ==>
+            lazy(
+                    setVector app "v" v
+                    let offset = rnd.Next(v.Length) + 2
+                    setScalar app "offset" (float(offset))
+                    app.Execute("res = diag(v,offset);") |> ignore
+                    let res = getMatrix app "res"
+                    let v = new Vector(v)
+                    (diag v (int64(offset))).ToArray2D() <==> res            
+                )
+
+
+    [<Property>]
+    let ``diag int``(v : float[]) =
+        (v.Length > 0) ==>
+            lazy(
+                    setVector app "v" v
+                    let offset = rnd.Next(v.Length) + 2
+                    setScalar app "offset" (float(offset))
+                    app.Execute("res = diag(v,offset);") |> ignore
+                    let res = getMatrix app "res"
+                    let v = new Vector(v)
+                    (diag v offset).ToArray2D() <==> res            
+                )
 
 

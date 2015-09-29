@@ -255,6 +255,22 @@ module VectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetSlice Some int64, Some int64 scalar vector``(v : float[]) (a:float) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setVector app "v" v
+                                    let fromIndex = rnd.Next(v.Length) |> int64
+                                    let toIndex = rnd.Next(v.Length) |> int64
+                                    setScalar app "fromIndex" (float(fromIndex + 1L))
+                                    setScalar app "toIndex" (float(toIndex + 1L))
+                                    setScalar app "a" a
+                                    app.Execute("v(fromIndex:toIndex) = a;") |> ignore
+                                    let res = getVector app "v"
+                                    let v = new Vector(v)
+                                    v.SetSlice(Some fromIndex, Some toIndex, new Vector(a))
+                                    epsEqual 0.0 (v.ToArray()) res       
+                                    )
+
+    [<Property>]
     let ``SetSlice Some int64, None scalar``(v : float[]) (a:float) =
         (v.LongLength > 0L) ==> lazy(
                                     setVector app "v" v
@@ -269,6 +285,20 @@ module VectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetSlice Some int64, None scalar vector``(v : float[]) (a:float) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setVector app "v" v
+                                    let fromIndex = rnd.Next(v.Length) |> int64
+                                    setScalar app "fromIndex" (float(fromIndex + 1L))
+                                    setScalar app "a" a
+                                    app.Execute("v(fromIndex:end) = a;") |> ignore
+                                    let res = getVector app "v"
+                                    let v = new Vector(v)
+                                    v.SetSlice(Some fromIndex, None, new Vector(a))
+                                    epsEqual 0.0 (v.ToArray()) res       
+                                    )
+
+    [<Property>]
     let ``SetSlice None, Some int64 scalar``(v : float[]) (a:float) =
         (v.LongLength > 0L) ==> lazy(
                                     setVector app "v" v
@@ -279,6 +309,20 @@ module VectorSlicing =
                                     let res = getVector app "v"
                                     let v = new Vector(v)
                                     v.SetSlice(None, Some toIndex, a)
+                                    epsEqual 0.0 (v.ToArray()) res       
+                                    )
+
+    [<Property>]
+    let ``SetSlice None, Some int64 scalar vector``(v : float[]) (a:float) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setVector app "v" v
+                                    let toIndex = rnd.Next(v.Length) |> int64
+                                    setScalar app "toIndex" (float(toIndex + 1L))
+                                    setScalar app "a" a
+                                    app.Execute("v(1:toIndex) = a;") |> ignore
+                                    let res = getVector app "v"
+                                    let v = new Vector(v)
+                                    v.SetSlice(None, Some toIndex, new Vector(a))
                                     epsEqual 0.0 (v.ToArray()) res       
                                     )
 
@@ -299,6 +343,22 @@ module VectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetSlice Some int, Some int scalar vector``(v : float[]) (a:float) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setVector app "v" v
+                                    let fromIndex = rnd.Next(v.Length) 
+                                    let toIndex = rnd.Next(v.Length) 
+                                    setScalar app "fromIndex" (float(fromIndex + 1))
+                                    setScalar app "toIndex" (float(toIndex + 1))
+                                    setScalar app "a" a
+                                    app.Execute("v(fromIndex:toIndex) = a;") |> ignore
+                                    let res = getVector app "v"
+                                    let v = new Vector(v)
+                                    v.SetSlice(Some fromIndex, Some toIndex, new Vector(a))
+                                    epsEqual 0.0 (v.ToArray()) res       
+                                    )
+
+    [<Property>]
     let ``SetSlice Some int, None scalar``(v : float[]) (a:float) =
         (v.LongLength > 0L) ==> lazy(
                                     setVector app "v" v
@@ -313,6 +373,20 @@ module VectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetSlice Some int, None scalar vector``(v : float[]) (a:float) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setVector app "v" v
+                                    let fromIndex = rnd.Next(v.Length) 
+                                    setScalar app "fromIndex" (float(fromIndex + 1))
+                                    setScalar app "a" a
+                                    app.Execute("v(fromIndex:end) = a;") |> ignore
+                                    let res = getVector app "v"
+                                    let v = new Vector(v)
+                                    v.SetSlice(Some fromIndex, None, new Vector(a))
+                                    epsEqual 0.0 (v.ToArray()) res       
+                                    )
+
+    [<Property>]
     let ``SetSlice None, Some int scalar``(v : float[]) (a:float) =
         (v.LongLength > 0L) ==> lazy(
                                     setVector app "v" v
@@ -323,6 +397,20 @@ module VectorSlicing =
                                     let res = getVector app "v"
                                     let v = new Vector(v)
                                     v.SetSlice(None, Some toIndex, a)
+                                    epsEqual 0.0 (v.ToArray()) res       
+                                    )
+
+    [<Property>]
+    let ``SetSlice None, Some int scalar vector``(v : float[]) (a:float) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setVector app "v" v
+                                    let toIndex = rnd.Next(v.Length) 
+                                    setScalar app "toIndex" (float(toIndex + 1))
+                                    setScalar app "a" a
+                                    app.Execute("v(1:toIndex) = a;") |> ignore
+                                    let res = getVector app "v"
+                                    let v = new Vector(v)
+                                    v.SetSlice(None, Some toIndex, new Vector(a))
                                     epsEqual 0.0 (v.ToArray()) res       
                                     )
 
@@ -463,12 +551,29 @@ module VectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetItem bool scalar vector``(v : float[]) (a : float) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setVector app "v" v
+                                    let b = Array.init v.Length (fun i -> rnd.NextDouble() < 0.5)
+                                    let trueB = b |> Array.filter id
+                                    let y = [|a|]
+                                    setBoolVector app "b" b
+                                    setVector app "y" y
+                                    app.Execute("v(b) = y;") |> ignore
+                                    let res = getVector app "v"
+                                    let v = new Vector(v)
+                                    let b = new BoolVector(b)
+                                    v.[b] <- new Vector(y)
+                                    epsEqual 0.0 (v.ToArray()) res       
+                                    )
+
+    [<Property>]
     let ``View int64``(v : float[]) =
         (v.LongLength > 0L) ==> lazy(
                                     let v = new Vector(v)
                                     let fromIndex = rnd.Next(v.Length) |> int64
                                     let length = rnd.Next(1, v.Length - int(fromIndex) + 1) |> int64
-                                    let view = v.View(fromIndex, length)                    
+                                    let view = v.View(fromIndex, fromIndex + length - 1L)                    
                                     let y = new Vector(Array.init (int(length)) (fun i -> rnd.NextDouble()))
                                     v.SetSlice(Some fromIndex, Some (fromIndex + length - 1L), y)
                                     view.ToArray() = v.[fromIndex..(fromIndex + length - 1L)].ToArray() && view.IsView
@@ -480,7 +585,7 @@ module VectorSlicing =
                                     let v = new Vector(v)
                                     let fromIndex = rnd.Next(v.Length)
                                     let length = rnd.Next(1, v.Length - fromIndex + 1)
-                                    let view = v.View(fromIndex, length)                    
+                                    let view = v.View(fromIndex, fromIndex + length - 1)                    
                                     let y = new Vector(Array.init length (fun i -> rnd.NextDouble()))
                                     v.SetSlice(Some fromIndex, Some (fromIndex + length - 1), y)
                                     view.ToArray() = v.[fromIndex..(fromIndex + length - 1)].ToArray() && view.IsView

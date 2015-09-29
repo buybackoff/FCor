@@ -19,6 +19,8 @@ module VectorExpr =
 
     let inline (<==>) (x : float) (y : float) = epsEqualFloat x y 0.0
 
+    let inline epsEqual eps (x : Vector) (y : Vector) = epsEqualArray (x.ToArray()) (y.ToArray()) epsEqualFloat eps
+
     [<Property>]
     let ``VectorExpr .< VectorExpr`` (v : (float*float)[]) =
         let x = v |> Array.map fst
@@ -661,7 +663,7 @@ module VectorExpr =
         let y1 = new Vector(b1)
         let y2 = new Vector(b2)
         let r = (a1 * a2) + (b1 * b2)
-        (not <| Double.IsNaN(r) && not <| Double.IsInfinity(r)) ==> (eval ((x1.AsExpr .* x2) + (y1.AsExpr .* y2)) <=> new Vector( (a1 * a2) + (b1 * b2)))
+        (not <| Double.IsNaN(r) && not <| Double.IsInfinity(r)) ==> ( epsEqual 1e-15 (eval ((x1.AsExpr .* x2) + (y1.AsExpr .* y2))) (new Vector( (a1 * a2) + (b1 * b2))))
 
     [<Property>]
     let ``Eval scalar IfFunction`` (a : bool) (b : float) (c : float) =
@@ -716,9 +718,9 @@ module VectorExpr =
 
     [<Fact>]
     let ``eval large vector`` () =
-        use x = new Vector(11234567, fun i -> rnd.NextDouble())
-        use y = new Vector(11234567, fun i -> rnd.NextDouble())
-        eval (VectorExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> (Vector.Min(x .* y, x + y) |> (~-)) 
+        use x = new Vector(5234567, fun i -> rnd.NextDouble())
+        use y = new Vector(5234567, fun i -> rnd.NextDouble())
+        eval (VectorExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> -Vector.Min(x .* y, x + y)
 
 
 

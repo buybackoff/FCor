@@ -61,6 +61,20 @@ module VectorConstruction =
             data.[0] <- - data.[0]
         v.Length = data.Length && v.ToArray() <=> data
 
+    [<Property>]
+    let ``Copy Vector`` (data : float[]) = 
+        let v = new Vector(data)
+        let s = Vector.Copy(v)
+        s.ToArray() <=> v.ToArray() && (s.NativeArray <> v.NativeArray)
+
+    [<Property>]
+    let ``Concat Vector seq`` (data : float[][]) =
+        let vectors = data |> Seq.map (fun x -> new Vector(x))
+        let res = Vector.Concat vectors
+        let vectors = vectors |> Seq.filter (fun v -> v.LongLength <> 0L)
+        let startIndexSeq = vectors |> Seq.scan (fun index v -> index + v.LongLength) 0L
+        vectors |> Seq.zip startIndexSeq |> Seq.map (fun (startIndex, v) -> res.[startIndex..startIndex + v.LongLength - 1L].ToArray() <=> v.ToArray()) |> Seq.fold (&&) true 
+
 
 
 

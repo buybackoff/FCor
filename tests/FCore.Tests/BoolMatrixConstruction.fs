@@ -1,6 +1,7 @@
 namespace FCore.Tests
 
 open FCore
+open FCore.Math
 open Xunit
 open FsCheck
 open FsCheck.Xunit
@@ -41,3 +42,28 @@ module BoolMatrixConstruction =
     let ``Constructs BoolMatrix from ints and initializer function`` (r : int) (c : int) (init : int -> int -> bool) = 
         (r >= 0 && c >= 0) ==> lazy (let v = new BoolMatrix(r, c, init) in v.RowCount = r && v.ColCount = c && v.ToArray2D() = Array2D.init r c init)
 
+    [<Property>]
+    let ``Copy BoolMatrix`` (data : bool[,]) = 
+        let v = new BoolMatrix(data)
+        let s = BoolMatrix.Copy(v)
+        s = v && (s.ColMajorDataVector.NativeArray <> v.ColMajorDataVector.NativeArray)
+
+    [<Property>]
+    let ``Identity BoolMatrix int64`` (data : bool[,]) =
+        let x : BoolMatrix = I (data.GetLength(0) |> int64) (data.GetLength(1) |> int64) 
+        seq{for i in 0..data.GetLength(0)-1 do
+                for j in 0..data.GetLength(1)-1 do
+                    yield
+                        if i = j then x.[i, j]
+                        else not x.[i, j]
+           } |> Seq.fold (&&) true
+
+    [<Property>]
+    let ``Identity BoolMatrix int`` (data : bool[,]) =
+        let x : BoolMatrix = I (data.GetLength(0)) (data.GetLength(1)) 
+        seq{for i in 0..data.GetLength(0)-1 do
+                for j in 0..data.GetLength(1)-1 do
+                    yield
+                        if i = j then x.[i, j]
+                        else not x.[i, j]
+           } |> Seq.fold (&&) true

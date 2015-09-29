@@ -58,6 +58,20 @@ module BoolVectorConstruction =
             data.[0] <- not data.[0]
         v.Length = data.Length && v.ToArray() = data
 
+    [<Property>]
+    let ``Copy BoolVector`` (data : bool[]) = 
+        let v = new BoolVector(data)
+        let s = BoolVector.Copy(v)
+        s = v && (s.NativeArray <> v.NativeArray)
+
+    [<Property>]
+    let ``Concat BoolVector seq`` (data : bool[][]) =
+        let vectors = data |> Seq.map (fun x -> new BoolVector(x))
+        let res = BoolVector.Concat vectors
+        let vectors = vectors |> Seq.filter (fun v -> v.LongLength <> 0L)
+        let startIndexSeq = vectors |> Seq.scan (fun index v -> index + v.LongLength) 0L |> Seq.take data.Length
+        vectors |> Seq.zip startIndexSeq |> Seq.map (fun (startIndex, v) -> res.[startIndex..startIndex + v.LongLength - 1L] = v) |> Seq.fold (&&) true 
+
 
 
 

@@ -103,15 +103,15 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
     static member op_Explicit(v : BoolMatrix) = v
 
     member this.View
-        with get(fromIndex : int64, length) =
-            colMajorDataVector.View(fromIndex, length)
+        with get(fromIndex : int64, toIndex : int64) =
+            colMajorDataVector.View(fromIndex, toIndex)
 
     member this.View
-        with get(fromIndex : int, length : int) = this.View(int64(fromIndex), int64(length))
+        with get(fromIndex : int, toIndex : int) = this.View(int64(fromIndex), int64(toIndex))
 
     member this.ColView
         with get(colIndex : int64) =
-            this.View(colIndex * rowCount, rowCount)
+            this.View(colIndex * rowCount, (colIndex + 1L) * rowCount - 1L)
 
     member this.ColView
         with get(colIndex : int) =
@@ -124,7 +124,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         this.GetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64)
 
     member this.SetSlice(fromIndex : int64 option, toIndex : int64 option, value: bool) =
-        colMajorDataVector.SetSlice(fromIndex, toIndex, value)
+        colMajorDataVector.SetSlice(fromIndex, toIndex, new BoolVector(value))
 
     member this.SetSlice(fromIndex : int option, toIndex : int option, value: bool) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
@@ -151,8 +151,9 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
             let sliceColCount = toColIndex - fromColIndex + 1L
 
             let slice = new BoolMatrix(sliceRowCount, sliceColCount, false)
-            for i in 0L..sliceColCount - 1L do
-                slice.ColView(i).SetSlice(Some(0L), None, this.View((fromColIndex + i) * rowCount + fromRowIndex, sliceRowCount))
+            for i in 0L..sliceColCount - 1L do 
+                let sliceFromIndex = (fromColIndex + i) * rowCount + fromRowIndex
+                slice.ColView(i).SetSlice(Some(0L), None, this.View(sliceFromIndex, sliceFromIndex + sliceRowCount - 1L))
             slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
@@ -182,7 +183,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         if toColIndex < 0L || toColIndex >= colCount then raise (new IndexOutOfRangeException())
 
         for i in fromColIndex..toColIndex do
-            this.ColView(i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value)
+            this.ColView(i).SetSlice(Some(fromRowIndex), Some(toRowIndex), new BoolVector(value))
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : bool) =
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
@@ -862,15 +863,15 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
     static member op_Explicit(v : Matrix) = v
 
     member this.View
-        with get(fromIndex : int64, length) =
-            colMajorDataVector.View(fromIndex, length)
+        with get(fromIndex : int64, toIndex : int64) =
+            colMajorDataVector.View(fromIndex, toIndex)
 
     member this.View
-        with get(fromIndex : int, length : int) = this.View(int64(fromIndex), int64(length))
+        with get(fromIndex : int, toIndex : int) = this.View(int64(fromIndex), int64(toIndex))
 
     member this.ColView
         with get(colIndex : int64) =
-            this.View(colIndex * rowCount, rowCount)
+            this.View(colIndex * rowCount, (colIndex + 1L) * rowCount - 1L)
 
     member this.ColView
         with get(colIndex : int) =
@@ -882,11 +883,19 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                                 if rowCount + offset < colCount then rowCount + offset else colCount
                             else
                                 if colCount - offset < rowCount then colCount - offset else rowCount
-            let res = new Vector(len, 0.0)
-            MklFunctions.D_Get_Diag(rowCount, offset, len, colMajorDataVector.NativeArray, res.NativeArray)
-            res
+            if len <= 0L then Vector.Empty
+            else
+                let res = new Vector(len, 0.0)
+                MklFunctions.D_Get_Diag(rowCount, offset, len, colMajorDataVector.NativeArray, res.NativeArray)
+                res
         and set (offset : int64) (diag : Vector) =
-            MklFunctions.D_Set_Diag(diag.LongLength, offset, diag.NativeArray, colMajorDataVector.NativeArray) 
+            let n = diag.LongLength
+            if this.LongLength = 0L || n = 0L then ()
+            else
+                let k = (if offset < 0L then -offset else offset)
+                if (this.LongRowCount, this.LongColCount) <> (n + k, n + k) then
+                    raise (new ArgumentException("Matrix size mismatch"))
+                MklFunctions.D_Set_Diag(diag.LongLength, offset, diag.NativeArray, colMajorDataVector.NativeArray) 
 
     member this.Diag
         with get(offset : int) =
@@ -930,7 +939,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
             let slice = new Matrix(sliceRowCount, sliceColCount, 0.0)
             for i in 0L..sliceColCount - 1L do
-                slice.ColView(i).SetSlice(Some(0L), None, this.View((fromColIndex + i) * rowCount + fromRowIndex, sliceRowCount))
+                let sliceFromIndex = (fromColIndex + i) * rowCount + fromRowIndex
+                slice.ColView(i).SetSlice(Some(0L), None, this.View(sliceFromIndex, sliceFromIndex + sliceRowCount - 1L))
             slice 
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex) =
@@ -1160,7 +1170,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member UpperTri(matrix : Matrix, offset : int64) =
-        let res : Matrix = Matrix.Copy(matrix)
+        let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
         MklFunctions.D_Get_Upper_Tri(offset, matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
         res
 
@@ -1168,7 +1178,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         Matrix.UpperTri(matrix, offset |> int64)
 
     static member LowerTri(matrix : Matrix, offset : int64) =
-        let res : Matrix = Matrix.Copy(matrix)
+        let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
         MklFunctions.D_Get_Lower_Tri(offset, matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
         res
 

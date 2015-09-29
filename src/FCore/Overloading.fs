@@ -90,13 +90,18 @@ module Overloading =
 
         static member inline Diag (DummyType, x : Vector, offset) =
             let offset : T1orT2<int, int64> = !!offset
-            let res = new Matrix(x.LongLength, x.LongLength, 0.0)
+            let n = x.LongLength
             match offset with
                 | T1of2(offset) ->
+                    let k = (if offset < 0 then -offset else offset) |> int64
+                    let res = new Matrix(n + k, n + k, 0.0)
                     res.Diag(offset) <- x
+                    res
                 | T2of2(offset) ->
+                    let k = (if offset < 0L then -offset else offset) 
+                    let res = new Matrix(n + k, n + k, 0.0)
                     res.Diag(offset) <- x
-            res
+                    res
 
         static member UpperTri (DummyType, matrix, offset : int) = Matrix.UpperTri(matrix, offset)
         static member UpperTri (DummyType, matrix, offset : int64) = Matrix.UpperTri(matrix, offset)

@@ -244,7 +244,23 @@ module BoolVectorSlicing =
                                     app.Execute("v(fromIndex:toIndex) = a;") |> ignore
                                     let res = getBoolVector app "v"
                                     let v = new BoolVector(v)
-                                    v.SetSlice(Some fromIndex, Some toIndex, a)
+                                    v.SetSlice(Some(fromIndex), Some(toIndex), a)
+                                    v.ToArray() = res       
+                                    )
+
+    [<Property>]
+    let ``SetSlice Some int64, Some int64 scalar vector``(v : bool[]) (a:bool) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setBoolVector app "v" v
+                                    let fromIndex = rnd.Next(v.Length) |> int64
+                                    let toIndex = rnd.Next(v.Length) |> int64
+                                    setScalar app "fromIndex" (float(fromIndex + 1L))
+                                    setScalar app "toIndex" (float(toIndex + 1L))
+                                    setBoolScalar app "a" a
+                                    app.Execute("v(fromIndex:toIndex) = a;") |> ignore
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    v.SetSlice(Some(fromIndex), Some(toIndex), new BoolVector(a))
                                     v.ToArray() = res       
                                     )
 
@@ -263,6 +279,20 @@ module BoolVectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetSlice Some int64, None scalar vector``(v : bool[]) (a:bool) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setBoolVector app "v" v
+                                    let fromIndex = rnd.Next(v.Length) |> int64
+                                    setScalar app "fromIndex" (float(fromIndex + 1L))
+                                    setBoolScalar app "a" a
+                                    app.Execute("v(fromIndex:end) = a;") |> ignore
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    v.SetSlice(Some fromIndex, None, new BoolVector(a))
+                                    v.ToArray() = res       
+                                    )
+
+    [<Property>]
     let ``SetSlice None, Some int64 scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
                                     setBoolVector app "v" v
@@ -273,6 +303,20 @@ module BoolVectorSlicing =
                                     let res = getBoolVector app "v"
                                     let v = new BoolVector(v)
                                     v.SetSlice(None, Some toIndex, a)
+                                    v.ToArray() = res       
+                                    )
+
+    [<Property>]
+    let ``SetSlice None, Some int64 scalar vector``(v : bool[]) (a:bool) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setBoolVector app "v" v
+                                    let toIndex = rnd.Next(v.Length) |> int64
+                                    setScalar app "toIndex" (float(toIndex + 1L))
+                                    setBoolScalar app "a" a
+                                    app.Execute("v(1:toIndex) = a;") |> ignore
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    v.SetSlice(None, Some toIndex, new BoolVector(a))
                                     v.ToArray() = res       
                                     )
 
@@ -293,6 +337,22 @@ module BoolVectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetSlice Some int, Some int scalar vector``(v : bool[]) (a:bool) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setBoolVector app "v" v
+                                    let fromIndex = rnd.Next(v.Length) 
+                                    let toIndex = rnd.Next(v.Length) 
+                                    setScalar app "fromIndex" (float(fromIndex + 1))
+                                    setScalar app "toIndex" (float(toIndex + 1))
+                                    setBoolScalar app "a" a
+                                    app.Execute("v(fromIndex:toIndex) = a;") |> ignore
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    v.SetSlice(Some fromIndex, Some toIndex, new BoolVector(a))
+                                    v.ToArray() = res       
+                                    )
+
+    [<Property>]
     let ``SetSlice Some int, None scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
                                     setBoolVector app "v" v
@@ -307,6 +367,20 @@ module BoolVectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetSlice Some int, None scalar vector``(v : bool[]) (a:bool) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setBoolVector app "v" v
+                                    let fromIndex = rnd.Next(v.Length) 
+                                    setScalar app "fromIndex" (float(fromIndex + 1))
+                                    setBoolScalar app "a" a
+                                    app.Execute("v(fromIndex:end) = a;") |> ignore
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    v.SetSlice(Some fromIndex, None, new BoolVector(a))
+                                    v.ToArray() = res       
+                                    )
+
+    [<Property>]
     let ``SetSlice None, Some int scalar``(v : bool[]) (a:bool) =
         (v.LongLength > 0L) ==> lazy(
                                     setBoolVector app "v" v
@@ -317,6 +391,20 @@ module BoolVectorSlicing =
                                     let res = getBoolVector app "v"
                                     let v = new BoolVector(v)
                                     v.SetSlice(None, Some toIndex, a)
+                                    v.ToArray() = res       
+                                    )
+
+    [<Property>]
+    let ``SetSlice None, Some int scalar vector``(v : bool[]) (a:bool) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setBoolVector app "v" v
+                                    let toIndex = rnd.Next(v.Length) 
+                                    setScalar app "toIndex" (float(toIndex + 1))
+                                    setBoolScalar app "a" a
+                                    app.Execute("v(1:toIndex) = a;") |> ignore
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    v.SetSlice(None, Some toIndex, new BoolVector(a))
                                     v.ToArray() = res       
                                     )
 
@@ -457,12 +545,29 @@ module BoolVectorSlicing =
                                     )
 
     [<Property>]
+    let ``SetItem bool scalar vector``(v : bool[]) (a : bool) =
+        (v.LongLength > 0L) ==> lazy(
+                                    setBoolVector app "v" v
+                                    let b = Array.init v.Length (fun i -> rnd.NextDouble() < 0.5)
+                                    let trueB = b |> Array.filter id
+                                    let y = [|a|]
+                                    setBoolVector app "b" b
+                                    setBoolVector app "y" y
+                                    app.Execute("v(b) = y;") |> ignore
+                                    let res = getBoolVector app "v"
+                                    let v = new BoolVector(v)
+                                    let b = new BoolVector(b)
+                                    v.[b] <- new BoolVector(y)
+                                    v.ToArray() = res       
+                                    )
+
+    [<Property>]
     let ``View int64``(v : bool[]) =
         (v.LongLength > 0L) ==> lazy(
                                     let v = new BoolVector(v)
                                     let fromIndex = rnd.Next(v.Length) |> int64
                                     let length = rnd.Next(1, v.Length - int(fromIndex) + 1) |> int64
-                                    let view = v.View(fromIndex, length)                    
+                                    let view = v.View(fromIndex, fromIndex + length - 1L)                    
                                     let y = new BoolVector(Array.init (int(length)) (fun i -> rnd.NextDouble() < 0.5))
                                     v.SetSlice(Some fromIndex, Some (fromIndex + length - 1L), y)
                                     view.ToArray() = v.[fromIndex..(fromIndex + length - 1L)].ToArray() && view.IsView
@@ -474,7 +579,7 @@ module BoolVectorSlicing =
                                     let v = new BoolVector(v)
                                     let fromIndex = rnd.Next(v.Length)
                                     let length = rnd.Next(1, v.Length - fromIndex + 1)
-                                    let view = v.View(fromIndex, length)                    
+                                    let view = v.View(fromIndex, fromIndex + length - 1)                    
                                     let y = new BoolVector(Array.init length (fun i -> rnd.NextDouble() < 0.5))
                                     v.SetSlice(Some fromIndex, Some (fromIndex + length - 1), y)
                                     view.ToArray() = v.[fromIndex..(fromIndex + length - 1)].ToArray() && view.IsView

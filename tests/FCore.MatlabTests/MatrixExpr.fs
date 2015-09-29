@@ -17,6 +17,7 @@ module MatrixExpr =
 
     let inline (<=>) (x : Matrix) (y : Matrix) = epsEqualArray2D (x.ToArray2D()) (y.ToArray2D()) epsEqualFloat 0.0
     let inline (<==>) (x : float) (y : float) = epsEqualFloat x y 0.0
+    let inline epsEqual eps (x : Matrix) (y : Matrix) = epsEqualArray2D (x.ToArray2D()) (y.ToArray2D()) epsEqualFloat eps
 
     [<Property>]
     let ``MatrixExpr .< MatrixExpr`` (v : (float*float)[,]) =
@@ -660,7 +661,7 @@ module MatrixExpr =
         let y1 = new Matrix(b1)
         let y2 = new Matrix(b2)
         let r = (a1 * a2) + (b1 * b2)
-        (not <| Double.IsNaN(r) && not <| Double.IsInfinity(r)) ==> (eval ((x1.AsExpr .* x2) + (y1.AsExpr .* y2)) <=> new Matrix( (a1 * a2) + (b1 * b2)))
+        (not <| Double.IsNaN(r) && not <| Double.IsInfinity(r)) ==> (epsEqual 1e-15 (eval ((x1.AsExpr .* x2) + (y1.AsExpr .* y2))) (new Matrix( (a1 * a2) + (b1 * b2))))
 
     [<Property>]
     let ``Eval scalar IfFunction`` (a : bool) (b : float) (c : float) =
@@ -716,7 +717,7 @@ module MatrixExpr =
 
     [<Fact>]
     let ``eval large vector`` () =
-        use x = new Matrix(2121232, 5, fun i j -> rnd.NextDouble())
-        use y = new Matrix(2121232, 5, fun i j -> rnd.NextDouble())
-        eval (MatrixExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> (Matrix.Min(x .* y, x + y) |> (~-)) 
+        use x = new Matrix(1121232, 5, fun i j -> rnd.NextDouble())
+        use y = new Matrix(1121232, 5, fun i j -> rnd.NextDouble())
+        eval (MatrixExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> -Matrix.Min(x .* y, x + y)
 

@@ -12,11 +12,15 @@ open MLApp
 open Util
 
 module MatrixFunctions =
+    
+    let rnd = new Random()
 
     let app = new MLAppClass()
     do app.Visible <- 0
 
     let inline (<=>) (x : float[,]) (y :float[,]) = epsEqualArray2D x y epsEqualFloat 0.0
+
+    let inline (<==>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
 
     let inline epsEqual eps (x : float[,]) (y :float[,])  = epsEqualArray2D x y epsEqualFloat eps
 
@@ -263,4 +267,73 @@ module MatrixFunctions =
         let res = getMatrix app "res"
         let v = new Matrix(v)
         trunc(v).ToArray2D() <=> res
+
+    [<Property>]
+    let ``triL int64``(v : float[,]) =
+        setMatrix app "v" v
+        let offset = rnd.Next(max (v.GetLength(0)) (v.GetLength(1))) + 2
+        setScalar app "offset" (float(offset))
+        app.Execute("res = tril(v,offset);") |> ignore
+        let res = getMatrix app "res"
+        let v = new Matrix(v)
+        (triL v (int64(offset))).ToArray2D() <=> res
+
+    [<Property>]
+    let ``triL int``(v : float[,]) =
+        setMatrix app "v" v
+        let offset = rnd.Next(max (v.GetLength(0)) (v.GetLength(1))) + 2
+        setScalar app "offset" (float(offset))
+        app.Execute("res = tril(v,offset);") |> ignore
+        let res = getMatrix app "res"
+        let v = new Matrix(v)
+        (triL v offset).ToArray2D() <=> res
+
+    [<Property>]
+    let ``triU int64``(v : float[,]) =
+        setMatrix app "v" v
+        let offset = rnd.Next(max (v.GetLength(0)) (v.GetLength(1))) + 2
+        setScalar app "offset" (float(offset))
+        app.Execute("res = triu(v,offset);") |> ignore
+        let res = getMatrix app "res"
+        let v = new Matrix(v)
+        (triU v (int64(offset))).ToArray2D() <=> res
+
+    [<Property>]
+    let ``triU int``(v : float[,]) =
+        setMatrix app "v" v
+        let offset = rnd.Next(max (v.GetLength(0)) (v.GetLength(1))) + 2
+        setScalar app "offset" (float(offset))
+        app.Execute("res = triu(v,offset);") |> ignore
+        let res = getMatrix app "res"
+        let v = new Matrix(v)
+        (triU v offset).ToArray2D() <=> res
+
+    [<Property>]
+    let ``diag int64``(v : float[,]) =
+        (v.GetLength(0) > 1 && v.GetLength(1) > 1) ==>
+            lazy(
+                let v = v |> fixEmpty
+                setMatrix app "v" v
+                let offset = rnd.Next(max (v.GetLength(0)) (v.GetLength(1))) + 2
+                setScalar app "offset" (float(offset))
+                app.Execute("res = diag(v,offset);") |> ignore
+                let res = getVector app "res"
+                let v = new Matrix(v)
+                (diag v (int64(offset))).ToArray() <==> res            
+                )
+
+
+    [<Property>]
+    let ``diag int``(v : float[,]) =
+        (v.GetLength(0) > 1 && v.GetLength(1) > 1) ==>
+            lazy(
+                let v = v |> fixEmpty
+                setMatrix app "v" v
+                let offset = rnd.Next(max (v.GetLength(0)) (v.GetLength(1))) + 2
+                setScalar app "offset" (float(offset))
+                app.Execute("res = diag(v,offset);") |> ignore
+                let res = getVector app "res"
+                let v = new Matrix(v)
+                (diag v offset).ToArray() <==> res            
+                )
 

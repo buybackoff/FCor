@@ -143,8 +143,8 @@ module MatrixBasicStats =
         let axis = ColumnAxis
         use m =
             match axis with
-                | RowAxis -> unifRnd rng 0.0 1000.0 5L 10000000L
-                | ColumnAxis -> unifRnd rng 0.0 1000.0 10000000L 5L 
+                | RowAxis -> unifRnd rng 0.0 1000.0 5L 5000000L
+                | ColumnAxis -> unifRnd rng 0.0 1000.0 5000000L 5L 
         let q = new Vector([|1.0..(-0.1)..0.0|])
         let resArr = [[|1000.0..(-100.)..0.0|]
                       [|1000.0..(-100.)..0.0|]
@@ -162,8 +162,8 @@ module MatrixBasicStats =
         let axis = RowAxis
         use m =
             match axis with
-                | RowAxis -> unifRnd rng 0.0 1000.0 5L 10000000L
-                | ColumnAxis -> unifRnd rng 0.0 1000.0 10000000L 5L 
+                | RowAxis -> unifRnd rng 0.0 1000.0 5L 5000000L
+                | ColumnAxis -> unifRnd rng 0.0 1000.0 5000000L 5L 
         let q = new Vector([|1.0..(-0.1)..0.0|])
         let resArr = [[|1000.0..(-100.)..0.0|]
                       [|1000.0..(-100.)..0.0|]
