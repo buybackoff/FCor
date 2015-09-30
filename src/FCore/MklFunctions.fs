@@ -84,11 +84,17 @@ type internal MklFunctions() =
 
     static let validateRetCode(code : int) =
         match code with
-            | -1 -> raise (new OutOfMemoryException())
-            | -9 -> raise (new ArgumentException("Vector length mismatch"))
-            | -7 -> raise (new ArgumentException("VSL error"))
             | 0 -> ()
-            | _ -> raise (new ArgumentException()) 
+            | -1 -> raise (new OutOfMemoryException())
+            | -2 -> raise (new ArgumentException("Matrix is not positive definite"))
+            | -3 -> raise (new ArgumentException("MKL arg error"))
+            | -4 -> raise (new ArgumentException("Matrix is singular"))
+            | -5 -> raise (new ArgumentException("Matrix is not full rank"))
+            | -6 -> raise (new ArgumentException("Algorithm did not converge"))
+            | -7 -> raise (new ArgumentException("VSL arg error"))
+            | -9 -> raise (new ArgumentException("Vector length mismatch"))
+            | _ -> raise (new ArgumentException("Error in native FCore")) 
+
 
     [<DllImport("kernel32")>]
     static extern IntPtr LoadLibrary(string lpFileName)

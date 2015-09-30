@@ -19,6 +19,10 @@ module ArgumentChecks =
         if (size1 = size2) || (len1 = 1L) || (len2 = 1L) || (len1 = 0L && len2 = 0L) then ()
         else raise (new ArgumentException("Elementwise operation: matrix size mismatch")) 
 
+    let inline throwIfContainsDisposed (xseq : seq<'T> when ^T : (member IsDisposed : bool)) =
+        if xseq |> Seq.exists (fun x -> (^T : (member IsDisposed : bool) x)) then raise (new ObjectDisposedException(""))
+        else ()
+
     let getElementwiseLength (len1 : int64 option) (len2 : int64 option) =
         match len1, len2 with
             | Some(l1), Some(l2) when l1 = l2 -> Some l1

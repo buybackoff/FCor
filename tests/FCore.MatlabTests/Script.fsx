@@ -18,5 +18,5 @@ open FCore.ExplicitConversion
 let inline (<=>) (x : Vector) (y : Vector) = epsEqualArray (x.ToArray()) (y.ToArray()) epsEqualFloat 0.0
 //let app = new MLAppClass()
 
-let m = new Matrix(2.0)
-let v = diag m 2
+let m = new BoolVector(Array.init 0 (fun i -> true))
+let res = m.IsDisposed
