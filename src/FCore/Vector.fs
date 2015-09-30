@@ -11,6 +11,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     static let empty = new BoolVector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
 
+    static let mutable evalSliceLength = 1000000L
+
     new(length : int64, init : bool) =
         if length < 0L then raise (new ArgumentException("Vector length must be >= 0"))
         let mutable arr = IntPtr.Zero
@@ -72,6 +74,10 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     static member op_Explicit(v : bool[]) = new BoolVector(v)
 
     static member op_Explicit(v : BoolVector) = v
+
+    static member EvalSliceLength
+        with get() = evalSliceLength
+        and set(value) = evalSliceLength <- value
 
     member this.View
         with get(fromIndex, toIndex) =
@@ -489,7 +495,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     interface IDisposable with
         member this.Dispose() = this.DoDispose(true)
 
-    member internal this.DoDispose(isDisposing) = if not isDisposed then
+    member internal this.DoDispose(isDisposing) = if not isDisposed && length > 0L then
                                                      isDisposed <- true
                                                      if isDisposing then GC.SuppressFinalize(this)
                                                      let nativeArray = nativeArray |> NativePtr.toNativeInt
@@ -522,6 +528,8 @@ and BoolVectorExpr =
     static member op_Explicit(a : bool) = (new BoolVector(a)).AsExpr
 
     static member op_Explicit(v : BoolVector) = v.AsExpr
+
+
 
     static member DeScalar(boolVectorExpr : BoolVectorExpr) = 
         match boolVectorExpr with
@@ -635,7 +643,7 @@ and BoolVectorExpr =
                         | None -> new BoolVector(len, false)
         ArgumentChecks.throwIfContainsDisposed [res]
         if res.LongLength <> 0L then
-            let n = 1000000L
+            let n = BoolVector.EvalSliceLength
             let len = res.LongLength
             let m = len / n
             let k = len % n
@@ -827,6 +835,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static let empty = new Vector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
 
+    static let mutable evalSliceLength = 1000000L
+
     new(length : int64, init : float) =
         if length < 0L then raise (new ArgumentException("Vector length must be >= 0"))
         let mutable arr = IntPtr.Zero
@@ -891,6 +901,10 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static member op_Explicit(v : Vector) =
         v.[0]
+
+    static member EvalSliceLength
+        with get() = evalSliceLength
+        and set(value) = evalSliceLength <- value
 
     member this.View
         with get(fromIndex, toIndex) =
@@ -1708,7 +1722,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
     interface IDisposable with
         member this.Dispose() = this.DoDispose(true)
 
-    member internal this.DoDispose(isDisposing) = if not isDisposed then
+    member internal this.DoDispose(isDisposing) = if not isDisposed && length > 0L then
                                                      isDisposed <- true
                                                      if isDisposing then GC.SuppressFinalize(this)
                                                      let nativeArray = nativeArray |> NativePtr.toNativeInt
@@ -1829,7 +1843,7 @@ and VectorExpr =
                         | None -> new Vector(len, 0.0)
         ArgumentChecks.throwIfContainsDisposed [res]
         if res.LongLength <> 0L then
-            let n = 1000000L
+            let n = Vector.EvalSliceLength
             let len = res.LongLength
             let m = len / n
             let k = len % n
