@@ -486,6 +486,38 @@ module MatrixExpr =
         eval (-(-X.AsExpr)) <=> X
 
     [<Property>]
+    let ``a .* X + b .* Y`` (v : (float*float)[,]) (a : float) (b : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new Matrix(x)
+        let Y = new Matrix(y)
+        eval (a .* X.AsExpr + b .* Y.AsExpr) <=> (a .* X + b .* Y)
+
+    [<Property>]
+    let ``X .* a + b .* Y`` (v : (float*float)[,]) (a : float) (b : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new Matrix(x)
+        let Y = new Matrix(y)
+        eval (X.AsExpr .* a + b .* Y.AsExpr) <=> (a .* X + b .* Y)
+
+    [<Property>]
+    let ``a .* X + Y .* b`` (v : (float*float)[,]) (a : float) (b : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new Matrix(x)
+        let Y = new Matrix(y)
+        eval (a .* X.AsExpr + Y.AsExpr .* b) <=> (a .* X + b .* Y)
+
+    [<Property>]
+    let ``X .* a + Y .* b`` (v : (float*float)[,]) (a : float) (b : float) =
+        let x = v |> Array2D.map fst
+        let y = v |> Array2D.map snd
+        let X = new Matrix(x)
+        let Y = new Matrix(y)
+        eval (X.AsExpr .* a + Y.AsExpr .* b) <=> (a .* X + b .* Y)
+
+    [<Property>]
     let ``abs MatrixExpr`` (x : float[,]) =
         let X = new Matrix(x)
         eval (abs X.AsExpr) <=> (abs X)
@@ -721,9 +753,10 @@ module MatrixExpr =
         (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr (a .* Y) !!b) in res.ToArray2D() |> Array2D.mapi (fun i j x -> res.[i,j] <==> if X.[i,j] then aY.[i,j] else b) = Array2D.create res.RowCount res.ColCount true)
 
 
-    [<Fact>]
-    let ``eval large vector`` () =
-        use x = new Matrix(1121232, 5, fun i j -> rnd.NextDouble())
-        use y = new Matrix(1121232, 5, fun i j -> rnd.NextDouble())
+    [<Property>]
+    let ``eval large vector`` (n: int) =
+        let n = max (min n 200000) 0
+        use x = new Matrix(n, 5, fun i j -> rnd.NextDouble())
+        use y = new Matrix(n, 5, fun i j -> rnd.NextDouble())
         eval (MatrixExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> -Matrix.Min(x .* y, x + y)
 

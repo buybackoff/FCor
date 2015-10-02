@@ -603,27 +603,27 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 and BoolMatrixExpr = 
     | Scalar of bool
     | Var of BoolMatrix
-    | UnaryFunction of BoolMatrixExpr * (BoolVector -> BoolVector -> unit)
-    | BinaryFunction of BoolMatrixExpr * BoolMatrixExpr * (BoolVector -> BoolVector -> BoolVector -> unit)
-    | BinaryMatrixFunction of MatrixExpr * MatrixExpr * (Vector -> Vector -> BoolVector -> unit)
+    | UnaryFunction of BoolMatrixExpr * (BoolVector -> BoolVector -> unit) * string
+    | BinaryFunction of BoolMatrixExpr * BoolMatrixExpr * (BoolVector -> BoolVector -> BoolVector -> unit) * string
+    | BinaryMatrixFunction of MatrixExpr * MatrixExpr * (Vector -> Vector -> BoolVector -> unit) * string
     | IfFunction of BoolMatrixExpr * BoolMatrixExpr * BoolMatrixExpr
 
     member this.AsBoolVectorExpr =
         match this with
             | Scalar(v) -> BoolVectorExpr.Scalar(v)
             | Var(v) -> v.ColMajorDataVector.AsExpr
-            | UnaryFunction(expr, f) -> BoolVectorExpr.UnaryFunction(expr.AsBoolVectorExpr, f)
-            | BinaryFunction(expr1, expr2, f) -> BoolVectorExpr.BinaryFunction(expr1.AsBoolVectorExpr, expr2.AsBoolVectorExpr, f)
-            | BinaryMatrixFunction(expr1, expr2, f) -> BoolVectorExpr.BinaryVectorFunction(expr1.AsVectorExpr, expr2.AsVectorExpr, f) 
+            | UnaryFunction(expr, f, label) -> BoolVectorExpr.UnaryFunction(expr.AsBoolVectorExpr, f, label)
+            | BinaryFunction(expr1, expr2, f, label) -> BoolVectorExpr.BinaryFunction(expr1.AsBoolVectorExpr, expr2.AsBoolVectorExpr, f, label)
+            | BinaryMatrixFunction(expr1, expr2, f, label) -> BoolVectorExpr.BinaryVectorFunction(expr1.AsVectorExpr, expr2.AsVectorExpr, f, label) 
             | IfFunction(ifExpr, trueExpr, falseExpr) -> BoolVectorExpr.IfFunction(ifExpr.AsBoolVectorExpr, trueExpr.AsBoolVectorExpr, falseExpr.AsBoolVectorExpr)
 
     member this.Size =
         match this with
             | Scalar(_) -> Some(1L, 1L)
             | Var(v) -> Some(v.LongRowCount, v.LongColCount)
-            | UnaryFunction(v, _) -> v.Size
-            | BinaryFunction(v1, v2, _) -> ArgumentChecks.getElementwiseSize v1.Size v2.Size 
-            | BinaryMatrixFunction(v1, v2, _) -> ArgumentChecks.getElementwiseSize v1.Size v2.Size                  
+            | UnaryFunction(v, _, _) -> v.Size
+            | BinaryFunction(v1, v2, _, _) -> ArgumentChecks.getElementwiseSize v1.Size v2.Size 
+            | BinaryMatrixFunction(v1, v2, _, _) -> ArgumentChecks.getElementwiseSize v1.Size v2.Size                  
             | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseSizeIf v1.Size v2.Size v3.Size  
 
     static member EvalIn(matrixExpr : BoolMatrixExpr, res : BoolMatrix option) =
@@ -643,7 +643,8 @@ and BoolMatrixExpr =
 
     static member (.<) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                        fun v1 v2 res -> MklFunctions.B_Arrays_LessThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_LessThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".<")
     
     static member (.<) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
         matrix1 .< matrix2.AsExpr
@@ -660,7 +661,8 @@ and BoolMatrixExpr =
 
     static member (.<=) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_Arrays_LessEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_LessEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".<=")
     
     static member (.<=) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
         matrix1 .<= matrix2.AsExpr
@@ -677,7 +679,8 @@ and BoolMatrixExpr =
 
     static member (.>) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_Arrays_GreaterThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_GreaterThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".>")
     
     static member (.>) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
         matrix1 .> matrix2.AsExpr
@@ -694,7 +697,8 @@ and BoolMatrixExpr =
 
     static member (.>=) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_Arrays_GreaterEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_GreaterEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".>=")
     
     static member (.>=) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
         matrix1 .>= matrix2.AsExpr
@@ -711,7 +715,8 @@ and BoolMatrixExpr =
 
     static member (.=) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_Arrays_EqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_EqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".=")
     
     static member (.=) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
         matrix1 .= matrix2.AsExpr
@@ -727,7 +732,8 @@ and BoolMatrixExpr =
 
     static member (.<>) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_Arrays_NotEqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_NotEqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".<>")
     
     static member (.<>) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
         matrix1 .<> matrix2.AsExpr
@@ -743,7 +749,8 @@ and BoolMatrixExpr =
 
     static member Min (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       "Min")
 
     static member Min (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
        BoolMatrixExpr.Min(matrix1, matrix2.AsExpr)
@@ -759,7 +766,8 @@ and BoolMatrixExpr =
 
     static member Max (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       "Max")
 
     static member Max (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
        BoolMatrixExpr.Max(matrix1, matrix2.AsExpr)
@@ -775,7 +783,8 @@ and BoolMatrixExpr =
 
     static member (.&&) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_And_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_And_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".&&")
 
     static member (.&&) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
         matrix1 .&& matrix2.AsExpr
@@ -791,7 +800,8 @@ and BoolMatrixExpr =
 
     static member (.||) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.B_Or_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Or_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".||")
 
     static member (.||) (matrix1 : BoolMatrixExpr, matrix2 : BoolMatrix) =
         matrix1 .|| matrix2.AsExpr
@@ -806,7 +816,7 @@ and BoolMatrixExpr =
         Scalar(a) .|| matrix
 
     static member Not (matrix : BoolMatrixExpr) =
-        UnaryFunction(matrix, fun v res -> MklFunctions.B_Not_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrix, (fun v res -> MklFunctions.B_Not_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Not")
 
 //***************************************************Matrix**************************************************************************************
 
@@ -2240,24 +2250,24 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 and MatrixExpr = 
     | Scalar of float
     | Var of Matrix
-    | UnaryFunction of MatrixExpr * (Vector -> Vector -> unit)
-    | BinaryFunction of MatrixExpr * MatrixExpr * (Vector -> Vector -> Vector -> unit)
+    | UnaryFunction of MatrixExpr * (Vector -> Vector -> unit) * string
+    | BinaryFunction of MatrixExpr * MatrixExpr * (Vector -> Vector -> Vector -> unit) * string
     | IfFunction of BoolMatrixExpr * MatrixExpr * MatrixExpr
 
     member this.AsVectorExpr =
         match this with
             | Scalar(v) -> VectorExpr.Scalar(v)
             | Var(v) -> v.ColMajorDataVector.AsExpr
-            | UnaryFunction(expr, f) -> VectorExpr.UnaryFunction(expr.AsVectorExpr, f)
-            | BinaryFunction(expr1, expr2, f) -> VectorExpr.BinaryFunction(expr1.AsVectorExpr, expr2.AsVectorExpr, f) 
+            | UnaryFunction(expr, f, label) -> VectorExpr.UnaryFunction(expr.AsVectorExpr, f, label)
+            | BinaryFunction(expr1, expr2, f, label) -> VectorExpr.BinaryFunction(expr1.AsVectorExpr, expr2.AsVectorExpr, f, label) 
             | IfFunction(ifExpr, trueExpr, falseExpr) -> VectorExpr.IfFunction(ifExpr.AsBoolVectorExpr, trueExpr.AsVectorExpr, falseExpr.AsVectorExpr) 
 
     member this.Size = 
         match this with
             | Scalar(_) -> Some(1L, 1L)
             | Var(v) -> Some(v.LongRowCount, v.LongColCount)
-            | UnaryFunction(v, _) -> v.Size
-            | BinaryFunction(v1, v2, _) -> ArgumentChecks.getElementwiseSize v1.Size v2.Size
+            | UnaryFunction(v, _, _) -> v.Size
+            | BinaryFunction(v1, v2, _, _) -> ArgumentChecks.getElementwiseSize v1.Size v2.Size
             | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseSizeIf v1.Size v2.Size v3.Size
 
     static member EvalIn(matrixExpr : MatrixExpr, res : Matrix option) =
@@ -2277,7 +2287,8 @@ and MatrixExpr =
 
     static member (.<) (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryMatrixFunction(matrix1, matrix2, 
-                             fun v1 v2 res -> MklFunctions.D_Arrays_LessThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_LessThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".<")
     
     static member (.<) (matrix1 : MatrixExpr, matrix2 : Matrix) =
         matrix1 .< matrix2.AsExpr
@@ -2293,7 +2304,8 @@ and MatrixExpr =
 
     static member (.<=) (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryMatrixFunction(matrix1, matrix2, 
-                             fun v1 v2 res -> MklFunctions.D_Arrays_LessEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_LessEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".<=")
     
     static member (.<=) (matrix1 : MatrixExpr, matrix2 : Matrix) =
         matrix1 .<= matrix2.AsExpr
@@ -2309,7 +2321,8 @@ and MatrixExpr =
 
     static member (.>) (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryMatrixFunction(matrix1, matrix2, 
-                             fun v1 v2 res -> MklFunctions.D_Arrays_GreaterThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_GreaterThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".>")
     
     static member (.>) (matrix1 : MatrixExpr, matrix2 : Matrix) =
         matrix1 .> matrix2.AsExpr
@@ -2325,7 +2338,8 @@ and MatrixExpr =
 
     static member (.>=) (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryMatrixFunction(matrix1, matrix2, 
-                             fun v1 v2 res -> MklFunctions.D_Arrays_GreaterEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_GreaterEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".>=")
     
     static member (.>=) (matrix1 : MatrixExpr, matrix2 : Matrix) =
         matrix1 .>= matrix2.AsExpr
@@ -2341,7 +2355,8 @@ and MatrixExpr =
 
     static member (.=) (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryMatrixFunction(matrix1, matrix2, 
-                             fun v1 v2 res -> MklFunctions.D_Arrays_EqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_EqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".=")
     
     static member (.=) (matrix1 : MatrixExpr, matrix2 : Matrix) =
         matrix1 .= matrix2.AsExpr
@@ -2357,7 +2372,8 @@ and MatrixExpr =
 
     static member (.<>) (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryMatrixFunction(matrix1, matrix2, 
-                             fun v1 v2 res -> MklFunctions.D_Arrays_NotEqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_NotEqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".<>")
     
     static member (.<>) (matrix1 : MatrixExpr, matrix2 : Matrix) =
         matrix1 .<> matrix2.AsExpr
@@ -2374,7 +2390,8 @@ and MatrixExpr =
 
     static member Min (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.D_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.D_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       "Min")
 
     static member Min (matrix1 : MatrixExpr, matrix2 : Matrix) =
        MatrixExpr.Min(matrix1, matrix2.AsExpr)
@@ -2390,7 +2407,8 @@ and MatrixExpr =
 
     static member Max (matrix1 : MatrixExpr, matrix2 : MatrixExpr) =
         BinaryFunction(matrix1, matrix2, 
-                       fun v1 v2 res -> MklFunctions.D_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.D_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       "Max")
 
     static member Max (matrix1 : MatrixExpr, matrix2 : Matrix) =
        MatrixExpr.Max(matrix1, matrix2.AsExpr)
@@ -2407,14 +2425,15 @@ and MatrixExpr =
 
 
     static member (.*) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
-        BinaryFunction(matrixExpr1, matrixExpr2, fun v1 v2 res ->
+        BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Mul_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Mul_Array(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
-                                                       MklFunctions.D_Array_Mul_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                       MklFunctions.D_Array_Mul_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                      ".*"
                       )
 
     static member (.*) (matrixExpr1 : MatrixExpr, matrix2 : Matrix) =
@@ -2430,14 +2449,15 @@ and MatrixExpr =
         Scalar(a) .* matrixExpr 
 
     static member (+) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
-        BinaryFunction(matrixExpr1, matrixExpr2, fun v1 v2 res ->
+        BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Add_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Add_Array(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
-                                                       MklFunctions.D_Array_Add_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                       MklFunctions.D_Array_Add_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                      "+"
                       )
 
     static member (+) (matrixExpr1 : MatrixExpr, matrix2 : Matrix) =
@@ -2453,14 +2473,15 @@ and MatrixExpr =
         Scalar(a) + matrixExpr 
 
     static member (./) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
-        BinaryFunction(matrixExpr1, matrixExpr2, fun v1 v2 res ->
+        BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Div_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Array_Div_Scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
-                                                       MklFunctions.D_Array_Div_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                       MklFunctions.D_Array_Div_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                      "./"
                       )
 
     static member (./) (matrixExpr1 : MatrixExpr, matrix2 : Matrix) =
@@ -2477,14 +2498,15 @@ and MatrixExpr =
 
 
     static member (-) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
-        BinaryFunction(matrixExpr1, matrixExpr2, fun v1 v2 res ->
+        BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Sub_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Array_Sub_Scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
-                                                       MklFunctions.D_Array_Sub_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                       MklFunctions.D_Array_Sub_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                      "-"
                       )
 
     static member (-) (matrixExpr1 : MatrixExpr, matrix2 : Matrix) =
@@ -2500,17 +2522,18 @@ and MatrixExpr =
         Scalar(a) - matrixExpr
 
     static member (~-) (matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Minus_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Minus_Array(v.LongLength, v.NativeArray, res.NativeArray)), "~-")
 
     static member (.^) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
-        BinaryFunction(matrixExpr1, matrixExpr2, fun v1 v2 res ->
+        BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Pow_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Array_Pow_scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
-                                                       MklFunctions.D_Array_Pow_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                       MklFunctions.D_Array_Pow_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                      ".^"
                       )
 
     static member (.^) (matrixExpr1 : MatrixExpr, matrix2 : Matrix) =
@@ -2536,88 +2559,88 @@ and MatrixExpr =
             (matrixExpr .^ (-n)) .^ (-1.0)
 
     static member Abs(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Abs_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Abs_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Abs")
 
     static member Sqrt(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Sqrt_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Sqrt_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Sqrt")
 
     static member Sin(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Sin_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Sin_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Sin")
 
     static member Cos(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Cos_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Cos_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Cos")
 
     static member Tan(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Tan_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Tan_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Tan")
 
     static member Asin(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_ASin_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_ASin_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Asin")
 
     static member Acos(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_ACos_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_ACos_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Acos")
 
     static member Atan(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_ATan_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_ATan_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Atan")
 
     static member Sinh(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Sinh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Sinh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Sinh")
 
     static member Cosh(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Cosh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Cosh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Cosh")
 
     static member Tanh(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Tanh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Tanh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Tanh")
 
     static member ASinh(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_ASinh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_ASinh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "ASinh")
 
     static member ACosh(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_ACosh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_ACosh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "ACosh")
 
     static member ATanh(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_ATanh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_ATanh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "ATanh")
 
     static member Exp(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Exp_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Exp_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Exp")
 
     static member Expm1(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Expm1_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Expm1_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Expm1")
 
     static member Log(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Ln_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Ln_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Log")
 
     static member Log10(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Log10_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Log10_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Log10")
 
     static member Log1p(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Log1p_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Log1p_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Log1p")
 
     static member Erf(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Erf_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Erf_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Erf")
 
     static member Erfc(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Erfc_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Erfc_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Erfc")
 
     static member Erfinv(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Erfinv_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Erfinv_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Erfinv")
 
     static member Erfcinv(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Erfcinv_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Erfcinv_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Erfcinv")
 
     static member Normcdf(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_CdfNorm_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_CdfNorm_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Normcdf")
 
     static member Norminv(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_CdfNormInv_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_CdfNormInv_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Norminv")
 
     static member Round(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Round_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Round_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Round")
 
     static member Ceiling(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Ceil_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Ceil_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Ceiling")
 
     static member Floor(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Floor_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Floor_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Floor")
 
     static member Truncate(matrixExpr : MatrixExpr) =
-        UnaryFunction(matrixExpr, fun v res -> MklFunctions.D_Trunc_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(matrixExpr, (fun v res -> MklFunctions.D_Trunc_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Truncate")

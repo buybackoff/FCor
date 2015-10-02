@@ -515,18 +515,18 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 and BoolVectorExpr = 
     | Scalar of bool
     | Var of BoolVector
-    | UnaryFunction of BoolVectorExpr * (BoolVector -> BoolVector -> unit)
-    | BinaryFunction of BoolVectorExpr * BoolVectorExpr * (BoolVector -> BoolVector -> BoolVector -> unit)
-    | BinaryVectorFunction of VectorExpr * VectorExpr * (Vector -> Vector -> BoolVector -> unit)
+    | UnaryFunction of BoolVectorExpr * (BoolVector -> BoolVector -> unit) * string
+    | BinaryFunction of BoolVectorExpr * BoolVectorExpr * (BoolVector -> BoolVector -> BoolVector -> unit) * string
+    | BinaryVectorFunction of VectorExpr * VectorExpr * (Vector -> Vector -> BoolVector -> unit) * string
     | IfFunction of BoolVectorExpr * BoolVectorExpr * BoolVectorExpr
 
     member this.Length =
         match this with
             | Scalar(_)-> Some 1L
             | Var(v) -> Some v.LongLength
-            | UnaryFunction(v, _) -> v.Length    
-            | BinaryFunction(v1, v2, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length
-            | BinaryVectorFunction(v1, v2, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length               
+            | UnaryFunction(v, _, _) -> v.Length    
+            | BinaryFunction(v1, v2, _, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length
+            | BinaryVectorFunction(v1, v2, _, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length               
             | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseLengthIf v1.Length v2.Length v3.Length
 
     static member op_Explicit(a : bool) = (new BoolVector(a)).AsExpr
@@ -537,15 +537,15 @@ and BoolVectorExpr =
         match boolVectorExpr with
             | Scalar(_)  -> boolVectorExpr
             | Var(v)  -> v.AsExpr
-            | UnaryFunction(v, f) ->
+            | UnaryFunction(v, f, label) ->
                 let v = BoolVectorExpr.DeScalar(v)
                 match v with
                     | Scalar(u) ->
                         let res = new BoolVector(false)
                         f !!u res
                         res.AsExpr
-                    | _ -> UnaryFunction(v, f)    
-            | BinaryFunction(v1, v2, f) ->
+                    | _ -> UnaryFunction(v, f, label) 
+            | BinaryFunction(v1, v2, f, label) ->
                 let v1 = BoolVectorExpr.DeScalar(v1)
                 let v2 = BoolVectorExpr.DeScalar(v2)
                 match v1, v2 with
@@ -553,8 +553,8 @@ and BoolVectorExpr =
                         let res = new BoolVector(false)
                         f !!u1 !!u2 res
                         res.AsExpr
-                    | _ -> BinaryFunction(v1, v2, f)
-            | BinaryVectorFunction(v1, v2, f) ->
+                    | _ -> BinaryFunction(v1, v2, f, label)
+            | BinaryVectorFunction(v1, v2, f, label) ->
                 let v1 = VectorExpr.DeScalar(v1)
                 let v2 = VectorExpr.DeScalar(v2)
                 match v1, v2 with
@@ -562,7 +562,7 @@ and BoolVectorExpr =
                         let res = new BoolVector(false)
                         f !!u1 !!u2 res
                         res.AsExpr
-                    | _ -> BinaryVectorFunction(v1, v2, f)
+                    | _ -> BinaryVectorFunction(v1, v2, f, label)
             | IfFunction(v1, v2, v3) ->
                 let v1 = BoolVectorExpr.DeScalar(v1)
                 let v2 = BoolVectorExpr.DeScalar(v2)
@@ -579,7 +579,7 @@ and BoolVectorExpr =
             | Var(v) ->
                 ArgumentChecks.throwIfContainsDisposed [v]
                 v.View(sliceStart, sliceStart + sliceLen - 1L), memPool
-            | UnaryFunction(v, f) -> 
+            | UnaryFunction(v, f, _) -> 
                 let v, memPool = BoolVectorExpr.EvalSlice v sliceStart sliceLen memPool
                 if memPool.Contains(v) then
                     f v v
@@ -588,7 +588,7 @@ and BoolVectorExpr =
                     let res = memPool.GetBoolVector(sliceLen)
                     f v res
                     res, memPool
-            | BinaryFunction(v1, v2, f) -> 
+            | BinaryFunction(v1, v2, f, _) -> 
                 let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen memPool
                 if memPool.Contains(v1) then
@@ -602,7 +602,7 @@ and BoolVectorExpr =
                     let res = memPool.GetBoolVector(sliceLen)
                     f v1 v2 res
                     res, memPool
-            | BinaryVectorFunction(v1, v2, f) -> 
+            | BinaryVectorFunction(v1, v2, f, _) -> 
                 let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
                 let res = memPool.GetBoolVector(sliceLen)
@@ -663,7 +663,8 @@ and BoolVectorExpr =
 
     static member (.<) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Arrays_LessThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_LessThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".<")
     
     static member (.<) (vector1 : BoolVectorExpr, vector2 : BoolVector) =
         vector1 .< vector2.AsExpr
@@ -680,7 +681,8 @@ and BoolVectorExpr =
 
     static member (.<=) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Arrays_LessEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_LessEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".<=")
     
     static member (.<=) (vector1 : BoolVectorExpr, vector2 : BoolVector) =
         vector1 .<= vector2.AsExpr
@@ -697,7 +699,8 @@ and BoolVectorExpr =
 
     static member (.>) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Arrays_GreaterThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_GreaterThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".>")
     
     static member (.>) (vector1 : BoolVectorExpr, vector2 : BoolVector) =
         vector1 .> vector2.AsExpr
@@ -714,7 +717,8 @@ and BoolVectorExpr =
 
     static member (.>=) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Arrays_GreaterEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_GreaterEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".>=")
     
     static member (.>=) (vector1 : BoolVectorExpr, vector2 : BoolVector) =
         vector1 .>= vector2.AsExpr
@@ -731,7 +735,8 @@ and BoolVectorExpr =
 
     static member (.=) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Arrays_EqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_EqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".=")
     
     static member (.=) (vector1 : BoolVectorExpr, vector2 : BoolVector) =
         vector1 .= vector2.AsExpr
@@ -747,7 +752,8 @@ and BoolVectorExpr =
 
     static member (.<>) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Arrays_NotEqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Arrays_NotEqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".<>")
     
     static member (.<>) (vector1 : BoolVectorExpr, vector2 : BoolVector) =
         vector1 .<> vector2.AsExpr
@@ -763,7 +769,8 @@ and BoolVectorExpr =
 
     static member Min (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       "Min")
 
     static member Min (vector1 : BoolVectorExpr, vector2 : BoolVector) =
        BoolVectorExpr.Min(vector1, vector2.AsExpr)
@@ -779,7 +786,8 @@ and BoolVectorExpr =
 
     static member Max (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       "Max")
 
     static member Max (vector1 : BoolVectorExpr, vector2 : BoolVector) =
        BoolVectorExpr.Max(vector1, vector2.AsExpr)
@@ -795,7 +803,8 @@ and BoolVectorExpr =
 
     static member (.&&) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_And_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_And_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".&&")
 
     static member (.&&) (vector1 : BoolVectorExpr, vector2 : BoolVector) =
         vector1 .&& vector2.AsExpr
@@ -811,7 +820,8 @@ and BoolVectorExpr =
 
     static member (.||) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.B_Or_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.B_Or_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       ".||")
 
     static member (.||) (vector1 : BoolVectorExpr, vector2 : BoolVector) =
         vector1 .|| vector2.AsExpr
@@ -826,7 +836,7 @@ and BoolVectorExpr =
         Scalar(a) .|| vector
 
     static member Not (vector : BoolVectorExpr) =
-        UnaryFunction(vector, fun v res -> MklFunctions.B_Not_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vector, (fun v res -> MklFunctions.B_Not_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Not")
 
 
 //*******************************************Vector***********************************************************************************
@@ -1745,31 +1755,31 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 and VectorExpr = 
     | Scalar of float
     | Var of Vector
-    | UnaryFunction of VectorExpr * (Vector -> Vector -> unit)
-    | BinaryFunction of VectorExpr * VectorExpr * (Vector -> Vector -> Vector -> unit)
+    | UnaryFunction of VectorExpr * (Vector -> Vector -> unit) * string
+    | BinaryFunction of VectorExpr * VectorExpr * (Vector -> Vector -> Vector -> unit) * string
     | IfFunction of BoolVectorExpr * VectorExpr * VectorExpr
 
     member this.Length =
         match this with
             | Scalar(_) -> Some 1L
             | Var(v) -> Some v.LongLength
-            | UnaryFunction(v, _) -> v.Length
-            | BinaryFunction(v1, v2, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length
+            | UnaryFunction(v, _, _) -> v.Length
+            | BinaryFunction(v1, v2, _, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length
             | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseLengthIf v1.Length v2.Length v3.Length
 
     static member DeScalar(vectorExpr : VectorExpr) =
         match vectorExpr with
             | Scalar(_) -> vectorExpr
             | Var(v) -> v.AsExpr
-            | UnaryFunction(v, f) ->
+            | UnaryFunction(v, f, label) ->
                 let v = VectorExpr.DeScalar(v)
                 match v with
                     | Scalar(u) ->
                         let res = new Vector(0.0)
                         f !!u res
                         res.AsExpr
-                    | _ -> UnaryFunction(v, f)    
-            | BinaryFunction(v1, v2, f) ->
+                    | _ -> UnaryFunction(v, f, label)    
+            | BinaryFunction(v1, v2, f, label) ->
                 let v1 = VectorExpr.DeScalar(v1)
                 let v2 = VectorExpr.DeScalar(v2)
                 match v1, v2 with
@@ -1777,7 +1787,7 @@ and VectorExpr =
                         let res = new Vector(0.0)
                         f !!u1 !!u2 res
                         res.AsExpr
-                    | _ -> BinaryFunction(v1, v2, f)
+                    | _ -> BinaryFunction(v1, v2, f, label)
             | IfFunction(v1, v2, v3) ->
                 let v1 = BoolVectorExpr.DeScalar(v1)
                 let v2 = VectorExpr.DeScalar(v2)
@@ -1788,6 +1798,18 @@ and VectorExpr =
                         Scalar(res)
                     | _ -> IfFunction(v1, v2, v3)
 
+    static member FuseAxpby(vectorExpr : VectorExpr) =
+        match vectorExpr with
+            | BinaryFunction(BinaryFunction(Scalar(a), X, _ , ".*"), BinaryFunction(Scalar(b), Y, _, ".*"), _, "+") ->
+                BinaryFunction(X, Y, (fun v1 v2 v3 -> MklFunctions.D_Array_Axpby_Array(v1.LongLength, v1.NativeArray, a, v2.NativeArray, b, v3.NativeArray)), "axpby")
+            | BinaryFunction(BinaryFunction(X, Scalar(a), _ , ".*"), BinaryFunction(Scalar(b), Y, _, ".*"), _, "+") ->
+                BinaryFunction(X, Y, (fun v1 v2 v3 -> MklFunctions.D_Array_Axpby_Array(v1.LongLength, v1.NativeArray, a, v2.NativeArray, b, v3.NativeArray)), "axpby")
+            | BinaryFunction(BinaryFunction(Scalar(a), X, _ , ".*"), BinaryFunction(Y, Scalar(b), _, ".*"), _, "+") ->
+                BinaryFunction(X, Y, (fun v1 v2 v3 -> MklFunctions.D_Array_Axpby_Array(v1.LongLength, v1.NativeArray, a, v2.NativeArray, b, v3.NativeArray)), "axpby")
+            | BinaryFunction(BinaryFunction(X, Scalar(a), _ , ".*"), BinaryFunction(Y, Scalar(b), _, ".*"), _, "+") ->
+                BinaryFunction(X, Y, (fun v1 v2 v3 -> MklFunctions.D_Array_Axpby_Array(v1.LongLength, v1.NativeArray, a, v2.NativeArray, b, v3.NativeArray)), "axpby")
+            | _ -> vectorExpr
+
     static member EvalSlice (vectorExpr : VectorExpr) (sliceStart : int64) (sliceLen : int64) (memPool : MemoryPool) =
         match vectorExpr with
             | Scalar(v) -> 
@@ -1795,7 +1817,7 @@ and VectorExpr =
             | Var(v) ->
                 ArgumentChecks.throwIfContainsDisposed [v]
                 v.View(sliceStart, sliceStart + sliceLen - 1L), memPool
-            | UnaryFunction(v, f) -> 
+            | UnaryFunction(v, f, _) -> 
                 let v, memPool = VectorExpr.EvalSlice v sliceStart sliceLen memPool
                 if memPool.Contains(v) then
                     f v v
@@ -1804,7 +1826,7 @@ and VectorExpr =
                     let res = memPool.GetVector(sliceLen)
                     f v res
                     res, memPool
-            | BinaryFunction(v1, v2, f) -> 
+            | BinaryFunction(v1, v2, f, _) -> 
                 let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
                 if memPool.Contains(v1) then
@@ -1838,7 +1860,7 @@ and VectorExpr =
                     res, memPool
 
     static member EvalIn(vectorExpr : VectorExpr, res : Vector option) =
-        let vectorExpr = VectorExpr.DeScalar(vectorExpr)
+        let vectorExpr = vectorExpr |> (VectorExpr.DeScalar>>VectorExpr.FuseAxpby)
         let length = vectorExpr.Length
         let res = 
             match length with
@@ -1869,7 +1891,8 @@ and VectorExpr =
 
     static member (.<) (vector1 : VectorExpr, vector2 : VectorExpr) =
         BinaryVectorFunction(vector1, vector2, 
-                                fun v1 v2 res -> MklFunctions.D_Arrays_LessThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_LessThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".<")
     
     static member (.<) (vector1 : VectorExpr, vector2 : Vector) =
         vector1 .< vector2.AsExpr
@@ -1885,7 +1908,8 @@ and VectorExpr =
 
     static member (.<=) (vector1 : VectorExpr, vector2 : VectorExpr) =
         BinaryVectorFunction(vector1, vector2, 
-                                fun v1 v2 res -> MklFunctions.D_Arrays_LessEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_LessEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".<=")
     
     static member (.<=) (vector1 : VectorExpr, vector2 : Vector) =
         vector1 .<= vector2.AsExpr
@@ -1901,7 +1925,8 @@ and VectorExpr =
 
     static member (.>) (vector1 : VectorExpr, vector2 : VectorExpr) =
         BinaryVectorFunction(vector1, vector2, 
-                                fun v1 v2 res -> MklFunctions.D_Arrays_GreaterThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_GreaterThan(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".>")
     
     static member (.>) (vector1 : VectorExpr, vector2 : Vector) =
         vector1 .> vector2.AsExpr
@@ -1917,7 +1942,8 @@ and VectorExpr =
 
     static member (.>=) (vector1 : VectorExpr, vector2 : VectorExpr) =
         BinaryVectorFunction(vector1, vector2, 
-                                fun v1 v2 res -> MklFunctions.D_Arrays_GreaterEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_GreaterEqual(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".>=")
     
     static member (.>=) (vector1 : VectorExpr, vector2 : Vector) =
         vector1 .>= vector2.AsExpr
@@ -1933,7 +1959,8 @@ and VectorExpr =
 
     static member (.=) (vector1 : VectorExpr, vector2 : VectorExpr) =
         BinaryVectorFunction(vector1, vector2, 
-                                fun v1 v2 res -> MklFunctions.D_Arrays_EqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_EqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".=")
     
     static member (.=) (vector1 : VectorExpr, vector2 : Vector) =
         vector1 .= vector2.AsExpr
@@ -1949,7 +1976,8 @@ and VectorExpr =
 
     static member (.<>) (vector1 : VectorExpr, vector2 : VectorExpr) =
         BinaryVectorFunction(vector1, vector2, 
-                                fun v1 v2 res -> MklFunctions.D_Arrays_NotEqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                             (fun v1 v2 res -> MklFunctions.D_Arrays_NotEqualElementwise(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                             ".<>")
     
     static member (.<>) (vector1 : VectorExpr, vector2 : Vector) =
         vector1 .<> vector2.AsExpr
@@ -1966,7 +1994,8 @@ and VectorExpr =
 
     static member Min (vector1 : VectorExpr, vector2 : VectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.D_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.D_Min_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       "Min")
 
     static member Min (vector1 : VectorExpr, vector2 : Vector) =
        VectorExpr.Min(vector1, vector2.AsExpr)
@@ -1982,7 +2011,8 @@ and VectorExpr =
 
     static member Max (vector1 : VectorExpr, vector2 : VectorExpr) =
         BinaryFunction(vector1, vector2, 
-                        fun v1 v2 res -> MklFunctions.D_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray))
+                       (fun v1 v2 res -> MklFunctions.D_Max_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, res.NativeArray)),
+                       "Max")
 
     static member Max (vector1 : VectorExpr, vector2 : Vector) =
        VectorExpr.Max(vector1, vector2.AsExpr)
@@ -1999,14 +2029,15 @@ and VectorExpr =
 
 
     static member (.*) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
-        BinaryFunction(vectorExpr1, vectorExpr2, fun v1 v2 res ->
+        BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Mul_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Mul_Array(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
-                                                        MklFunctions.D_Array_Mul_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                        MklFunctions.D_Array_Mul_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                        ".*"
                         )
 
     static member (.*) (vectorExpr1 : VectorExpr, vector2 : Vector) =
@@ -2022,14 +2053,15 @@ and VectorExpr =
         Scalar(a) .* vectorExpr
 
     static member (+) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
-        BinaryFunction(vectorExpr1, vectorExpr2, fun v1 v2 res ->
+        BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Add_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Add_Array(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
-                                                        MklFunctions.D_Array_Add_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                        MklFunctions.D_Array_Add_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                        "+"
                         )
 
     static member (+) (vectorExpr1 : VectorExpr, vector2 : Vector) =
@@ -2045,14 +2077,15 @@ and VectorExpr =
         Scalar(a) + vectorExpr
 
     static member (./) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
-        BinaryFunction(vectorExpr1, vectorExpr2, fun v1 v2 res ->
+        BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Div_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Array_Div_Scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
-                                                        MklFunctions.D_Array_Div_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                        MklFunctions.D_Array_Div_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                        "./"
                         )
 
     static member (./) (vectorExpr1 : VectorExpr, vector2 : Vector) =
@@ -2069,14 +2102,15 @@ and VectorExpr =
 
 
     static member (-) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
-        BinaryFunction(vectorExpr1, vectorExpr2, fun v1 v2 res ->
+        BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Sub_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Array_Sub_Scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
-                                                        MklFunctions.D_Array_Sub_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                        MklFunctions.D_Array_Sub_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                        "-"
                         )
 
     static member (-) (vectorExpr1 : VectorExpr, vector2 : Vector) =
@@ -2092,17 +2126,18 @@ and VectorExpr =
         Scalar(a) - vectorExpr
 
     static member (~-) (vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Minus_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Minus_Array(v.LongLength, v.NativeArray, res.NativeArray)), "~-")
 
     static member (.^) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
-        BinaryFunction(vectorExpr1, vectorExpr2, fun v1 v2 res ->
+        BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
                                                         MklFunctions.D_Scalar_Pow_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
                                                         MklFunctions.D_Array_Pow_scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
-                                                        MklFunctions.D_Array_Pow_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)
+                                                        MklFunctions.D_Array_Pow_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
+                        ".^"
                         )
 
     static member (.^) (vectorExpr1 : VectorExpr, vector2 : Vector) =
@@ -2128,128 +2163,130 @@ and VectorExpr =
             (vectorExpr .^ (-n)) .^ (-1.0)
 
     static member Abs(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Abs_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Abs_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Abs")
 
     static member Sqrt(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Sqrt_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Sqrt_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Sqrt")
 
     static member Sin(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Sin_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Sin_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Sin")
 
     static member Cos(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Cos_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Cos_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Cos")
 
     static member Tan(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Tan_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Tan_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Tan")
 
     static member Asin(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_ASin_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_ASin_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Asin")
 
     static member Acos(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_ACos_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_ACos_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Acos")
 
     static member Atan(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_ATan_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_ATan_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Atan")
 
     static member Sinh(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Sinh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Sinh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Sinh")
 
     static member Cosh(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Cosh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Cosh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Cosh")
 
     static member Tanh(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Tanh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Tanh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Tanh")
 
     static member ASinh(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_ASinh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_ASinh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "ASinh")
 
     static member ACosh(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_ACosh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_ACosh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "ACosh")
 
     static member ATanh(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_ATanh_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_ATanh_Array(v.LongLength, v.NativeArray, res.NativeArray)), "ATanh")
 
     static member Exp(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Exp_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Exp_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Exp")
 
     static member Expm1(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Expm1_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Expm1_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Expm1")
 
     static member Log(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Ln_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Ln_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Log")
 
     static member Log10(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Log10_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Log10_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Log10")
 
     static member Log1p(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Log1p_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Log1p_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Log1p")
 
     static member Erf(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Erf_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Erf_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Erf")
 
     static member Erfc(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Erfc_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Erfc_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Erfc")
 
     static member Erfinv(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Erfinv_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Erfinv_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Erfinv")
 
     static member Erfcinv(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Erfcinv_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Erfcinv_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Erfcinv")
 
     static member Normcdf(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_CdfNorm_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_CdfNorm_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Normcdf")
 
     static member Norminv(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_CdfNormInv_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_CdfNormInv_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Norminv")
 
     static member Round(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Round_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Round_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Round")
 
     static member Ceiling(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Ceil_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Ceil_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Ceiling")
 
     static member Floor(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Floor_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Floor_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Floor")
 
     static member Truncate(vectorExpr : VectorExpr) =
-        UnaryFunction(vectorExpr, fun v res -> MklFunctions.D_Trunc_Array(v.LongLength, v.NativeArray, res.NativeArray))
+        UnaryFunction(vectorExpr, (fun v res -> MklFunctions.D_Trunc_Array(v.LongLength, v.NativeArray, res.NativeArray)), "Truncate")
+
+and PoolVector<'T>(vector : 'T) =
+    let mutable isUsed = true
+
+    member this.IsUsed 
+        with get() = isUsed
+        and set(value) = isUsed <- value
+
+    member this.Vector = vector
 
 and MemoryPool() =
-    let boolVectorPool = new Dictionary<nativeptr<bool>, BoolVector*bool>() // bool: is in use
-    let vectorPool = new Dictionary<nativeptr<float>, Vector*bool>()
 
-    member this.BoolVectorCount = boolVectorPool.Keys.Count
-
-    member this.VectorCount = vectorPool.Keys.Count
-
-    member this.UsedBoolVectorCount = boolVectorPool |> Seq.filter (fun kv -> kv.Value |> snd) |> Seq.length
-
-    member this.UsedVectorCount = vectorPool |> Seq.filter (fun kv -> kv.Value |> snd) |> Seq.length
+    let boolVectorPool = new Dictionary<nativeptr<bool>, PoolVector<BoolVector>>() 
+    let vectorPool = new Dictionary<nativeptr<float>, PoolVector<Vector>>()
 
     member this.GetBoolVector(length : int64) =
-        match boolVectorPool.Values |> Seq.tryFind (fun (v, isUsed) -> not isUsed && v.LongLength >= length) with
-            | Some(v,_) -> 
-                 boolVectorPool.[v.NativeArray] <- (v, true)
-                 if v.LongLength <> length then
-                     v.View(0L, length - 1L)
+        match boolVectorPool.Values |> Seq.tryFind (fun poolVector -> not poolVector.IsUsed && poolVector.Vector.LongLength >= length) with
+            | Some(v) -> 
+                 v.IsUsed <- true
+                 if v.Vector.LongLength <> length then
+                     v.Vector.View(0L, length - 1L)
                  else
-                     v
+                     v.Vector
             | None ->
                 let v = new BoolVector(length, false)
-                boolVectorPool.Add(v.NativeArray, (v, true))
+                boolVectorPool.Add(v.NativeArray, new PoolVector<_>(v))
                 v
 
     member this.GetVector(length : int64) =
-        match vectorPool.Values |> Seq.tryFind (fun (v, isUsed) -> not isUsed && v.LongLength >= length) with
-            | Some(v,_) -> 
-                 vectorPool.[v.NativeArray] <- (v, true)
-                 if v.LongLength <> length then
-                     v.View(0L, length - 1L)
+        match vectorPool.Values |> Seq.tryFind (fun poolVector -> not poolVector.IsUsed && poolVector.Vector.LongLength >= length) with
+            | Some(v) -> 
+                 v.IsUsed <- true
+                 if v.Vector.LongLength <> length then
+                     v.Vector.View(0L, length - 1L)
                  else
-                     v
+                     v.Vector
             | None ->
                 let v = new Vector(length, 0.0)
-                vectorPool.Add(v.NativeArray, (v, true))
+                vectorPool.Add(v.NativeArray, new PoolVector<Vector>(v))
                 v
 
     member this.Contains(boolVector : BoolVector) =
@@ -2260,28 +2297,20 @@ and MemoryPool() =
 
     member this.UnUse(boolVector : BoolVector) =
         if this.Contains(boolVector) then
-            boolVectorPool.[boolVector.NativeArray] <- (fst boolVectorPool.[boolVector.NativeArray], false)
+            boolVectorPool.[boolVector.NativeArray].IsUsed <- false
 
     member this.UnUse(vector : Vector) =
         if this.Contains(vector) then
-            vectorPool.[vector.NativeArray] <- (fst vectorPool.[vector.NativeArray], false)
+            vectorPool.[vector.NativeArray].IsUsed <- false
 
     member this.UnUseAll() =
-        let boolVectors = boolVectorPool.Values |> Seq.map fst |> Seq.toArray
-        boolVectors |> Array.iter (fun v -> this.UnUse(v))
-        let vectors = vectorPool.Values |> Seq.map fst |> Seq.toArray
-        vectors |> Array.iter (fun v -> this.UnUse(v))
-           
-    member this.IsUsed(boolVector : BoolVector) =
-        this.Contains(boolVector) && snd(boolVectorPool.[boolVector.NativeArray]) 
-
-    member this.IsUsed(vector : Vector) =
-        this.Contains(vector) && snd(vectorPool.[vector.NativeArray]) 
+        boolVectorPool.Values |> Seq.iter (fun v -> v.IsUsed <- false)
+        vectorPool.Values |> Seq.iter (fun v -> v.IsUsed <- false)
            
     interface IDisposable with
         member this.Dispose() = 
-             boolVectorPool |> Seq.iter (fun kv -> let vector = fst kv.Value in (vector:>IDisposable).Dispose())  
-             vectorPool |> Seq.iter (fun kv -> let vector = fst kv.Value in (vector:>IDisposable).Dispose())  
+             boolVectorPool |> Seq.iter (fun kv -> let vector = kv.Value.Vector in (vector:>IDisposable).Dispose())  
+             vectorPool |> Seq.iter (fun kv -> let vector = kv.Value.Vector in (vector:>IDisposable).Dispose())  
               
 
         

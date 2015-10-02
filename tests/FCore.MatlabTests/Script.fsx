@@ -20,7 +20,8 @@ let inline (<=>) (x : Vector) (y : Vector) = epsEqualArray (x.ToArray()) (y.ToAr
 
 #time
 let rng = new MT19937Rng()
-let v = (new Vector([2.;3.;4.])).AsExpr
-Vector.EvalSliceLength <- 200000
-MklControl.SetMaxThreads(4)
-let res = (v .^ -3) |> eval
+let v1 = (rand rng 100000000 : Vector).AsExpr
+let v2 = (rand rng 100000000 : Vector).AsExpr
+Vector.EvalSliceLength <- 80000
+MklControl.SetMaxThreads(8)
+let res = (2.0 .* v1 + 3.0 .* v2) |> eval

@@ -488,6 +488,38 @@ module VectorExpr =
         eval (-(-X.AsExpr)) <=> X
 
     [<Property>]
+    let ``a .* X + b .* Y`` (v : (float*float)[]) (a : float) (b : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        eval (a .* X.AsExpr + b .* Y.AsExpr) <=> (a .* X + b .* Y)
+
+    [<Property>]
+    let ``X .* a + b .* Y`` (v : (float*float)[]) (a : float) (b : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        eval (X.AsExpr .* a + b .* Y.AsExpr) <=> (a .* X + b .* Y)
+
+    [<Property>]
+    let ``a .* X + Y .* b`` (v : (float*float)[]) (a : float) (b : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        eval (a .* X.AsExpr + Y.AsExpr .* b) <=> (a .* X + b .* Y)
+
+    [<Property>]
+    let ``X .* a + Y .* b`` (v : (float*float)[]) (a : float) (b : float) =
+        let x = v |> Array.map fst
+        let y = v |> Array.map snd
+        let X = new Vector(x)
+        let Y = new Vector(y)
+        eval (X.AsExpr .* a + Y.AsExpr .* b) <=> (a .* X + b .* Y)
+
+    [<Property>]
     let ``abs VectorExpr`` (x : float[]) =
         let X = new Vector(x)
         eval (abs X.AsExpr) <=> (abs X)
@@ -722,10 +754,11 @@ module VectorExpr =
         let aY = a .* Y
         (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr (a .* Y) !!b) in res.ToArray() |> Array.mapi (fun i x -> res.[i] <==> if X.[i] then aY.[i] else b) |> Array.fold (&&) true)
 
-    [<Fact>]
-    let ``eval large vector`` () =
-        use x = new Vector(5234567, fun i -> rnd.NextDouble())
-        use y = new Vector(5234567, fun i -> rnd.NextDouble())
+    [<Property>]
+    let ``eval large vector`` (n : int) =
+        let n = max (min n 1000000) 0
+        use x = new Vector(n, fun i -> rnd.NextDouble())
+        use y = new Vector(n, fun i -> rnd.NextDouble())
         eval (VectorExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> -Vector.Min(x .* y, x + y)
 
 
