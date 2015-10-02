@@ -465,6 +465,12 @@ module MatrixExpr =
         (x.Length > 0) ==> lazy(eval (X.AsExpr .^ a) <=> (X .^ a))
 
     [<Property>]
+    let ``MatrixExpr .^ n`` (x : float[,]) (n : int) =
+        let n = max (min 10 n) -10
+        let X = new Matrix(x)
+        (x.Length > 0) ==> lazy(epsEqual 1e-14 (eval (X.AsExpr .^ n)) (X .^ n))
+
+    [<Property>]
     let ``scalar .^ MatrixExpr`` (x : float[,]) (a : float) =
         let X = new Matrix(x)
         (x.Length > 0) ==> lazy(eval (a .^ X.AsExpr) <=> (a .^ X))

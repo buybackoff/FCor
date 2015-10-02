@@ -507,6 +507,16 @@ module MatrixOperators =
         (epsEqual 1e-14 ((X .^ a).ToArray2D()) ((X .^ A).ToArray2D())) .&. (epsEqual 1e-15 ((X .^ a).ToArray2D()) (x |> Array2D.map (fun z -> if a = 0.0 then 1.0 elif z = 1.0 then 1.0 else z ** a)))
 
     [<Property>]
+    let ``X .^ n`` (x : float[,]) (n : int) =
+        let a = float n
+        let x = x |> Array2D.map (fun x -> if Double.IsNaN(x) then 1.0 else abs(x))
+        let a = if Double.IsNaN(a) then 1.0 else a
+        let X = new Matrix(x)
+        let A = new Matrix(a)
+        (epsEqual 1e-15 ((X .^ n).ToArray2D()) (x |> Array2D.map (fun z -> if a = 0.0 then 1.0 elif z = 1.0 then 1.0 else z ** a)))
+
+
+    [<Property>]
     let ``a .^ X`` (x : float[,]) (a : float) =
         let a = if Double.IsNaN(a) then 1.0 else abs a
         let x = x |> Array2D.map (fun x -> if Double.IsNaN(x) then 1.0 else x)

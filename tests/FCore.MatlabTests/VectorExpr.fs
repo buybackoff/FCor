@@ -467,6 +467,12 @@ module VectorExpr =
         (x.Length > 0) ==> lazy(eval (X.AsExpr .^ a) <=> (X .^ a))
 
     [<Property>]
+    let ``VectorExpr .^ n`` (x : float[]) (n : int) =
+        let n = max (min 10 n) -10
+        let X = new Vector(x)
+        (x.Length > 0) ==> lazy(epsEqual 1e-14 (eval (X.AsExpr .^ n)) (X .^ n))
+
+    [<Property>]
     let ``scalar .^ VectorExpr`` (x : float[]) (a : float) =
         let X = new Vector(x)
         (x.Length > 0) ==> lazy(eval (a .^ X.AsExpr) <=> (a .^ X))
