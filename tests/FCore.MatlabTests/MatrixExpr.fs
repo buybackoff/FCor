@@ -18,7 +18,9 @@ module MatrixExpr =
     let inline (<=>) (x : Matrix) (y : Matrix) = epsEqualArray2D (x.ToArray2D()) (y.ToArray2D()) epsEqualFloat 0.0
     let inline (<==>) (x : float) (y : float) = epsEqualFloat x y 0.0
     let inline epsEqual eps (x : Matrix) (y : Matrix) = epsEqualArray2D (x.ToArray2D()) (y.ToArray2D()) epsEqualFloat eps
-
+    let isRegular x =
+        not <| Double.IsNaN(x) && not <| Double.IsInfinity(x) && x <> Double.MaxValue && x <> Double.MinValue
+    
     [<Property>]
     let ``MatrixExpr .< MatrixExpr`` (v : (float*float)[,]) =
         let x = v |> Array2D.map fst
@@ -489,33 +491,41 @@ module MatrixExpr =
     let ``a .* X + b .* Y`` (v : (float*float)[,]) (a : float) (b : float) =
         let x = v |> Array2D.map fst
         let y = v |> Array2D.map snd
+        let a = if a = 0.0 then 1.0 else a
+        let b = if b = 0.0 then 1.0 else b
         let X = new Matrix(x)
         let Y = new Matrix(y)
-        eval (a .* X.AsExpr + b .* Y.AsExpr) <=> (a .* X + b .* Y)
+        epsEqual 1e-14 (eval (a .* X.AsExpr + b .* Y.AsExpr)) (a .* X + b .* Y)
 
     [<Property>]
     let ``X .* a + b .* Y`` (v : (float*float)[,]) (a : float) (b : float) =
         let x = v |> Array2D.map fst
         let y = v |> Array2D.map snd
+        let a = if a = 0.0 then 1.0 else a
+        let b = if b = 0.0 then 1.0 else b
         let X = new Matrix(x)
         let Y = new Matrix(y)
-        eval (X.AsExpr .* a + b .* Y.AsExpr) <=> (a .* X + b .* Y)
+        epsEqual 1e-14 (eval (X.AsExpr .* a + b .* Y.AsExpr)) (a .* X + b .* Y)
 
     [<Property>]
     let ``a .* X + Y .* b`` (v : (float*float)[,]) (a : float) (b : float) =
         let x = v |> Array2D.map fst
         let y = v |> Array2D.map snd
+        let a = if a = 0.0 then 1.0 else a
+        let b = if b = 0.0 then 1.0 else b
         let X = new Matrix(x)
         let Y = new Matrix(y)
-        eval (a .* X.AsExpr + Y.AsExpr .* b) <=> (a .* X + b .* Y)
+        epsEqual 1e-14 (eval (a .* X.AsExpr + Y.AsExpr .* b)) (a .* X + b .* Y)
 
     [<Property>]
     let ``X .* a + Y .* b`` (v : (float*float)[,]) (a : float) (b : float) =
         let x = v |> Array2D.map fst
         let y = v |> Array2D.map snd
+        let a = if a = 0.0 then 1.0 else a
+        let b = if b = 0.0 then 1.0 else b
         let X = new Matrix(x)
         let Y = new Matrix(y)
-        eval (X.AsExpr .* a + Y.AsExpr .* b) <=> (a .* X + b .* Y)
+        epsEqual 1e-14 (eval (X.AsExpr .* a + Y.AsExpr .* b)) (a .* X + b .* Y)
 
     [<Property>]
     let ``abs MatrixExpr`` (x : float[,]) =
@@ -699,7 +709,7 @@ module MatrixExpr =
         let y1 = new Matrix(b1)
         let y2 = new Matrix(b2)
         let r = (a1 * a2) + (b1 * b2)
-        (not <| Double.IsNaN(r) && not <| Double.IsInfinity(r)) ==> (epsEqual 1e-15 (eval ((x1.AsExpr .* x2) + (y1.AsExpr .* y2))) (new Matrix( (a1 * a2) + (b1 * b2))))
+        (isRegular a1 && isRegular a2 && isRegular b1 && isRegular b2) ==> (epsEqual 1e-14 (eval ((x1.AsExpr .* x2) + (y1.AsExpr .* y2))) (new Matrix( (a1 * a2) + (b1 * b2))))
 
     [<Property>]
     let ``Eval scalar IfFunction`` (a : bool) (b : float) (c : float) =
@@ -755,7 +765,7 @@ module MatrixExpr =
 
     [<Property>]
     let ``eval large vector`` (n: int) =
-        let n = max (min n 200000) 0
+        let n = max (min n 200000) 30000
         use x = new Matrix(n, 5, fun i j -> rnd.NextDouble())
         use y = new Matrix(n, 5, fun i j -> rnd.NextDouble())
         eval (MatrixExpr.Min(x.AsExpr .* y.AsExpr, x.AsExpr + y.AsExpr) |> (~-)) <=> -Matrix.Min(x .* y, x + y)

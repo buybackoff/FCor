@@ -7,7 +7,7 @@ open Microsoft.FSharp.NativeInterop
 open System.Collections.Generic
 open FCore.ExplicitConversion
 
-type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : IntPtr, isView : bool, parentVector : BoolVector option) =
+type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : IntPtr, isView : bool, parentVector : BoolVector option) as this =
     let mutable isDisposed = false
 
     static let empty = new BoolVector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
@@ -46,7 +46,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
             let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
             new BoolVector(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<bool>, GCHandle.ToIntPtr(gcHandle), true, None)
 
-    new(data : bool) = new BoolVector([|data|])
+    new(data : bool) = new BoolVector([|data|], false)
 
     new(length : int, initializer : int -> bool) =
         let data = Array.init length initializer
@@ -652,13 +652,13 @@ and BoolVectorExpr =
             for i in 0L..(m-1L) do
                 let sliceStart = i * n
                 let v, _ = BoolVectorExpr.EvalSlice boolVectorExpr sliceStart n memPool
-                res.View(sliceStart, sliceStart + n - 1L).SetSlice(Some(0L), None, v)
+                res.SetSlice(Some sliceStart, Some(sliceStart + n - 1L), v)
                 memPool.UnUseAll()
 
             if k > 0L then
                 let sliceStart = m * n
                 let v, _ = BoolVectorExpr.EvalSlice boolVectorExpr sliceStart k memPool
-                res.View(sliceStart, sliceStart + k - 1L).SetSlice(Some(0L), None, v)
+                res.SetSlice(Some sliceStart, Some(sliceStart + k - 1L), v)
         res
 
     static member (.<) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
@@ -841,7 +841,7 @@ and BoolVectorExpr =
 
 //*******************************************Vector***********************************************************************************
 
-and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr, isView : bool, parentVector : Vector option) =
+and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr, isView : bool, parentVector : Vector option) as this =
     let mutable isDisposed = false
 
     static let empty = new Vector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
@@ -880,11 +880,11 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
             new Vector(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<float>, GCHandle.ToIntPtr(gcHandle), true, None)
 
-    new(data : float) = new Vector([|data|])
+    new(data : float) = new Vector([|data|], false)
 
     new(length : int, initializer : int -> float) =
         let data = Array.init length initializer
-        new Vector(data)
+        new Vector(data, false)
 
 
     member this.Length = length |> int
@@ -1880,13 +1880,13 @@ and VectorExpr =
             for i in 0L..(m-1L) do
                 let sliceStart = i * n
                 let v, _ = VectorExpr.EvalSlice vectorExpr sliceStart n memPool
-                res.View(sliceStart, sliceStart + n - 1L).SetSlice(Some(0L), None, v)
+                res.SetSlice(Some(sliceStart), Some(sliceStart + n - 1L), v)
                 memPool.UnUseAll()
 
             if k > 0L then
                 let sliceStart = m * n
                 let v, _ = VectorExpr.EvalSlice vectorExpr sliceStart k memPool
-                res.View(sliceStart, sliceStart + k - 1L).SetSlice(Some(0L), None, v)
+                res.SetSlice(Some(sliceStart), Some(sliceStart + k - 1L), v)
         res
 
     static member (.<) (vector1 : VectorExpr, vector2 : VectorExpr) =
@@ -2296,11 +2296,11 @@ and MemoryPool() =
         vectorPool.ContainsKey(vector.NativeArray)
 
     member this.UnUse(boolVector : BoolVector) =
-        if this.Contains(boolVector) then
+        if boolVectorPool.ContainsKey(boolVector.NativeArray) then
             boolVectorPool.[boolVector.NativeArray].IsUsed <- false
 
     member this.UnUse(vector : Vector) =
-        if this.Contains(vector) then
+        if vectorPool.ContainsKey(vector.NativeArray) then
             vectorPool.[vector.NativeArray].IsUsed <- false
 
     member this.UnUseAll() =
