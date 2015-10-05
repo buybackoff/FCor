@@ -78,7 +78,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     static member op_Explicit(v : bool) = new BoolVector(v)
 
-    static member op_Explicit(v : bool[]) = new BoolVector(v)
+    static member op_Explicit(v : bool seq) = new BoolVector(v)
 
     static member op_Explicit(v : BoolVector) = v
 
@@ -918,7 +918,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static member op_Explicit(v : float) = new Vector(v)
 
-    static member op_Explicit(v : float[]) = new Vector(v)
+    static member op_Explicit(v : float seq) = new Vector(v)
 
     static member op_Explicit(v : Vector) = v
 

@@ -8,8 +8,6 @@
 FCore Numerical Library
 ======================
 
-FCore is a high performance F# numerical library.
-
 <div class="row">
   <div class="span1"></div>
   <div class="span6">
@@ -20,6 +18,23 @@ FCore is a high performance F# numerical library.
   </div>
   <div class="span1"></div>
 </div>
+
+Overview
+--------
+
+FCore is a high performance .NET numerical library with an F# API. It contains F# types and functions which will allow you to create and manipulate bool and float vectors and 2D dense matrices as well as generate random numbers and calculate basic stats. 
+Main features:
+
+- strong typing: use `BoolVector`, `Vector`, `BoolMatrix` and `Matrix` types in overloaded functions and operators
+- FCore uses unmanaged memory so you can create vectors and matrices of virtually any size (64 bit memory required)
+- most functions use Math Kernel Library (MKL) or C implementation for maximum performance on Intel
+- elementwise operators: `.*`, `./`, `.<` etc
+- access to all high quality random number generators from MKL
+- access to matrix factorizations and solvers from MKL 
+- overloaded functions, e.g. `rand` can return a vector or a matrix, `mean` can take a vector or matrix and axis etc.
+- evaluate vector and matrix expressions without creating temporary objects, e.g. `(a .* X + b .* Y) |> eval` 
+- vector and matrix slicing and indexing
+
 
 Example
 -------
@@ -35,15 +50,16 @@ open FCore.Random
 open FCore.LinearAlgebra
 open FCore.BasicStats
 
-let rng = new MT19937Rng()
-let vector1 : Vector = rand rng 5
-let matrix1 = rand rng 5 5
-let vector2 = exp(vector1) + 2.0
-let matrix2 = exp(matrix1) + 2.0
-let l, u, p = lu matrix1
-let variance1 = var vector1
-let variance2 = var matrix1 ColumnAxis
-
+let rng = new MT19937Rng() // create a Mersenne Twister random number generator
+let vector1 : Vector = rand rng 5 // create a random vector with 5 elements
+let boolVector = vector1 .< 0.5 // compare elementwise
+let matrix1 = rand rng 5 5 // create a random matrix 5x5
+let vector2 = exp(vector1) + 2.0 // apply exp to a vector
+let matrix2 = exp(matrix1) + 2.0 // apply exp to a matrix
+let l, u, p = lu matrix1 // LU factorization
+let variance1 = var vector1 // calculate variance of a vector
+let variance2 = var matrix1 ColumnAxis // calculate variance of each column of a matrix
+let vector4 = log((vector2.AsExpr + 3.0) .^ 3) |> eval // avoid creating temporary vectors
 
 (** And the variable `matrix1` has the following value: *)
 (*** include-value: matrix1 ***)
@@ -55,7 +71,6 @@ Documentation
 
 The library comes with a comprehensive library guide: 
 
- * [Introduction](introduction.html) contains an overview of the library.
  * [BoolVector](BoolVector.html) introduces BoolVector type and related functions
  * [Vector](Vector.html) introduces Vector type and related functions
  * [BoolMatrix](BoolMatrix.html) introduces BoolMatrix type and related functions

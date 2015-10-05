@@ -5,15 +5,15 @@
 (**
 BoolVector
 ============
-FCore provides specialised vectors that hold boolean values. The primary use of these is for linear algebra. 
+FCore provides specialised vectors that hold boolean values. Boolean vectors are usually created as a result of comparing elementwise float vectors but you can also create them directly. 
 Creating BoolVectors
 --------------------
-There are a number of options provided to create these vectors.
 
-They can be created by defining the length using an integer or long and the value to be used for each element, or if you just provide a value you will get a vector of length 1: 
+They can be created by defining the length using an `int` or `int64` and the value to be used for each element, or if you just provide a value you will get a vector of length 1: 
 *)
 #r "FCore.dll"
 
+open System
 open FCore
 
 let v1 = new BoolVector(5, true)
@@ -26,9 +26,7 @@ You can also create a vector by just providing a sequence of bool values or by s
 *)
 let v4 = new BoolVector([ false; true ])
 
-let v5 = new BoolVector(3, fun i -> 
-                       if i = 1 then false
-                       else true)
+let v5 = new BoolVector(3, fun i -> i <> 1)
 (** This gives a value for v5 of: *)
 (*** include-value: v5 ***)
 (**
@@ -39,44 +37,91 @@ let v6 = new BoolVector([| false; true |], true)
 let v7 = new BoolVector([| false; true |], false)
 
 (**
-You can also create a vector by converting a single bool or an array of bools using !! operator from the ExplicitConversion module.
+You can also create a vector by converting a single bool or a seq of bools using `!!` operator from the ExplicitConversion module.
 *)
 open FCore.ExplicitConversion
 let v8 : BoolVector = !!false
-let v9 : BoolVector = !![| false; true |]
+let v9 : BoolVector = !![false; true]
 (**
 Operators
 ---------
 There are a full range of operators provided for working with BoolVectors. These include:
 
-* **==** - tests whether two vectors are equal 
-* **!=** - tests whether two vectors are different 
-* **.&&** - creates a new vector, which is the result of applying && to each element of the two vectors  
-* **.||** - creates a new vector, which is the result of applying || to each element of the two vectors  
+* `=` - tests whether two vectors are equal by value
+* `<>` - tests whether two vectors are not equal by value
+* `==` - tests whether two vectors or vector and scalar are equal 
+* `!=` - tests whether two vectors or vector and scalar are different 
+* `.&&` - creates a new vector, which is the result of applying && to each element of the two vectors  
+* `.||` - creates a new vector, which is the result of applying || to each element of the two vectors  
 
 Here are some examples:
 *)
-let v10 = new BoolVector([ false; true; false ])
-let v11 = new BoolVector([ false; true; true ])
-v10 == v11 //false
+let v10 = new BoolVector([false; true; false])
+let v11 = new BoolVector([false; true; true])
+v10 = v11 //false
+v10 <> v11 //true
+v10 == false // false
 v10 != v11 //true
 v10 .&& v11 //false,true,false
 v10 .|| v11 //false,true,true
 (**
-Accessing elements and slicing
+Accessing elements and slicing/indexing
 ------------------------------
-To access an individual element within the vector you can just use the standard F# syntax: x.[i]. For example:
+In indexing and slicing you can use indices of type `int` or `int64`. The code examples below only show `int` version.
+ 
+To get or set an individual element within the vector you can just use the standard F# syntax: `x.[i]`. For example:
 *)
-v10.[2]
+let a = v10.[2]
+v10.[0] <- false
+(**
+You can also get and set a range within a vector using slicing syntax: `x.[i..j]`. For example:
+*)
+let slice = v10.[1..2] 
 (**
 produces a value of:
 *)
-(*** include-value: v10.[2] ***)
+(*** include-value: slice ***)
+v10.SetSlice(Some(1), Some(2), true) 
+v10.SetSlice(Some(1), Some(2), v11.[1..2]) 
 (**
-Tou can also access a range within a vector using slicing syntax: x.[i..j]. For example:
+You can also use a sequence of indices to get or set part of a vector:
 *)
-v10.[1..2]
+let v12 = v10.[ [0;2] ] 
+v10.[ [0;2] ] <- v11.[1..2]
 (**
-produces a value of:
+It is also possible to index a bool vector with another bool vector (logical indexing), e.g.
 *)
-(*** include-value: v10.[1..2] ***)
+let v13 = v10.[v11] //returns v10 elements where v11 is true
+v10.[v11] <- new BoolVector(false) //set elements of v10 where v11 is true to elements of given vector
+(**
+BoolVector views
+------------------------------
+For performance reasons you might want to get a slice of a vector without copying the data. You can create a view on part of an existing vector:
+*)
+let view = v10.View(1,2) // creates a slice 1..2 which shares memory with the input vector
+(**
+You can check if a vector is a view:
+*)
+let isView = view.IsView
+(**
+BoolVector functions
+--------------------
+You can convert BoolVector to .NET array:
+*)
+let arr = v10.ToArray()
+(**
+Use static methods `Min` `Max` and `Not` to manipulate vectors:
+*)
+let v14 = BoolVector.Min(v10, v11)
+let v15 = BoolVector.Max(v10, v11)
+let v16 = BoolVector.Not v10
+(**
+BoolVector disposing
+------------------------------
+BoolVector implements `IDisposable` so that you can deallocate unmanaged memory deterministically:
+*)
+(v10:>IDisposable).Dispose()
+(**
+If `Dispose` is not called then the memory is deallocated in Finalizer.
+*)
+
