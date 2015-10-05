@@ -12,8 +12,11 @@ type MatrixAxis = | RowAxis | ColumnAxis
 type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVector) =
 
     let mutable rowCount = rowCount
-
     let mutable colCount = colCount
+
+    do 
+      if rowCount < 0L || colCount < 0L then raise (new ArgumentException("BoolMatrix row and column count must be >= 0"))
+      if colMajorDataVector.LongLength <> rowCount * colCount then raise (new ArgumentException("BoolMatrix row and column count not compatible with data length"))
 
     static let empty = new BoolMatrix(0L, 0L, BoolVector.Empty)
 
@@ -21,10 +24,12 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         new BoolMatrix(colMajorDataVector.LongLength, 1L, colMajorDataVector)
 
     new(rowCount : int64, colCount : int64, init : bool) =
-        if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
-        let length = rowCount * colCount
-        let v = new BoolVector(length, init)
-        new BoolMatrix(rowCount, colCount, v)
+        if rowCount < 0L || colCount < 0L then 
+            new BoolMatrix(rowCount, colCount, BoolVector.Empty)
+        else
+            let length = rowCount * colCount
+            let v = new BoolVector(length, init)
+            new BoolMatrix(rowCount, colCount, v)
 
     new(rowCount : int, colCount : int, init : bool) =
         let rowCount = rowCount |> int64
@@ -32,11 +37,11 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         new BoolMatrix(rowCount, colCount, init)
 
     new(rowCount : int64, colCount : int64, colMajorDataSeq : seq<bool>) =
-        if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
-        let length = rowCount * colCount
-        let v = new BoolVector(colMajorDataSeq)
-        if v.LongLength <> length then raise (new ArgumentException("Matrix row and column count not compatible with data length"))
-        new BoolMatrix(rowCount, colCount, v)
+        if rowCount < 0L || colCount < 0L then 
+            new BoolMatrix(rowCount, colCount, BoolVector.Empty)
+        else
+            let v = new BoolVector(colMajorDataSeq)
+            new BoolMatrix(rowCount, colCount, v)
 
     new(rowCount : int, colCount : int, colMajorDataSeq : seq<bool>) =
         new BoolMatrix(rowCount |> int64, colCount |> int64, colMajorDataSeq)
@@ -565,9 +570,6 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
     interface IDisposable with
         member this.Dispose() = this.ColMajorDataVector.DoDispose(true)
 
-    override this.Finalize() =
-            try this.ColMajorDataVector.DoDispose(false) with _ -> ()
-
     override this.ToString() = 
         ArgumentChecks.throwIfContainsDisposed [this]
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<bool>() true, null)
@@ -825,16 +827,22 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
     let mutable rowCount = rowCount
     let mutable colCount = colCount
 
+    do 
+      if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
+      if colMajorDataVector.LongLength <> rowCount * colCount then raise (new ArgumentException("Matrix row and column count not compatible with data length"))
+
     static let empty = new Matrix(0L, 0L, Vector.Empty)
 
     new(colMajorDataVector : Vector) =
         new Matrix(colMajorDataVector.LongLength, 1L, colMajorDataVector)
 
     new(rowCount : int64, colCount : int64, init : float) =
-        if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
-        let length = rowCount * colCount
-        let v = new Vector(length, init)
-        new Matrix(rowCount, colCount, v)
+        if rowCount < 0L || colCount < 0L then 
+            new Matrix(rowCount, colCount, Vector.Empty)
+        else
+            let length = rowCount * colCount
+            let v = new Vector(length, init)
+            new Matrix(rowCount, colCount, v)
 
     new(rowCount : int, colCount : int, init : float) =
         let rowCount = rowCount |> int64
@@ -842,11 +850,11 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(rowCount, colCount, init)
 
     new(rowCount : int64, colCount : int64, colMajorDataSeq : seq<float>) =
-        if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
-        let length = rowCount * colCount
-        let v = new Vector(colMajorDataSeq)
-        if v.LongLength <> length then raise (new ArgumentException("Matrix row and column count not compatible with data length"))
-        new Matrix(rowCount, colCount, v)
+        if rowCount < 0L || colCount < 0L then 
+            new Matrix(rowCount, colCount, Vector.Empty)
+        else
+            let v = new Vector(colMajorDataSeq)
+            new Matrix(rowCount, colCount, v)
 
     new(rowCount : int, colCount : int, colMajorDataSeq : seq<float>) =
         new Matrix(rowCount |> int64, colCount |> int64, colMajorDataSeq)
@@ -2242,8 +2250,6 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
     interface IDisposable with
         member this.Dispose() = this.ColMajorDataVector.DoDispose(true)
-
-    override this.Finalize() = try this.ColMajorDataVector.DoDispose(false) with _ -> ()
 
 //************************************************MatrixExpr*******************************************************************************
 

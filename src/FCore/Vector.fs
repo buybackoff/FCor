@@ -9,19 +9,25 @@ open FCore.ExplicitConversion
 
 type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : IntPtr, isView : bool, parentVector : BoolVector option) as this =
     let mutable isDisposed = false
+    do
+        if length < 0L then
+            GC.SuppressFinalize(this)
+            raise (new ArgumentException("BoolVector length must be >= 0"))
 
     static let empty = new BoolVector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
 
     static let mutable evalSliceLength = 100000
 
     new(length : int64, init : bool) =
-        if length < 0L then raise (new ArgumentException("Vector length must be >= 0"))
         let mutable arr = IntPtr.Zero
-        let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
-        MklFunctions.B_Create_Array(length, nativeArrayPtr)
-        let nativeArray = arr |> NativePtr.ofNativeInt<bool>
-        MklFunctions.B_Fill_Array(init, length, nativeArray)
-        new BoolVector(length, nativeArray, IntPtr.Zero, false, None)
+        if length < 0L then
+            new BoolVector(length, arr |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
+        else
+            let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
+            MklFunctions.B_Create_Array(length, nativeArrayPtr)
+            let nativeArray = arr |> NativePtr.ofNativeInt<bool>
+            MklFunctions.B_Fill_Array(init, length, nativeArray)
+            new BoolVector(length, nativeArray, IntPtr.Zero, false, None)
 
     new(length : int, init : bool) =
         let length = length |> int64
@@ -843,19 +849,25 @@ and BoolVectorExpr =
 
 and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr, isView : bool, parentVector : Vector option) as this =
     let mutable isDisposed = false
+    do 
+        if length < 0L then 
+            GC.SuppressFinalize(this)
+            raise (new ArgumentException("Vector length must be >= 0"))
 
     static let empty = new Vector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
 
     static let mutable evalSliceLength = 100000
 
     new(length : int64, init : float) =
-        if length < 0L then raise (new ArgumentException("Vector length must be >= 0"))
         let mutable arr = IntPtr.Zero
-        let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
-        MklFunctions.D_Create_Array(length, nativeArrayPtr)
-        let nativeArray = arr |> NativePtr.ofNativeInt<float>
-        MklFunctions.D_Fill_Array(init, length, nativeArray)
-        new Vector(length, nativeArray, IntPtr.Zero, false, None)
+        if length < 0L then 
+             new Vector(length, arr |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
+        else
+            let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
+            MklFunctions.D_Create_Array(length, nativeArrayPtr)
+            let nativeArray = arr |> NativePtr.ofNativeInt<float>
+            MklFunctions.D_Fill_Array(init, length, nativeArray)
+            new Vector(length, nativeArray, IntPtr.Zero, false, None)
 
     new(length : int, init : float) =
         let length = length |> int64
