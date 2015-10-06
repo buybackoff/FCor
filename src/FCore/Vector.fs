@@ -500,6 +500,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
             let formattedArray = DisplayControl.FormatArray2D(arr, format, moreRows, false)
             sprintf "Length = %d\r\n%s" length formattedArray
 
+    member this.Dispose() = (this:>IDisposable).Dispose()
+
     interface IDisposable with
         member this.Dispose() = this.DoDispose(true)
 
@@ -1745,6 +1747,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             let arr = Array2D.init showRows 1 (fun row col -> this.[row])
             let formattedArray = DisplayControl.FormatArray2D(arr, format, moreRows, false)
             sprintf "Length = %d\r\n%s" length formattedArray
+
+    member this.Dispose() = (this:>IDisposable).Dispose()
 
     interface IDisposable with
         member this.Dispose() = this.DoDispose(true)

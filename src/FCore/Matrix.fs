@@ -567,6 +567,8 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         ArgumentChecks.throwIfContainsDisposed [matrix]
         new BoolMatrix(matrix.LongRowCount, matrix.LongColCount, BoolVector.Not matrix.ColMajorDataVector)
 
+    member this.Dispose() = (this:>IDisposable).Dispose()
+
     interface IDisposable with
         member this.Dispose() = this.ColMajorDataVector.DoDispose(true)
 
@@ -2247,6 +2249,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             let arr = Array2D.init showRows showCols (fun row col -> this.[row, col])
             let formattedArray = DisplayControl.FormatArray2D(arr, format, moreRows, moreCols)
             sprintf "Size = [%d,%d]\r\n%s" rowCount colCount formattedArray
+
+    member this.Dispose() = (this:>IDisposable).Dispose()
 
     interface IDisposable with
         member this.Dispose() = this.ColMajorDataVector.DoDispose(true)

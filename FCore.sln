@@ -31,7 +31,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{8E6D
 		docs\content\BoolMatrix.fsx = docs\content\BoolMatrix.fsx
 		docs\content\BoolVector.fsx = docs\content\BoolVector.fsx
 		docs\content\index.fsx = docs\content\index.fsx
-		docs\content\introduction.fsx = docs\content\introduction.fsx
 		docs\content\license.md = docs\content\license.md
 		docs\content\Matrix.fsx = docs\content\Matrix.fsx
 		docs\content\release-notes.md = docs\content\release-notes.md

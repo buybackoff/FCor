@@ -17,14 +17,14 @@ open System
 open FCore
 
 let v1 = new BoolVector(5, true)
-let v2 = new BoolVector(3L, false)
+let v2 = new BoolVector(3L, false) // create large vectors with int64 length
 let v3 = new BoolVector(false)
 (** This gives a value for v2 of: *)
 (*** include-value: v2 ***)
 (**
 You can also create a vector by just providing a sequence of bool values or by specifiying a length and an initializer function:
 *)
-let v4 = new BoolVector([ false; true ])
+let v4 = new BoolVector([false; true])
 
 let v5 = new BoolVector(3, fun i -> i <> 1)
 (** This gives a value for v5 of: *)
@@ -32,9 +32,9 @@ let v5 = new BoolVector(3, fun i -> i <> 1)
 (**
 You can also create a vector from an array of bools. For performance reasons you can specify whether to copy the data or just hold a reference to the data.
 *)
-let v6 = new BoolVector([| false; true |], true)
+let v6 = new BoolVector([|false; true|], copyData = true)
 //v7 just holds a reference to the provided array
-let v7 = new BoolVector([| false; true |], false)
+let v7 = new BoolVector([|false; true|], copyData = false)
 
 (**
 You can also create a vector by converting a single bool or a seq of bools using `!!` operator from the ExplicitConversion module.
@@ -49,10 +49,16 @@ There are a full range of operators provided for working with BoolVectors. These
 
 * `=` - tests whether two vectors are equal by value
 * `<>` - tests whether two vectors are not equal by value
-* `==` - tests whether two vectors or vector and scalar are equal 
-* `!=` - tests whether two vectors or vector and scalar are different 
-* `.&&` - creates a new vector, which is the result of applying && to each element of the two vectors  
-* `.||` - creates a new vector, which is the result of applying || to each element of the two vectors  
+* `==` - tests whether two vectors or vector and scalar are equal by value
+* `!=` - tests whether two vectors or vector and scalar are different by value
+* `.<` - creates a new vector of bools, which is the result of applying `<` elementwise
+* `.<=` - creates a new vector of bools, which is the result of applying `<=` elementwise
+* `.>` - creates a new vector of bools, which is the result of applying `>` elementwise
+* `.>=` - creates a new vector of bools, which is the result of applying `>=` elementwise
+* `.=` - creates a new vector of bools, which is the result of applying `=` elementwise
+* `.<>` - creates a new vector of bools, which is the result of applying `<>` elementwise
+* `.&&` - creates a new vector, which is the result of applying `&&` elementwise 
+* `.||` - creates a new vector, which is the result of applying `||` elementwise  
 
 Here are some examples:
 *)
@@ -100,9 +106,14 @@ For performance reasons you might want to get a slice of a vector without copyin
 *)
 let view = v10.View(1,2) // creates a slice 1..2 which shares memory with the input vector
 (**
-You can check if a vector is a view:
+BoolVector properties
+--------------------
+You can get the length of a vector and check if it is a view and check if it is disposed:
 *)
+let len = v10.Length
+let lenL = v10.LongLength // as int64
 let isView = view.IsView
+let isDisposed = v10.IsDisposed
 (**
 BoolVector functions
 --------------------
@@ -110,17 +121,25 @@ You can convert BoolVector to .NET array:
 *)
 let arr = v10.ToArray()
 (**
-Use static methods `Min` `Max` and `Not` to manipulate vectors:
+Create a bool vector copy:
 *)
-let v14 = BoolVector.Min(v10, v11)
-let v15 = BoolVector.Max(v10, v11)
-let v16 = BoolVector.Not v10
+let v14 = BoolVector.Copy(v10)
+(**
+Use static methods `Min` `Max` and `Not` to manipulate vectors elementwise:
+*)
+let v15 = BoolVector.Min(v10, v11)
+let v16 = BoolVector.Max(v10, v11)
+let v17 = BoolVector.Not v10
+(**
+Concatenate a seq of bool vectors:
+*)
+let v18 = BoolVector.Concat([v10;v11;v12])
 (**
 BoolVector disposing
 ------------------------------
 BoolVector implements `IDisposable` so that you can deallocate unmanaged memory deterministically:
 *)
-(v10:>IDisposable).Dispose()
+v10.Dispose()
 (**
 If `Dispose` is not called then the memory is deallocated in Finalizer.
 *)
