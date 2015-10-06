@@ -35,13 +35,13 @@
           
 <h1><a name="BoolMatrix" class="anchor" href="#BoolMatrix">BoolMatrix</a></h1>
 
-<p>FCore provides specialised matices that hold boolean values. The primary use of these is for linear algebra.</p>
+<p>FCore provides specialised matrices that hold boolean values. Boolean matrices are usually created as a result of comparing elementwise float matrices but you can also create them directly.</p>
 
-<h2><a name="Creating-a-BoolMatrix" class="anchor" href="#Creating-a-BoolMatrix">Creating a BoolMatrix</a></h2>
+<h2><a name="Creating-BoolMatrices" class="anchor" href="#Creating-BoolMatrices">Creating BoolMatrices</a></h2>
 
 <p>There are a number of options provided to create these matrices.</p>
 
-<p>They can be created by defining the number of rows and columns using integers or longs and the value to be used for each element, or if you just provide a value you will get a matrix containing one cell:</p>
+<p>They can be created by defining the number of rows and columns using <code>int</code> or <code>int64</code> and the value to be used for each element, or if you just provide a value you will get a matrix containing one cell:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
@@ -50,14 +50,16 @@
 <span class="l">5: </span>
 <span class="l">6: </span>
 <span class="l">7: </span>
+<span class="l">8: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="prep">#r</span> <span class="s">&quot;FCore.dll&quot;</span>
 
 <span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FCore</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="i">System</span>
 
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="i">m1</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="t">BoolMatrix</span>(<span class="n">5</span>, <span class="n">3</span>, <span class="k">true</span>)
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="i">m2</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 5)" onmouseover="showTip(event, 'fs3', 5)" class="t">BoolMatrix</span>(<span class="n">3L</span>, <span class="n">2L</span>, <span class="k">false</span>)
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs5', 6)" onmouseover="showTip(event, 'fs5', 6)" class="i">m3</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 7)" onmouseover="showTip(event, 'fs3', 7)" class="t">BoolMatrix</span>(<span class="k">false</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="i">m1</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="t">BoolMatrix</span>(<span class="n">5</span>, <span class="n">3</span>, <span class="k">true</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs5', 5)" onmouseover="showTip(event, 'fs5', 5)" class="i">m2</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 6)" onmouseover="showTip(event, 'fs4', 6)" class="t">BoolMatrix</span>(<span class="n">3L</span>, <span class="n">2L</span>, <span class="k">false</span>) <span class="c">// create large matrices with int64 row and column count</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs6', 7)" onmouseover="showTip(event, 'fs6', 7)" class="i">m3</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 8)" onmouseover="showTip(event, 'fs4', 8)" class="t">BoolMatrix</span>(<span class="k">false</span>)
 </code></pre></td>
 </tr>
 </table>
@@ -71,11 +73,11 @@
 
 </code></pre></td></tr></table>
 
-<p>You can also create a matrix by providing a sequence containing all the values and also specifiy the number of rows and columns:</p>
+<p>You can also create a matrix by providing a sequence containing all the values in column major order and also specifiy the number of rows and columns:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs6', 8)" onmouseover="showTip(event, 'fs6', 8)" class="i">m4</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 9)" onmouseover="showTip(event, 'fs3', 9)" class="t">BoolMatrix</span>(<span class="n">2</span>, <span class="n">2</span>, [ <span class="k">false</span>; <span class="k">true</span>; <span class="k">false</span>; <span class="k">false</span> ])
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs7', 9)" onmouseover="showTip(event, 'fs7', 9)" class="i">m4</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 10)" onmouseover="showTip(event, 'fs4', 10)" class="t">BoolMatrix</span>(<span class="n">2</span>, <span class="n">2</span>, [<span class="k">false</span>; <span class="k">true</span>; <span class="k">false</span>; <span class="k">false</span>])
 </code></pre></td>
 </tr>
 </table>
@@ -94,46 +96,50 @@
 <span class="l">2: </span>
 <span class="l">3: </span>
 <span class="l">4: </span>
+<span class="l">5: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs7', 10)" onmouseover="showTip(event, 'fs7', 10)" class="i">m5</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 11)" onmouseover="showTip(event, 'fs3', 11)" class="t">BoolMatrix</span>([[ <span class="k">true</span>; <span class="k">true</span> ];[ <span class="k">false</span>; <span class="k">true</span> ]])
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs8', 12)" onmouseover="showTip(event, 'fs8', 12)" class="i">a1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs9', 13)" onmouseover="showTip(event, 'fs9', 13)" class="t">Array2D</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="f">create</span> <span class="n">3</span> <span class="n">2</span> <span class="k">false</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="i">m6</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 16)" onmouseover="showTip(event, 'fs3', 16)" class="t">BoolMatrix</span>(<span onmouseout="hideTip(event, 'fs8', 17)" onmouseover="showTip(event, 'fs8', 17)" class="i">a1</span>)
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 18)" onmouseover="showTip(event, 'fs12', 18)" class="i">m7</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 19)" onmouseover="showTip(event, 'fs3', 19)" class="t">BoolMatrix</span>(<span class="n">3</span>, <span class="n">1</span>, <span class="k">fun</span> <span onmouseout="hideTip(event, 'fs13', 20)" onmouseover="showTip(event, 'fs13', 20)" class="i">r</span> <span onmouseout="hideTip(event, 'fs14', 21)" onmouseover="showTip(event, 'fs14', 21)" class="i">c</span> <span class="k">-&gt;</span> <span class="k">if</span> <span onmouseout="hideTip(event, 'fs13', 22)" onmouseover="showTip(event, 'fs13', 22)" class="i">r</span> <span class="o">=</span> <span class="n">1</span> <span class="k">then</span> <span class="k">false</span> <span class="k">else</span> <span class="k">true</span>)
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs8', 11)" onmouseover="showTip(event, 'fs8', 11)" class="i">m5</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 12)" onmouseover="showTip(event, 'fs4', 12)" class="t">BoolMatrix</span>([[<span class="k">true</span>; <span class="k">true</span>]
+                         [<span class="k">false</span>; <span class="k">true</span>]])
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs9', 13)" onmouseover="showTip(event, 'fs9', 13)" class="i">a1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="t">Array2D</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="f">create</span> <span class="n">3</span> <span class="n">2</span> <span class="k">false</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 16)" onmouseover="showTip(event, 'fs12', 16)" class="i">m6</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 17)" onmouseover="showTip(event, 'fs4', 17)" class="t">BoolMatrix</span>(<span onmouseout="hideTip(event, 'fs9', 18)" onmouseover="showTip(event, 'fs9', 18)" class="i">a1</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 19)" onmouseover="showTip(event, 'fs13', 19)" class="i">m7</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 20)" onmouseover="showTip(event, 'fs4', 20)" class="t">BoolMatrix</span>(<span class="n">3</span>, <span class="n">2</span>, <span class="k">fun</span> <span onmouseout="hideTip(event, 'fs14', 21)" onmouseover="showTip(event, 'fs14', 21)" class="i">row</span> <span onmouseout="hideTip(event, 'fs15', 22)" onmouseover="showTip(event, 'fs15', 22)" class="i">col</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs14', 23)" onmouseover="showTip(event, 'fs14', 23)" class="i">row</span> <span class="o">=</span> <span class="n">1</span> <span class="o">||</span> <span onmouseout="hideTip(event, 'fs15', 24)" onmouseover="showTip(event, 'fs15', 24)" class="i">col</span> <span class="o">=</span> <span class="n">0</span>)
 </code></pre></td>
 </tr>
 </table>
 
 <p>This gives a value for m7 of:</p>
 
-<table class="pre"><tr><td><pre><code>Size = [3,1]
-  True
- False
-  True
+<table class="pre"><tr><td><pre><code>Size = [3,2]
+  True False
+  True  True
+  True False
 
 </code></pre></td></tr></table>
 
-<p>You can also create a matrix from a BoolVector. This creates a matrix with just 1 colum:</p>
+<p>You can also create a matrix from a BoolVector. This creates a matrix with just 1 column:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs15', 23)" onmouseover="showTip(event, 'fs15', 23)" class="i">b1</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs16', 24)" onmouseover="showTip(event, 'fs16', 24)" class="t">BoolVector</span>([| <span class="k">false</span>; <span class="k">true</span> |])
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 25)" onmouseover="showTip(event, 'fs17', 25)" class="i">m8</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 26)" onmouseover="showTip(event, 'fs3', 26)" class="t">BoolMatrix</span>(<span onmouseout="hideTip(event, 'fs15', 27)" onmouseover="showTip(event, 'fs15', 27)" class="i">b1</span>)
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 25)" onmouseover="showTip(event, 'fs16', 25)" class="i">b1</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs17', 26)" onmouseover="showTip(event, 'fs17', 26)" class="t">BoolVector</span>([<span class="k">false</span>; <span class="k">true</span>])
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs18', 27)" onmouseover="showTip(event, 'fs18', 27)" class="i">m8</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 28)" onmouseover="showTip(event, 'fs4', 28)" class="t">BoolMatrix</span>(<span onmouseout="hideTip(event, 'fs16', 29)" onmouseover="showTip(event, 'fs16', 29)" class="i">b1</span>) <span class="c">// 2x1, no data is copied so b1 and m8 share memory</span>
 </code></pre></td>
 </tr>
 </table>
 
-<p>You can also create a matrix by converting a single bool, a sequence of sequences of bool values or a 2D array of bool values, using !! operator from the ExplicitConversion module.</p>
+<p>You can also create a matrix by converting a single bool, a sequence of sequences of bool values or a 2D array of bool values, using <code>!!</code> operator from the ExplicitConversion module.</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 <span class="l">3: </span>
 <span class="l">4: </span>
+<span class="l">5: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 28)" onmouseover="showTip(event, 'fs1', 28)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs18', 29)" onmouseover="showTip(event, 'fs18', 29)" class="i">ExplicitConversion</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 30)" onmouseover="showTip(event, 'fs19', 30)" class="i">m9</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs3', 31)" onmouseover="showTip(event, 'fs3', 31)" class="t">BoolMatrix</span> <span class="o">=</span> <span class="o">!!</span><span class="k">false</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 32)" onmouseover="showTip(event, 'fs20', 32)" class="i">m10</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs3', 33)" onmouseover="showTip(event, 'fs3', 33)" class="t">BoolMatrix</span> <span class="o">=</span> <span class="o">!!</span>([[ <span class="k">true</span>; <span class="k">true</span> ];[ <span class="k">false</span>; <span class="k">true</span> ]]<span class="o">|&gt;</span><span onmouseout="hideTip(event, 'fs21', 34)" onmouseover="showTip(event, 'fs21', 34)" class="t">List</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="f">toSeq</span>)
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 36)" onmouseover="showTip(event, 'fs23', 36)" class="i">m11</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs3', 37)" onmouseover="showTip(event, 'fs3', 37)" class="t">BoolMatrix</span> <span class="o">=</span> <span class="o">!!</span>(<span onmouseout="hideTip(event, 'fs9', 38)" onmouseover="showTip(event, 'fs9', 38)" class="t">Array2D</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs10', 39)" onmouseover="showTip(event, 'fs10', 39)" class="f">create</span> <span class="n">2</span> <span class="n">2</span> <span class="k">true</span>)
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 30)" onmouseover="showTip(event, 'fs1', 30)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 31)" onmouseover="showTip(event, 'fs19', 31)" class="i">ExplicitConversion</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 32)" onmouseover="showTip(event, 'fs20', 32)" class="i">m9</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs4', 33)" onmouseover="showTip(event, 'fs4', 33)" class="t">BoolMatrix</span> <span class="o">=</span> <span class="o">!!</span><span class="k">false</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 34)" onmouseover="showTip(event, 'fs21', 34)" class="i">m10</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs4', 35)" onmouseover="showTip(event, 'fs4', 35)" class="t">BoolMatrix</span> <span class="o">=</span> <span class="o">!!</span>[[<span class="k">true</span>; <span class="k">true</span>]
+                          [<span class="k">false</span>; <span class="k">true</span>]]
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 36)" onmouseover="showTip(event, 'fs22', 36)" class="i">m11</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs4', 37)" onmouseover="showTip(event, 'fs4', 37)" class="t">BoolMatrix</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 38)" onmouseover="showTip(event, 'fs10', 38)" class="t">Array2D</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 39)" onmouseover="showTip(event, 'fs11', 39)" class="f">create</span> <span class="n">2</span> <span class="n">2</span> <span class="k">true</span> <span class="o">|&gt;</span> (<span class="o">!!</span>)
 </code></pre></td>
 </tr>
 </table>
@@ -143,10 +149,18 @@
 <p>There are a full range of operators provided for working with the BoolMatrix type. These include:</p>
 
 <ul>
-<li><strong>==</strong> - tests whether two matrices are equal</li>
-<li><strong>!=</strong> - tests whether two matrices are different</li>
-<li><strong>.&amp;&amp;</strong> - creates a new matrix, which is the result of applying &amp;&amp; to each element of the two matrices</li>
-<li><strong>.||</strong> - creates a new matrix, which is the result of applying || to each element of the two matrices</li>
+<li><code>=</code> - tests whether two matrices are equal by value</li>
+<li><code>&lt;&gt;</code> - tests whether two matrices are not equal by value</li>
+<li><code>==</code> - tests whether two matrices or matrix and scalar are equal by value</li>
+<li><code>!=</code> - tests whether two matrices or matrix and scalar are different by value</li>
+<li><code>.&lt;</code> - creates a new matrix of bools, which is the result of applying <code>&lt;</code> elementwise</li>
+<li><code>.&lt;=</code> - creates a new matrix of bools, which is the result of applying <code>&lt;=</code> elementwise</li>
+<li><code>.&gt;</code> - creates a new matrix of bools, which is the result of applying <code>&gt;</code> elementwise</li>
+<li><code>.&gt;=</code> - creates a new matrix of bools, which is the result of applying <code>&gt;=</code> elementwise</li>
+<li><code>.=</code> - creates a new matrix of bools, which is the result of applying <code>=</code> elementwise</li>
+<li><code>.&lt;&gt;</code> - creates a new matrix of bools, which is the result of applying <code>&lt;&gt;</code> elementwise</li>
+<li><code>.&amp;&amp;</code> - creates a new matrix, which is the result of applying <code>&amp;&amp;</code> elementwise</li>
+<li><code>.||</code> - creates a new matrix, which is the result of applying <code>||</code> elementwise</li>
 </ul>
 
 <p>Here are some examples:</p>
@@ -157,75 +171,247 @@
 <span class="l">4: </span>
 <span class="l">5: </span>
 <span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 40)" onmouseover="showTip(event, 'fs24', 40)" class="i">m12</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 41)" onmouseover="showTip(event, 'fs3', 41)" class="t">BoolMatrix</span>([[ <span class="k">true</span>; <span class="k">true</span> ];[ <span class="k">false</span>; <span class="k">true</span> ]])
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 42)" onmouseover="showTip(event, 'fs25', 42)" class="i">m13</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs3', 43)" onmouseover="showTip(event, 'fs3', 43)" class="t">BoolMatrix</span>([[ <span class="k">false</span>; <span class="k">true</span> ];[ <span class="k">false</span>; <span class="k">false</span> ]])
-<span onmouseout="hideTip(event, 'fs24', 44)" onmouseover="showTip(event, 'fs24', 44)" class="i">m12</span> <span class="o">==</span> <span onmouseout="hideTip(event, 'fs25', 45)" onmouseover="showTip(event, 'fs25', 45)" class="i">m13</span> <span class="c">//false</span>
-<span onmouseout="hideTip(event, 'fs24', 46)" onmouseover="showTip(event, 'fs24', 46)" class="i">m12</span> <span class="o">!=</span> <span onmouseout="hideTip(event, 'fs25', 47)" onmouseover="showTip(event, 'fs25', 47)" class="i">m13</span> <span class="c">//true</span>
-<span onmouseout="hideTip(event, 'fs24', 48)" onmouseover="showTip(event, 'fs24', 48)" class="i">m12</span> <span class="o">.</span><span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs25', 49)" onmouseover="showTip(event, 'fs25', 49)" class="i">m13</span> <span class="c">//false,true,false,false</span>
-<span onmouseout="hideTip(event, 'fs24', 50)" onmouseover="showTip(event, 'fs24', 50)" class="i">m12</span> <span class="o">.</span><span class="o">||</span> <span onmouseout="hideTip(event, 'fs25', 51)" onmouseover="showTip(event, 'fs25', 51)" class="i">m13</span> <span class="c">//true,true,false,true</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 40)" onmouseover="showTip(event, 'fs23', 40)" class="i">m12</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 41)" onmouseover="showTip(event, 'fs4', 41)" class="t">BoolMatrix</span>([[<span class="k">true</span>; <span class="k">true</span>]
+                          [<span class="k">false</span>; <span class="k">true</span>]])
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 42)" onmouseover="showTip(event, 'fs24', 42)" class="i">m13</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 43)" onmouseover="showTip(event, 'fs4', 43)" class="t">BoolMatrix</span>([[<span class="k">false</span>; <span class="k">true</span> ]
+                          [<span class="k">false</span>; <span class="k">false</span>]])
+<span onmouseout="hideTip(event, 'fs23', 44)" onmouseover="showTip(event, 'fs23', 44)" class="i">m12</span> <span class="o">==</span> <span onmouseout="hideTip(event, 'fs24', 45)" onmouseover="showTip(event, 'fs24', 45)" class="i">m13</span> <span class="c">//false</span>
+<span onmouseout="hideTip(event, 'fs23', 46)" onmouseover="showTip(event, 'fs23', 46)" class="i">m12</span> <span class="o">!=</span> <span onmouseout="hideTip(event, 'fs24', 47)" onmouseover="showTip(event, 'fs24', 47)" class="i">m13</span> <span class="c">//true</span>
+<span onmouseout="hideTip(event, 'fs23', 48)" onmouseover="showTip(event, 'fs23', 48)" class="i">m12</span> <span class="o">.</span><span class="o">&amp;&amp;</span> <span onmouseout="hideTip(event, 'fs24', 49)" onmouseover="showTip(event, 'fs24', 49)" class="i">m13</span> <span class="c">//false,true,false,false</span>
+<span onmouseout="hideTip(event, 'fs23', 50)" onmouseover="showTip(event, 'fs23', 50)" class="i">m12</span> <span class="o">.</span><span class="o">||</span> <span onmouseout="hideTip(event, 'fs24', 51)" onmouseover="showTip(event, 'fs24', 51)" class="i">m13</span> <span class="c">//true,true,false,true</span>
 </code></pre></td>
 </tr>
 </table>
 
-<h2><a name="Accessing-elements-and-slicing" class="anchor" href="#Accessing-elements-and-slicing">Accessing elements and slicing</a></h2>
+<h2><a name="Accessing-elements-and-slicing-indexing" class="anchor" href="#Accessing-elements-and-slicing-indexing">Accessing elements and slicing/indexing</a></h2>
 
-<p>To access an individual element within the matrix you can just use the standard F# syntax: x.[r,c]. For example:</p>
+<p>In indexing and slicing you can use indices of type <code>int</code> or <code>int64</code>. The code examples below only show <code>int</code> version.</p>
+
+<p>To get or set an individual element within the matrix you can just use the standard F# syntax: <code>x.[row, col]</code>. For example:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs26', 52)" onmouseover="showTip(event, 'fs26', 52)" class="i">m14</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs24', 53)" onmouseover="showTip(event, 'fs24', 53)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">1</span>]
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 52)" onmouseover="showTip(event, 'fs25', 52)" class="i">m14</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 53)" onmouseover="showTip(event, 'fs23', 53)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">1</span>]
+<span onmouseout="hideTip(event, 'fs23', 54)" onmouseover="showTip(event, 'fs23', 54)" class="i">m12</span><span class="o">.</span>[<span class="n">0</span>,<span class="n">0</span>] <span class="o">&lt;-</span> <span class="k">false</span>
 </code></pre></td>
 </tr>
 </table>
 
-<p>produces a value of:</p>
-
-<table class="pre"><tr><td><pre><code>true</code></pre></td></tr></table>
-
-<p>You can also access a range within a matrix using slicing syntax: x.[r..s,c..d]. For example:</p>
+<p>You can also get or set a range within a matrix using slicing syntax: x.[fromRow..toRow, fromCol..toCol]. For example:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 54)" onmouseover="showTip(event, 'fs27', 54)" class="i">m15</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs24', 55)" onmouseover="showTip(event, 'fs24', 55)" class="i">m12</span><span class="o">.</span>[<span class="n">1..</span><span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>]
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs26', 55)" onmouseover="showTip(event, 'fs26', 55)" class="i">m15</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 56)" onmouseover="showTip(event, 'fs23', 56)" class="i">m12</span><span class="o">.</span>[<span class="n">1..</span><span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>]
+<span onmouseout="hideTip(event, 'fs23', 57)" onmouseover="showTip(event, 'fs23', 57)" class="i">m12</span><span class="o">.</span>[<span class="n">1..</span><span class="n">1</span>, <span class="n">0..</span><span class="n">1</span>] <span class="o">&lt;-</span> <span class="k">true</span>
 </code></pre></td>
 </tr>
 </table>
 
-<p>produces a value of:</p>
+<p>m15 produces a value of:</p>
 
 <table class="pre"><tr><td><pre><code>Size = [1,2]
  False  True
 
 </code></pre></td></tr></table>
 
+<p>If <code>fromRow = toRow</code> or <code>fromCol = toCol</code> then the syntax is simpler and returns a bool vector:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 58)" onmouseover="showTip(event, 'fs27', 58)" class="i">v16</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 59)" onmouseover="showTip(event, 'fs23', 59)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>]
+<span onmouseout="hideTip(event, 'fs23', 60)" onmouseover="showTip(event, 'fs23', 60)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>] <span class="o">&lt;-</span> <span class="o">!!</span>[<span class="k">true</span>;<span class="k">false</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<p>You can also use a sequence of row and column indices to get or set part of a matrix:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs28', 61)" onmouseover="showTip(event, 'fs28', 61)" class="i">m17</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 62)" onmouseover="showTip(event, 'fs23', 62)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], [<span class="n">1</span>] ] 
+<span onmouseout="hideTip(event, 'fs23', 63)" onmouseover="showTip(event, 'fs23', 63)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], [<span class="n">1</span>] ] <span class="o">&lt;-</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 64)" onmouseover="showTip(event, 'fs4', 64)" class="t">BoolMatrix</span>(<span class="n">2</span>, <span class="n">1</span>, [<span class="k">true</span>;<span class="k">false</span>])
+</code></pre></td>
+</tr>
+</table>
+
+<p>If row or column sequence has only 1 index then the syntax is simpler and returns a bool vector:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 65)" onmouseover="showTip(event, 'fs29', 65)" class="i">v18</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 66)" onmouseover="showTip(event, 'fs23', 66)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], <span class="n">1</span>] 
+<span onmouseout="hideTip(event, 'fs23', 67)" onmouseover="showTip(event, 'fs23', 67)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], <span class="n">1</span>] <span class="o">&lt;-</span> <span class="o">!!</span>[<span class="k">true</span>;<span class="k">false</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<p>It is also possible to index a bool matrix with another bool matrix (logical indexing), e.g.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs30', 68)" onmouseover="showTip(event, 'fs30', 68)" class="i">v19</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 69)" onmouseover="showTip(event, 'fs23', 69)" class="i">m12</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs24', 70)" onmouseover="showTip(event, 'fs24', 70)" class="i">m13</span>] <span class="c">//returns m12 elements where m13 is true in column major order</span>
+<span onmouseout="hideTip(event, 'fs23', 71)" onmouseover="showTip(event, 'fs23', 71)" class="i">m12</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs24', 72)" onmouseover="showTip(event, 'fs24', 72)" class="i">m13</span>] <span class="o">&lt;-</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs17', 73)" onmouseover="showTip(event, 'fs17', 73)" class="t">BoolVector</span>(<span class="k">false</span>) <span class="c">//set elements of m12 where m13 is true to elements of given vector</span>
+</code></pre></td>
+</tr>
+</table>
+
+<p>Data in bool matrix is stored in column major order so we can slice and index a matrix as if it was a vector. This is called linear indexing:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 74)" onmouseover="showTip(event, 'fs31', 74)" class="i">v20</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 75)" onmouseover="showTip(event, 'fs23', 75)" class="i">m12</span><span class="o">.</span>[<span class="n">0..</span><span class="n">1</span>] 
+</code></pre></td>
+</tr>
+</table>
+
+<p>See <a href="BoolVector.html">BoolVector</a> for details about vector slicing and indexing.</p>
+
+<h2><a name="BoolMatrix-views" class="anchor" href="#BoolMatrix-views">BoolMatrix views</a></h2>
+
+<p>For performance reasons you might want to get a slice of a matrix without copying the data. You can create a view on part of an existing matrix:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs32', 76)" onmouseover="showTip(event, 'fs32', 76)" class="i">view</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 77)" onmouseover="showTip(event, 'fs23', 77)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs33', 78)" onmouseover="showTip(event, 'fs33', 78)" class="i">View</span>(<span class="n">1</span>,<span class="n">2</span>) <span class="c">// creates a linear slice 1..2 which shares memory with the input matrix</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs34', 79)" onmouseover="showTip(event, 'fs34', 79)" class="i">colView</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 80)" onmouseover="showTip(event, 'fs23', 80)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs35', 81)" onmouseover="showTip(event, 'fs35', 81)" class="i">ColView</span>(<span class="n">1</span>) <span class="c">// returns the 2nd column as a vector, no data is copied</span>
+</code></pre></td>
+</tr>
+</table>
+
+<h2><a name="BoolMatrix-properties" class="anchor" href="#BoolMatrix-properties">BoolMatrix properties</a></h2>
+
+<p>You can get the size of a matrix, get its data as a vector in column major order and check if it is disposed:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs36', 82)" onmouseover="showTip(event, 'fs36', 82)" class="i">rowCount</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 83)" onmouseover="showTip(event, 'fs23', 83)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs37', 84)" onmouseover="showTip(event, 'fs37', 84)" class="i">RowCount</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs38', 85)" onmouseover="showTip(event, 'fs38', 85)" class="i">colCount</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 86)" onmouseover="showTip(event, 'fs23', 86)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs39', 87)" onmouseover="showTip(event, 'fs39', 87)" class="i">ColCount</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs40', 88)" onmouseover="showTip(event, 'fs40', 88)" class="i">rowCountL</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 89)" onmouseover="showTip(event, 'fs23', 89)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs41', 90)" onmouseover="showTip(event, 'fs41', 90)" class="i">LongRowCount</span> <span class="c">// int64</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs42', 91)" onmouseover="showTip(event, 'fs42', 91)" class="i">colCountL</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 92)" onmouseover="showTip(event, 'fs23', 92)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs43', 93)" onmouseover="showTip(event, 'fs43', 93)" class="i">LongColCount</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs44', 94)" onmouseover="showTip(event, 'fs44', 94)" class="i">dataVector</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 95)" onmouseover="showTip(event, 'fs23', 95)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs45', 96)" onmouseover="showTip(event, 'fs45', 96)" class="i">ColMajorDataVector</span> <span class="c">// no data is copied</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs46', 97)" onmouseover="showTip(event, 'fs46', 97)" class="i">isDisposed</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 98)" onmouseover="showTip(event, 'fs23', 98)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs47', 99)" onmouseover="showTip(event, 'fs47', 99)" class="i">IsDisposed</span>
+</code></pre></td>
+</tr>
+</table>
+
+<h2><a name="BoolMatrix-functions" class="anchor" href="#BoolMatrix-functions">BoolMatrix functions</a></h2>
+
+<p>You can convert BoolMatrix to .NET 2D array:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 100)" onmouseover="showTip(event, 'fs48', 100)" class="i">arr</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 101)" onmouseover="showTip(event, 'fs23', 101)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs49', 102)" onmouseover="showTip(event, 'fs49', 102)" class="f">ToArray2D</span>()
+</code></pre></td>
+</tr>
+</table>
+
+<p>Create a bool matrix copy:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 103)" onmouseover="showTip(event, 'fs50', 103)" class="i">m21</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 104)" onmouseover="showTip(event, 'fs4', 104)" class="t">BoolMatrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs51', 105)" onmouseover="showTip(event, 'fs51', 105)" class="f">Copy</span>(<span onmouseout="hideTip(event, 'fs21', 106)" onmouseover="showTip(event, 'fs21', 106)" class="i">m10</span>)
+</code></pre></td>
+</tr>
+</table>
+
+<p>Use static methods <code>Min</code> <code>Max</code> and <code>Not</code> to manipulate matrices elementwise:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs52', 107)" onmouseover="showTip(event, 'fs52', 107)" class="i">m22</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 108)" onmouseover="showTip(event, 'fs4', 108)" class="t">BoolMatrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs53', 109)" onmouseover="showTip(event, 'fs53', 109)" class="f">Min</span>(<span onmouseout="hideTip(event, 'fs23', 110)" onmouseover="showTip(event, 'fs23', 110)" class="i">m12</span>, <span onmouseout="hideTip(event, 'fs24', 111)" onmouseover="showTip(event, 'fs24', 111)" class="i">m13</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs54', 112)" onmouseover="showTip(event, 'fs54', 112)" class="i">m23</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 113)" onmouseover="showTip(event, 'fs4', 113)" class="t">BoolMatrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs55', 114)" onmouseover="showTip(event, 'fs55', 114)" class="f">Max</span>(<span onmouseout="hideTip(event, 'fs23', 115)" onmouseover="showTip(event, 'fs23', 115)" class="i">m12</span>, <span onmouseout="hideTip(event, 'fs24', 116)" onmouseover="showTip(event, 'fs24', 116)" class="i">m13</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs56', 117)" onmouseover="showTip(event, 'fs56', 117)" class="i">m24</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 118)" onmouseover="showTip(event, 'fs4', 118)" class="t">BoolMatrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs57', 119)" onmouseover="showTip(event, 'fs57', 119)" class="f">Not</span> <span onmouseout="hideTip(event, 'fs23', 120)" onmouseover="showTip(event, 'fs23', 120)" class="i">m12</span>
+</code></pre></td>
+</tr>
+</table>
+
+<h2><a name="BoolMatrix-disposing" class="anchor" href="#BoolMatrix-disposing">BoolMatrix disposing</a></h2>
+
+<p>BoolMatrix implements <code>IDisposable</code> so that you can deallocate unmanaged memory deterministically:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs23', 121)" onmouseover="showTip(event, 'fs23', 121)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs58', 122)" onmouseover="showTip(event, 'fs58', 122)" class="f">Dispose</span>()
+</code></pre></td>
+</tr>
+</table>
+
+<p>If <code>Dispose</code> is not called then the memory is deallocated in Finalizer.</p>
+
 <div class="tip" id="fs1">namespace FCore</div>
-<div class="tip" id="fs2">val m1 : BoolMatrix<br /><br />Full name: BoolMatrix.m1</div>
-<div class="tip" id="fs3">Multiple items<br />type BoolMatrix =<br />&#160;&#160;interface IFormattable<br />&#160;&#160;interface IDisposable<br />&#160;&#160;new : data:bool -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; bool) -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;bool&gt; -&gt; BoolMatrix<br />&#160;&#160;...<br /><br />Full name: FCore.BoolMatrix<br /><br />--------------------<br />new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataSeq:seq&lt;bool&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
-<div class="tip" id="fs4">val m2 : BoolMatrix<br /><br />Full name: BoolMatrix.m2</div>
-<div class="tip" id="fs5">val m3 : BoolMatrix<br /><br />Full name: BoolMatrix.m3</div>
-<div class="tip" id="fs6">val m4 : BoolMatrix<br /><br />Full name: BoolMatrix.m4</div>
-<div class="tip" id="fs7">val m5 : BoolMatrix<br /><br />Full name: BoolMatrix.m5</div>
-<div class="tip" id="fs8">val a1 : bool [,]<br /><br />Full name: BoolMatrix.a1</div>
-<div class="tip" id="fs9">module Array2D<br /><br />from Microsoft.FSharp.Collections</div>
-<div class="tip" id="fs10">val create : length1:int -&gt; length2:int -&gt; value:&#39;T -&gt; &#39;T [,]<br /><br />Full name: Microsoft.FSharp.Collections.Array2D.create</div>
-<div class="tip" id="fs11">val m6 : BoolMatrix<br /><br />Full name: BoolMatrix.m6</div>
-<div class="tip" id="fs12">val m7 : BoolMatrix<br /><br />Full name: BoolMatrix.m7</div>
-<div class="tip" id="fs13">val r : int</div>
-<div class="tip" id="fs14">val c : int</div>
-<div class="tip" id="fs15">val b1 : BoolVector<br /><br />Full name: BoolMatrix.b1</div>
-<div class="tip" id="fs16">Multiple items<br />type BoolVector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:bool -&gt; BoolVector<br />&#160;&#160;new : data:seq&lt;bool&gt; -&gt; BoolVector<br />&#160;&#160;new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />&#160;&#160;new : data:bool [] * copyData:bool -&gt; BoolVector<br />&#160;&#160;new : length:int * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector<br />&#160;&#160;member private DoDispose : isDisposing:bool -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCore.BoolVector<br /><br />--------------------<br />new : data:seq&lt;bool&gt; -&gt; BoolVector<br />new : data:bool -&gt; BoolVector<br />new : length:int64 * init:bool -&gt; BoolVector<br />new : length:int * init:bool -&gt; BoolVector<br />new : data:bool [] * copyData:bool -&gt; BoolVector<br />new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:System.IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector</div>
-<div class="tip" id="fs17">val m8 : BoolMatrix<br /><br />Full name: BoolMatrix.m8</div>
-<div class="tip" id="fs18">module ExplicitConversion<br /><br />from FCore</div>
-<div class="tip" id="fs19">val m9 : BoolMatrix<br /><br />Full name: BoolMatrix.m9</div>
-<div class="tip" id="fs20">val m10 : BoolMatrix<br /><br />Full name: BoolMatrix.m10</div>
-<div class="tip" id="fs21">Multiple items<br />module List<br /><br />from Microsoft.FSharp.Collections<br /><br />--------------------<br />type List&lt;&#39;T&gt; =<br />&#160;&#160;| ( [] )<br />&#160;&#160;| ( :: ) of Head: &#39;T * Tail: &#39;T list<br />&#160;&#160;interface IEnumerable<br />&#160;&#160;interface IEnumerable&lt;&#39;T&gt;<br />&#160;&#160;member Head : &#39;T<br />&#160;&#160;member IsEmpty : bool<br />&#160;&#160;member Item : index:int -&gt; &#39;T with get<br />&#160;&#160;member Length : int<br />&#160;&#160;member Tail : &#39;T list<br />&#160;&#160;static member Cons : head:&#39;T * tail:&#39;T list -&gt; &#39;T list<br />&#160;&#160;static member Empty : &#39;T list<br /><br />Full name: Microsoft.FSharp.Collections.List&lt;_&gt;</div>
-<div class="tip" id="fs22">val toSeq : list:&#39;T list -&gt; seq&lt;&#39;T&gt;<br /><br />Full name: Microsoft.FSharp.Collections.List.toSeq</div>
-<div class="tip" id="fs23">val m11 : BoolMatrix<br /><br />Full name: BoolMatrix.m11</div>
-<div class="tip" id="fs24">val m12 : BoolMatrix<br /><br />Full name: BoolMatrix.m12</div>
-<div class="tip" id="fs25">val m13 : BoolMatrix<br /><br />Full name: BoolMatrix.m13</div>
-<div class="tip" id="fs26">val m14 : bool<br /><br />Full name: BoolMatrix.m14</div>
-<div class="tip" id="fs27">val m15 : BoolMatrix<br /><br />Full name: BoolMatrix.m15</div>
+<div class="tip" id="fs2">namespace System</div>
+<div class="tip" id="fs3">val m1 : BoolMatrix<br /><br />Full name: BoolMatrix.m1</div>
+<div class="tip" id="fs4">Multiple items<br />type BoolMatrix =<br />&#160;&#160;interface IFormattable<br />&#160;&#160;interface IDisposable<br />&#160;&#160;new : data:bool -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; bool) -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;bool&gt; -&gt; BoolMatrix<br />&#160;&#160;...<br /><br />Full name: FCore.BoolMatrix<br /><br />--------------------<br />new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataSeq:seq&lt;bool&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="tip" id="fs5">val m2 : BoolMatrix<br /><br />Full name: BoolMatrix.m2</div>
+<div class="tip" id="fs6">val m3 : BoolMatrix<br /><br />Full name: BoolMatrix.m3</div>
+<div class="tip" id="fs7">val m4 : BoolMatrix<br /><br />Full name: BoolMatrix.m4</div>
+<div class="tip" id="fs8">val m5 : BoolMatrix<br /><br />Full name: BoolMatrix.m5</div>
+<div class="tip" id="fs9">val a1 : bool [,]<br /><br />Full name: BoolMatrix.a1</div>
+<div class="tip" id="fs10">module Array2D<br /><br />from Microsoft.FSharp.Collections</div>
+<div class="tip" id="fs11">val create : length1:int -&gt; length2:int -&gt; value:&#39;T -&gt; &#39;T [,]<br /><br />Full name: Microsoft.FSharp.Collections.Array2D.create</div>
+<div class="tip" id="fs12">val m6 : BoolMatrix<br /><br />Full name: BoolMatrix.m6</div>
+<div class="tip" id="fs13">val m7 : BoolMatrix<br /><br />Full name: BoolMatrix.m7</div>
+<div class="tip" id="fs14">val row : int</div>
+<div class="tip" id="fs15">val col : int</div>
+<div class="tip" id="fs16">val b1 : BoolVector<br /><br />Full name: BoolMatrix.b1</div>
+<div class="tip" id="fs17">Multiple items<br />type BoolVector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:bool -&gt; BoolVector<br />&#160;&#160;new : data:seq&lt;bool&gt; -&gt; BoolVector<br />&#160;&#160;new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />&#160;&#160;new : data:bool [] * copyData:bool -&gt; BoolVector<br />&#160;&#160;new : length:int * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCore.BoolVector<br /><br />--------------------<br />new : data:seq&lt;bool&gt; -&gt; BoolVector<br />new : data:bool -&gt; BoolVector<br />new : length:int64 * init:bool -&gt; BoolVector<br />new : length:int * init:bool -&gt; BoolVector<br />new : data:bool [] * copyData:bool -&gt; BoolVector<br />new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector</div>
+<div class="tip" id="fs18">val m8 : BoolMatrix<br /><br />Full name: BoolMatrix.m8</div>
+<div class="tip" id="fs19">module ExplicitConversion<br /><br />from FCore</div>
+<div class="tip" id="fs20">val m9 : BoolMatrix<br /><br />Full name: BoolMatrix.m9</div>
+<div class="tip" id="fs21">val m10 : BoolMatrix<br /><br />Full name: BoolMatrix.m10</div>
+<div class="tip" id="fs22">val m11 : BoolMatrix<br /><br />Full name: BoolMatrix.m11</div>
+<div class="tip" id="fs23">val m12 : BoolMatrix<br /><br />Full name: BoolMatrix.m12</div>
+<div class="tip" id="fs24">val m13 : BoolMatrix<br /><br />Full name: BoolMatrix.m13</div>
+<div class="tip" id="fs25">val m14 : bool<br /><br />Full name: BoolMatrix.m14</div>
+<div class="tip" id="fs26">val m15 : BoolMatrix<br /><br />Full name: BoolMatrix.m15</div>
+<div class="tip" id="fs27">val v16 : BoolVector<br /><br />Full name: BoolMatrix.v16</div>
+<div class="tip" id="fs28">val m17 : BoolMatrix<br /><br />Full name: BoolMatrix.m17</div>
+<div class="tip" id="fs29">val v18 : BoolVector<br /><br />Full name: BoolMatrix.v18</div>
+<div class="tip" id="fs30">val v19 : BoolVector<br /><br />Full name: BoolMatrix.v19</div>
+<div class="tip" id="fs31">val v20 : BoolVector<br /><br />Full name: BoolMatrix.v20</div>
+<div class="tip" id="fs32">val view : BoolVector<br /><br />Full name: BoolMatrix.view</div>
+<div class="tip" id="fs33">Multiple items<br />property BoolMatrix.View: int64 * int64 -&gt; BoolVector<br /><br />--------------------<br />property BoolMatrix.View: int * int -&gt; BoolVector</div>
+<div class="tip" id="fs34">val colView : BoolVector<br /><br />Full name: BoolMatrix.colView</div>
+<div class="tip" id="fs35">Multiple items<br />property BoolMatrix.ColView: int64 -&gt; BoolVector<br /><br />--------------------<br />property BoolMatrix.ColView: int -&gt; BoolVector</div>
+<div class="tip" id="fs36">val rowCount : int<br /><br />Full name: BoolMatrix.rowCount</div>
+<div class="tip" id="fs37">property BoolMatrix.RowCount: int</div>
+<div class="tip" id="fs38">val colCount : int<br /><br />Full name: BoolMatrix.colCount</div>
+<div class="tip" id="fs39">property BoolMatrix.ColCount: int</div>
+<div class="tip" id="fs40">val rowCountL : int64<br /><br />Full name: BoolMatrix.rowCountL</div>
+<div class="tip" id="fs41">property BoolMatrix.LongRowCount: int64</div>
+<div class="tip" id="fs42">val colCountL : int64<br /><br />Full name: BoolMatrix.colCountL</div>
+<div class="tip" id="fs43">property BoolMatrix.LongColCount: int64</div>
+<div class="tip" id="fs44">val dataVector : BoolVector<br /><br />Full name: BoolMatrix.dataVector</div>
+<div class="tip" id="fs45">property BoolMatrix.ColMajorDataVector: BoolVector</div>
+<div class="tip" id="fs46">val isDisposed : bool<br /><br />Full name: BoolMatrix.isDisposed</div>
+<div class="tip" id="fs47">property BoolMatrix.IsDisposed: bool</div>
+<div class="tip" id="fs48">val arr : bool [,]<br /><br />Full name: BoolMatrix.arr</div>
+<div class="tip" id="fs49">member BoolMatrix.ToArray2D : unit -&gt; bool [,]</div>
+<div class="tip" id="fs50">val m21 : BoolMatrix<br /><br />Full name: BoolMatrix.m21</div>
+<div class="tip" id="fs51">static member BoolMatrix.Copy : matrix:BoolMatrix -&gt; BoolMatrix</div>
+<div class="tip" id="fs52">val m22 : BoolMatrix<br /><br />Full name: BoolMatrix.m22</div>
+<div class="tip" id="fs53">static member BoolMatrix.Min : a:bool * matrix:BoolMatrix -&gt; BoolMatrix<br />static member BoolMatrix.Min : matrix:BoolMatrix * a:bool -&gt; BoolMatrix<br />static member BoolMatrix.Min : matrix1:BoolMatrix * matrix2:BoolMatrix -&gt; BoolMatrix</div>
+<div class="tip" id="fs54">val m23 : BoolMatrix<br /><br />Full name: BoolMatrix.m23</div>
+<div class="tip" id="fs55">static member BoolMatrix.Max : a:bool * matrix:BoolMatrix -&gt; BoolMatrix<br />static member BoolMatrix.Max : matrix:BoolMatrix * a:bool -&gt; BoolMatrix<br />static member BoolMatrix.Max : matrix1:BoolMatrix * matrix2:BoolMatrix -&gt; BoolMatrix</div>
+<div class="tip" id="fs56">val m24 : BoolMatrix<br /><br />Full name: BoolMatrix.m24</div>
+<div class="tip" id="fs57">static member BoolMatrix.Not : matrix:BoolMatrix -&gt; BoolMatrix</div>
+<div class="tip" id="fs58">member BoolMatrix.Dispose : unit -&gt; unit</div>
 
         </div>
         <div class="span3">
