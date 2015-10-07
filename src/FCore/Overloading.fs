@@ -159,29 +159,32 @@ module Overloading =
 
         static member CholInv (DummyType, x) = Matrix.CholInv(x)
 
-        static member CholSolve (DummyType, a, b) = Matrix.CholSolve(a, b)
+        static member CholSolve (DummyType, a, b : Matrix) = Matrix.CholSolve(a, b)
+        static member CholSolve (DummyType, a, b : Vector) = Matrix.CholSolve(a, b)
 
         static member Lu (DummyType, x) = Matrix.Lu(x)
 
         static member LuInv (DummyType, x) = Matrix.LuInv(x)
 
-        static member LuSolve (DummyType, a, b) = Matrix.LuSolve(a, b)
+        static member LuSolve (DummyType, a, b : Matrix) = Matrix.LuSolve(a, b)
+        static member LuSolve (DummyType, a, b : Vector) = Matrix.LuSolve(a, b)
 
         static member Qr (DummyType, x) = Matrix.Qr(x)
 
-        static member QrSolveFull (DummyType, a, b) = Matrix.QrSolveFull(a, b)
+        static member QrSolveFull (DummyType, a, b : Matrix) = Matrix.QrSolveFull(a, b)
+        static member QrSolveFull (DummyType, a, b : Vector) = Matrix.QrSolveFull(a, b)
 
-        static member QrSolve (DummyType, a, b, tol) = Matrix.QrSolve(a, b, tol)
+        static member QrSolve (DummyType, a, b : Matrix, tol) = Matrix.QrSolve(a, b, tol)
+        static member QrSolve (DummyType, a, b : Vector, tol) = Matrix.QrSolve(a, b, tol)
 
-        static member SvdSolve (DummyType, a, b, tol) = Matrix.SvdSolve(a, b, tol)
+        static member SvdSolve (DummyType, a, b : Matrix, tol) = Matrix.SvdSolve(a, b, tol)
+        static member SvdSolve (DummyType, a, b : Vector, tol) = Matrix.SvdSolve(a, b, tol)
 
         static member SvdValues (DummyType, x) = Matrix.SvdValues(x)
 
         static member Svd (DummyType, x) = Matrix.Svd(x)
 
         static member Eig (DummyType, x) = Matrix.Eig(x)
-
-        static member EigValues (DummyType, x) = Matrix.EigValues(x)
 
         static member Min (DummyType, x) = Vector.Min(x)
         static member Min (DummyType, x) = Matrix.Min(x)

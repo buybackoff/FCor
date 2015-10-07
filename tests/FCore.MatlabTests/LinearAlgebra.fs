@@ -27,6 +27,7 @@ module LinearAlgebra =
     let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
 
     let inline epsEqual eps (x : float[,]) (y :float[,])  = epsEqualArray2D x y epsEqualFloat eps
+    let inline epsEqual1D eps (x : float[]) (y :float[])  = epsEqualArray x y epsEqualFloat eps
 
     [<Property>]
     let ``Transpose in place``(v : float[,]) =
@@ -69,7 +70,7 @@ module LinearAlgebra =
         epsEqual 1e-10 (res.ToArray2D()) y |> should be True
 
     [<Fact>]
-    let ``cholSolve``() =
+    let ``cholSolve matrix``() =
         use rng = new MT19937Rng(1u)
         let b = rand rng 100 1
         setMatrix app "b" (b.ToArray2D())
@@ -81,6 +82,20 @@ module LinearAlgebra =
         let c = new Matrix(z)
         let res = cholSolve a  b
         epsEqual 1e-10 (res.ToArray2D()) z |> should be True
+
+    [<Fact>]
+    let ``cholSolve vector``() =
+        use rng = new MT19937Rng(1u)
+        let b = rand rng 100 : Vector
+        setVector app "b" (b.ToArray())
+        let r = app.Execute("a = gallery('lehmer', 100);
+                             c = a \ b;")
+        let x = getMatrix app "a"
+        let z = getVector app "c"
+        let a = new Matrix(x)
+        let c = new Vector(z)
+        let res = cholSolve a b
+        epsEqual1D 1e-10 (res.ToArray()) z |> should be True
 
     [<Property>]
     let ``lu``(a : float[,]) =
@@ -112,7 +127,7 @@ module LinearAlgebra =
         epsEqual 1e-9 (res.ToArray2D()) y |> should be True
 
     [<Fact>]
-    let ``luSolve``() =
+    let ``luSolve matrix``() =
         use rng = new MT19937Rng(1u)
         let a = rand rng 100 100
         setMatrix app "a" (a.ToArray2D())
@@ -122,6 +137,18 @@ module LinearAlgebra =
         let z = getMatrix app  "c"
         let res = luSolve a b
         epsEqual 1e-11 (res.ToArray2D()) z |> should be True   
+
+    [<Fact>]
+    let ``luSolve vector``() =
+        use rng = new MT19937Rng(1u)
+        let a = rand rng 100 100
+        setMatrix app "a" (a.ToArray2D())
+        let b = rand rng 100 : Vector
+        setVector app "b" (b.ToArray())
+        let r = app.Execute("c = a \ b;")
+        let z = getVector app  "c"
+        let res = luSolve a b
+        epsEqual1D 1e-11 (res.ToArray()) z |> should be True  
         
     [<Fact>]
     let ``QR more rows`` () =
@@ -146,7 +173,7 @@ module LinearAlgebra =
         ((epsEqual 1e-8 (q.ToArray2D()) y) && (epsEqual 1e-8 (r.ToArray2D()) z)) |> should be True
 
     [<Fact>]
-    let ``QR solveFull`` () =
+    let ``QR solveFull matrix`` () =
         use rng = new MT19937Rng(1u)
         let a = rand rng 500 100
         setMatrix app "a" (a.ToArray2D())
@@ -158,7 +185,19 @@ module LinearAlgebra =
         epsEqual 1e-10 (res.ToArray2D()) z |> should be True
 
     [<Fact>]
-    let ``QR solve`` () =
+    let ``QR solveFull vector`` () =
+        use rng = new MT19937Rng(1u)
+        let a = rand rng 500 100
+        setMatrix app "a" (a.ToArray2D())
+        let b = rand rng 500 : Vector
+        setVector app "b" (b.ToArray())
+        let r = app.Execute("c = a \ b;")
+        let z = getVector app  "c"
+        let res = qrSolveFull a b
+        epsEqual1D 1e-10 (res.ToArray()) z |> should be True
+
+    [<Fact>]
+    let ``QR solve matrix`` () =
         let r = app.Execute("a = reshape(2:13, 4, 3);
                              a(:, 1) = 0;
                              b = reshape(1:8, 4, 2);
@@ -171,7 +210,20 @@ module LinearAlgebra =
         epsEqual 1e-10 (res.ToArray2D()) z |> should be True
 
     [<Fact>]
-    let ``Svd solve`` () =
+    let ``QR solve vector`` () =
+        let r = app.Execute("a = reshape(2:13, 4, 3);
+                             a(:, 1) = 0;
+                             b = reshape(1:4, 4, 1);
+                             c = a \ b;")
+        let x = getMatrix app  "a"
+        let y = getVector app  "b"
+        let z = getVector app  "c"
+        let (res, rank) = qrSolve (new Matrix(x)) (new Vector(y)) 1e-14
+        rank |> should equal 2
+        epsEqual1D 1e-10 (res.ToArray()) z |> should be True
+
+    [<Fact>]
+    let ``Svd solve matrix`` () =
         let r = app.Execute("a = reshape(2:13, 4, 3);
                              a(:, 1) = 0;
                              b = reshape(1:8, 4, 2);
@@ -182,6 +234,19 @@ module LinearAlgebra =
         let (res, rank) = svdSolve (new Matrix(x)) (new Matrix(y)) 1e-15
         rank |> should equal 2
         epsEqual 1e-13 (res.ToArray2D()) z |> should be True
+
+    [<Fact>]
+    let ``Svd solve vector`` () =
+        let r = app.Execute("a = reshape(2:13, 4, 3);
+                             a(:, 1) = 0;
+                             b = reshape(1:4, 4, 1);
+                             c = a \ b;")
+        let x = getMatrix app  "a"
+        let y = getVector app  "b"
+        let z = getVector app  "c"
+        let (res, rank) = svdSolve (new Matrix(x)) (new Vector(y)) 1e-15
+        rank |> should equal 2
+        epsEqual1D 1e-13 (res.ToArray()) z |> should be True
 
     [<Fact>]
     let ``SVD more rows`` () =
@@ -238,15 +303,6 @@ module LinearAlgebra =
         let values = diag values 0
         epsEqual 1e-15 (values.ToArray2D()) z |> should be True
         epsEqual 1e-15 (vect.ToArray2D()) y |> should be True
-
-    [<Fact>]
-    let ``Eigen values`` () =
-        let r = app.Execute("a = [1 3 5;3 2 4;5 4 1];
-                             b = eig(a);")
-        let x = getMatrix app  "a"
-        let y = getVector app  "b"
-        let v = eigValues (new Matrix(x))
-        epsEqualArray (v.ToArray()) y epsEqualFloat 1e-15 |> should be True
 
 
 

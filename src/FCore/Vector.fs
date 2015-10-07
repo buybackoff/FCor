@@ -80,6 +80,10 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     static member op_Explicit(v : bool seq) = new BoolVector(v)
 
+    static member op_Explicit(v : bool list) = new BoolVector(v)
+
+    static member op_Explicit(v : bool array) = new BoolVector(v)
+
     static member op_Explicit(v : BoolVector) = v
 
     static member EvalSliceLength
@@ -921,6 +925,10 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
     static member op_Explicit(v : float) = new Vector(v)
 
     static member op_Explicit(v : float seq) = new Vector(v)
+
+    static member op_Explicit(v : float list) = new Vector(v)
+
+    static member op_Explicit(v : float array) = new Vector(v)
 
     static member op_Explicit(v : Vector) = v
 

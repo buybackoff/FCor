@@ -836,12 +836,6 @@ type internal MklFunctions() =
     static extern int s_eigen_factor(IntPtr n, float32* Z, float32* D)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern int d_eigen_values(IntPtr n, float* x, float* D)
-
-    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern int s_eigen_values(IntPtr n, float32* x, float32* D)
-
-    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_multiply_matrices(float* x, float* y, float* z, IntPtr n, IntPtr m, IntPtr k, bool trans)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
@@ -1615,12 +1609,6 @@ type internal MklFunctions() =
 
     static member S_Eigen_Factor(n : int64, Z, D) =
         s_eigen_factor(new IntPtr(n), Z, D) |> validateRetCode
-
-    static member D_Eigen_Values(n : int64, x, D) =
-        d_eigen_values(new IntPtr(n), x, D) |> validateRetCode
-
-    static member S_Eigen_Values(n : int64, x, D) =
-        s_eigen_values(new IntPtr(n), x, D) |> validateRetCode
 
     static member D_Multiply_Matrices(x, y, z, n : int64, m : int64, k :  int64, trans) =
         d_multiply_matrices(x, y, z, new IntPtr(n), new IntPtr(m), new IntPtr(k), trans)

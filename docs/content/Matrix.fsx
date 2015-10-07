@@ -48,8 +48,8 @@ You can also create a matrix by converting a single float, a sequence of sequenc
 *)
 open FCore.ExplicitConversion
 let m9 : Matrix = !!0.1
-let m10 : Matrix = !!([[0.1; 0.2]
-                       [0.3; 0.4]] |> List.toSeq)
+let m10 : Matrix = !![[0.1; 0.2]
+                      [0.3; 0.4]]
 let m11 : Matrix = Array2D.create 2 2 0.4 |> (!!)
 (**
 Arithmetic Operators

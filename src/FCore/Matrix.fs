@@ -20,6 +20,9 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     static let empty = new BoolMatrix(0L, 0L, BoolVector.Empty)
 
+    new(rowCount : int, colCount : int, colMajorDataVector : BoolVector) =
+        new BoolMatrix(rowCount |> int64, colCount |> int64, colMajorDataVector)
+
     new(colMajorDataVector : BoolVector) =
         new BoolMatrix(colMajorDataVector.LongLength, 1L, colMajorDataVector)
 
@@ -50,13 +53,14 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         let rowCount = data.GetLength(0)
         let colCount = data.GetLength(1)
         let colMajorData = Array.init (rowCount * colCount) (fun i -> data.[i%rowCount, i/rowCount])
-        new BoolMatrix(rowCount, colCount, colMajorData)
+        new BoolMatrix(rowCount, colCount, new BoolVector(colMajorData, false))
 
     new(dataRows : seq<seq<bool>>) =
-        let rows = dataRows |> Seq.length
-        let cols = dataRows |> Seq.map Seq.length |> Seq.max
+        let dataRows = dataRows |> Seq.toArray |> Array.map Seq.toArray
+        let rows = dataRows.Length 
+        let cols = dataRows |> Array.map Array.length |> Array.max
         let data = Array2D.create rows cols false
-        dataRows |> Seq.iteri (fun row rowSeq -> rowSeq |> Seq.iteri (fun col x -> data.[row, col] <- x))
+        dataRows |> Array.iteri (fun row rowArr -> rowArr |> Array.iteri (fun col x -> data.[row, col] <- x))
         new BoolMatrix(data)
 
     new(dataRows : seq<bool list>) =
@@ -99,11 +103,32 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     static member op_Explicit(v : bool[,]) = new BoolMatrix(v)
 
-    static member op_Explicit(v : seq<seq<bool>>) = new BoolMatrix(v)
+    static member op_Explicit(dataRows : bool seq seq) = 
+        new BoolMatrix(dataRows)
 
-    static member op_Explicit(v : seq<bool list>) = new BoolMatrix(v)
+    static member op_Explicit(dataRows : bool list seq) = 
+        new BoolMatrix(dataRows)
 
-    static member op_Explicit(v : seq<bool array>) = new BoolMatrix(v)
+    static member op_Explicit(dataRows : bool array seq) = 
+        new BoolMatrix(dataRows)
+
+    static member op_Explicit(dataRows : bool seq list) = 
+        new BoolMatrix(dataRows)
+
+    static member op_Explicit(dataRows : bool list list) = 
+        new BoolMatrix(dataRows)
+
+    static member op_Explicit(dataRows : bool array list) = 
+        new BoolMatrix(dataRows)
+
+    static member op_Explicit(dataRows : bool seq array) = 
+        new BoolMatrix(dataRows)
+
+    static member op_Explicit(dataRows : bool list array) = 
+        new BoolMatrix(dataRows)
+
+    static member op_Explicit(dataRows : bool array array) = 
+        new BoolMatrix(dataRows)
 
     static member op_Explicit(v : BoolMatrix) = v
 
@@ -835,6 +860,9 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
     static let empty = new Matrix(0L, 0L, Vector.Empty)
 
+    new(rowCount : int, colCount : int, colMajorDataVector : Vector) =
+        new Matrix(rowCount |> int64, colCount |> int64, colMajorDataVector)
+
     new(colMajorDataVector : Vector) =
         new Matrix(colMajorDataVector.LongLength, 1L, colMajorDataVector)
 
@@ -865,13 +893,14 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         let rowCount = data.GetLength(0)
         let colCount = data.GetLength(1)
         let colMajorData = Array.init (rowCount * colCount) (fun i -> data.[i%rowCount, i/rowCount])
-        new Matrix(rowCount, colCount, colMajorData)
+        new Matrix(rowCount, colCount, new Vector(colMajorData, false))
 
     new(dataRows : seq<seq<float>>) =
-        let rows = dataRows |> Seq.length
-        let cols = dataRows |> Seq.map Seq.length |> Seq.max
+        let dataRows = dataRows |> Seq.toArray |> Array.map Seq.toArray
+        let rows = dataRows.Length 
+        let cols = dataRows |> Array.map Array.length |> Array.max
         let data = Array2D.create rows cols 0.0
-        dataRows |> Seq.iteri (fun row rowSeq -> rowSeq |> Seq.iteri (fun col x -> data.[row, col] <- x))
+        dataRows |> Array.iteri (fun row rowArr -> rowArr |> Array.iteri (fun col x -> data.[row, col] <- x))
         new Matrix(data)
 
     new(dataRows : seq<float list>) =
@@ -914,11 +943,32 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
     static member op_Explicit(v : float[,]) = new Matrix(v)
 
-    static member op_Explicit(v : seq<seq<float>>) = new Matrix(v)
+    static member op_Explicit(dataRows : float seq seq) = 
+        new Matrix(dataRows)
 
-    static member op_Explicit(v : seq<float list>) = new Matrix(v)
+    static member op_Explicit(dataRows : float list seq) = 
+        new Matrix(dataRows)
 
-    static member op_Explicit(v : seq<float array>) = new Matrix(v)
+    static member op_Explicit(dataRows : float array seq) = 
+        new Matrix(dataRows)
+
+    static member op_Explicit(dataRows : float seq list) = 
+        new Matrix(dataRows)
+
+    static member op_Explicit(dataRows : float list list) = 
+        new Matrix(dataRows)
+
+    static member op_Explicit(dataRows : float array list) = 
+        new Matrix(dataRows)
+
+    static member op_Explicit(dataRows : float seq array) = 
+        new Matrix(dataRows)
+
+    static member op_Explicit(dataRows : float list array) = 
+        new Matrix(dataRows)
+
+    static member op_Explicit(dataRows : float array array) = 
+        new Matrix(dataRows)
 
     static member op_Explicit(v : Matrix) = v
 
@@ -2077,6 +2127,10 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             MklFunctions.D_Cholesky_Solve(a.LongRowCount, b.LongColCount, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray)
             b
 
+    static member CholSolve(a : Matrix, b : Vector) =
+        let b = new Matrix(b)
+        Matrix.CholSolve(a, b).ColMajorDataVector
+
     static member Lu(matrix: Matrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix]
         let m = matrix.LongRowCount
@@ -2115,6 +2169,10 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             MklFunctions.D_Lu_Solve(a.LongRowCount, b.LongColCount, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray)
             b
 
+    static member LuSolve(a : Matrix, b : Vector) =
+        let b = new Matrix(b)
+        Matrix.LuSolve(a, b).ColMajorDataVector
+
     static member Qr(matrix: Matrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix]
         if matrix == Matrix.Empty then Matrix.Empty, Matrix.Empty
@@ -2147,6 +2205,10 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             MklFunctions.D_Qr_Solve_Full(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray)
             x
 
+    static member QrSolveFull(a : Matrix, b : Vector) =
+        let b = new Matrix(b)
+        Matrix.QrSolveFull(a, b).ColMajorDataVector
+
     static member QrSolve(a : Matrix, b : Matrix, tol : float) =
         ArgumentChecks.throwIfContainsDisposed [a;b]
         if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
@@ -2161,6 +2223,11 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             MklFunctions.D_Qr_Solve(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray, &&rank, tol)
             (x, rank)
 
+    static member QrSolve(a : Matrix, b : Vector, tol : float) =
+        let b = new Matrix(b)
+        let x, rank = Matrix.QrSolve(a, b, tol)
+        x.ColMajorDataVector, rank
+
     static member SvdSolve(a : Matrix, b : Matrix, tol : float) =
         ArgumentChecks.throwIfContainsDisposed [a;b]
         if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
@@ -2174,6 +2241,11 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             let mutable rank = 0
             MklFunctions.D_Svd_Solve(m, n, nrhs, a.ColMajorDataVector.NativeArray, b.ColMajorDataVector.NativeArray, x.ColMajorDataVector.NativeArray, &&rank, tol)
             (x, rank)
+
+    static member SvdSolve(a : Matrix, b : Vector, tol : float) =
+        let b = new Matrix(b)
+        let x, rank = Matrix.SvdSolve(a, b, tol)
+        x.ColMajorDataVector, rank
 
     static member SvdValues(matrix : Matrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix]
@@ -2209,16 +2281,6 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             let D = new Vector(n, 0.0)
             MklFunctions.D_Eigen_Factor(n, Z.ColMajorDataVector.NativeArray, D.NativeArray)
             (Z, D)
-
-    static member EigValues(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
-        if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix must be square"))
-        if matrix == Matrix.Empty then Vector.Empty
-        else
-            let n = matrix.LongRowCount
-            let D = new Vector(n, 0.0)
-            MklFunctions.D_Eigen_Values(n, matrix.ColMajorDataVector.NativeArray, D.NativeArray)
-            D
 
     override this.ToString() = 
         ArgumentChecks.throwIfContainsDisposed [this]
