@@ -137,9 +137,9 @@
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 29)" onmouseover="showTip(event, 'fs1', 29)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs19', 30)" onmouseover="showTip(event, 'fs19', 30)" class="i">ExplicitConversion</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 31)" onmouseover="showTip(event, 'fs20', 31)" class="i">m9</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs4', 32)" onmouseover="showTip(event, 'fs4', 32)" class="t">Matrix</span> <span class="o">=</span> <span class="o">!!</span><span class="n">0.1</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 33)" onmouseover="showTip(event, 'fs21', 33)" class="i">m10</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs4', 34)" onmouseover="showTip(event, 'fs4', 34)" class="t">Matrix</span> <span class="o">=</span> <span class="o">!!</span>([[<span class="n">0.1</span>; <span class="n">0.2</span>]
-                       [<span class="n">0.3</span>; <span class="n">0.4</span>]] <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="t">List</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs23', 36)" onmouseover="showTip(event, 'fs23', 36)" class="f">toSeq</span>)
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 37)" onmouseover="showTip(event, 'fs24', 37)" class="i">m11</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs4', 38)" onmouseover="showTip(event, 'fs4', 38)" class="t">Matrix</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 39)" onmouseover="showTip(event, 'fs10', 39)" class="t">Array2D</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 40)" onmouseover="showTip(event, 'fs11', 40)" class="f">create</span> <span class="n">2</span> <span class="n">2</span> <span class="n">0.4</span> <span class="o">|&gt;</span> (<span class="o">!!</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 33)" onmouseover="showTip(event, 'fs21', 33)" class="i">m10</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs4', 34)" onmouseover="showTip(event, 'fs4', 34)" class="t">Matrix</span> <span class="o">=</span> <span class="o">!!</span>[[<span class="n">0.1</span>; <span class="n">0.2</span>]
+                      [<span class="n">0.3</span>; <span class="n">0.4</span>]]
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="i">m11</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs4', 36)" onmouseover="showTip(event, 'fs4', 36)" class="t">Matrix</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 37)" onmouseover="showTip(event, 'fs10', 37)" class="t">Array2D</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 38)" onmouseover="showTip(event, 'fs11', 38)" class="f">create</span> <span class="n">2</span> <span class="n">2</span> <span class="n">0.4</span> <span class="o">|&gt;</span> (<span class="o">!!</span>)
 </code></pre></td>
 </tr>
 </table>
@@ -170,16 +170,16 @@
 <span class="l"> 9: </span>
 <span class="l">10: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 41)" onmouseover="showTip(event, 'fs25', 41)" class="i">m12</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 42)" onmouseover="showTip(event, 'fs4', 42)" class="t">Matrix</span>([[<span class="n">0.1</span>; <span class="n">0.2</span>]
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 39)" onmouseover="showTip(event, 'fs23', 39)" class="i">m12</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 40)" onmouseover="showTip(event, 'fs4', 40)" class="t">Matrix</span>([[<span class="n">0.1</span>; <span class="n">0.2</span>]
                       [<span class="n">0.3</span>; <span class="n">0.4</span>]])
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs26', 43)" onmouseover="showTip(event, 'fs26', 43)" class="i">m13</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 44)" onmouseover="showTip(event, 'fs4', 44)" class="t">Matrix</span>([[<span class="n">0.1</span>; <span class="n">0.2</span>]
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 41)" onmouseover="showTip(event, 'fs24', 41)" class="i">m13</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 42)" onmouseover="showTip(event, 'fs4', 42)" class="t">Matrix</span>([[<span class="n">0.1</span>; <span class="n">0.2</span>]
                       [<span class="n">0.4</span>; <span class="n">0.5</span>]])
-<span onmouseout="hideTip(event, 'fs25', 45)" onmouseover="showTip(event, 'fs25', 45)" class="i">m12</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs26', 46)" onmouseover="showTip(event, 'fs26', 46)" class="i">m13</span> <span class="c">//0.2,0.4,0.7,0.9</span>
-<span onmouseout="hideTip(event, 'fs25', 47)" onmouseover="showTip(event, 'fs25', 47)" class="i">m12</span> <span class="o">-</span> <span onmouseout="hideTip(event, 'fs26', 48)" onmouseover="showTip(event, 'fs26', 48)" class="i">m13</span> <span class="c">//0,0,-0.1,-0.1</span>
-<span onmouseout="hideTip(event, 'fs25', 49)" onmouseover="showTip(event, 'fs25', 49)" class="i">m12</span> <span class="o">.</span><span class="o">*</span> <span onmouseout="hideTip(event, 'fs26', 50)" onmouseover="showTip(event, 'fs26', 50)" class="i">m13</span> <span class="c">//0.01,0.04,0.12,0.2</span>
-<span onmouseout="hideTip(event, 'fs25', 51)" onmouseover="showTip(event, 'fs25', 51)" class="i">m12</span> <span class="o">.</span><span class="o">/</span> <span onmouseout="hideTip(event, 'fs26', 52)" onmouseover="showTip(event, 'fs26', 52)" class="i">m13</span> <span class="c">//1,1,0.75,0.8</span>
-<span onmouseout="hideTip(event, 'fs25', 53)" onmouseover="showTip(event, 'fs25', 53)" class="i">m12</span> <span class="o">.</span><span class="o">^</span> <span onmouseout="hideTip(event, 'fs26', 54)" onmouseover="showTip(event, 'fs26', 54)" class="i">m13</span> <span class="c">//0.794,0.725,0.618,0.632</span>
-<span class="o">-</span><span onmouseout="hideTip(event, 'fs26', 55)" onmouseover="showTip(event, 'fs26', 55)" class="i">m13</span> <span class="c">//-0.1,-0.2,-0.4,-0.5</span>
+<span onmouseout="hideTip(event, 'fs23', 43)" onmouseover="showTip(event, 'fs23', 43)" class="i">m12</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs24', 44)" onmouseover="showTip(event, 'fs24', 44)" class="i">m13</span> <span class="c">//0.2,0.4,0.7,0.9</span>
+<span onmouseout="hideTip(event, 'fs23', 45)" onmouseover="showTip(event, 'fs23', 45)" class="i">m12</span> <span class="o">-</span> <span onmouseout="hideTip(event, 'fs24', 46)" onmouseover="showTip(event, 'fs24', 46)" class="i">m13</span> <span class="c">//0,0,-0.1,-0.1</span>
+<span onmouseout="hideTip(event, 'fs23', 47)" onmouseover="showTip(event, 'fs23', 47)" class="i">m12</span> <span class="o">.</span><span class="o">*</span> <span onmouseout="hideTip(event, 'fs24', 48)" onmouseover="showTip(event, 'fs24', 48)" class="i">m13</span> <span class="c">//0.01,0.04,0.12,0.2</span>
+<span onmouseout="hideTip(event, 'fs23', 49)" onmouseover="showTip(event, 'fs23', 49)" class="i">m12</span> <span class="o">.</span><span class="o">/</span> <span onmouseout="hideTip(event, 'fs24', 50)" onmouseover="showTip(event, 'fs24', 50)" class="i">m13</span> <span class="c">//1,1,0.75,0.8</span>
+<span onmouseout="hideTip(event, 'fs23', 51)" onmouseover="showTip(event, 'fs23', 51)" class="i">m12</span> <span class="o">.</span><span class="o">^</span> <span onmouseout="hideTip(event, 'fs24', 52)" onmouseover="showTip(event, 'fs24', 52)" class="i">m13</span> <span class="c">//0.794,0.725,0.618,0.632</span>
+<span class="o">-</span><span onmouseout="hideTip(event, 'fs24', 53)" onmouseover="showTip(event, 'fs24', 53)" class="i">m13</span> <span class="c">//-0.1,-0.2,-0.4,-0.5</span>
 </code></pre></td>
 </tr>
 </table>
@@ -211,13 +211,13 @@
 <span class="l">6: </span>
 <span class="l">7: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs25', 56)" onmouseover="showTip(event, 'fs25', 56)" class="i">m12</span> <span class="o">==</span> <span onmouseout="hideTip(event, 'fs26', 57)" onmouseover="showTip(event, 'fs26', 57)" class="i">m13</span> <span class="c">//false</span>
-<span onmouseout="hideTip(event, 'fs25', 58)" onmouseover="showTip(event, 'fs25', 58)" class="i">m12</span> <span class="o">!=</span> <span onmouseout="hideTip(event, 'fs26', 59)" onmouseover="showTip(event, 'fs26', 59)" class="i">m13</span> <span class="c">//true</span>
-<span onmouseout="hideTip(event, 'fs25', 60)" onmouseover="showTip(event, 'fs25', 60)" class="i">m12</span> <span class="o">.</span><span class="o">&lt;</span> <span onmouseout="hideTip(event, 'fs26', 61)" onmouseover="showTip(event, 'fs26', 61)" class="i">m13</span> <span class="c">//false,false,true,true</span>
-<span onmouseout="hideTip(event, 'fs25', 62)" onmouseover="showTip(event, 'fs25', 62)" class="i">m12</span> <span class="o">.</span><span class="o">&lt;=</span> <span onmouseout="hideTip(event, 'fs26', 63)" onmouseover="showTip(event, 'fs26', 63)" class="i">m13</span> <span class="c">//true,true,true,true</span>
-<span onmouseout="hideTip(event, 'fs25', 64)" onmouseover="showTip(event, 'fs25', 64)" class="i">m12</span> <span class="o">.</span><span class="o">&gt;</span> <span onmouseout="hideTip(event, 'fs26', 65)" onmouseover="showTip(event, 'fs26', 65)" class="i">m13</span> <span class="c">//false,false,false,false</span>
-<span onmouseout="hideTip(event, 'fs25', 66)" onmouseover="showTip(event, 'fs25', 66)" class="i">m12</span> <span class="o">.</span><span class="o">&gt;=</span> <span onmouseout="hideTip(event, 'fs26', 67)" onmouseover="showTip(event, 'fs26', 67)" class="i">m13</span> <span class="c">//true,true,false,false</span>
-<span onmouseout="hideTip(event, 'fs25', 68)" onmouseover="showTip(event, 'fs25', 68)" class="i">m12</span> <span class="o">.</span><span class="o">&lt;&gt;</span> <span onmouseout="hideTip(event, 'fs26', 69)" onmouseover="showTip(event, 'fs26', 69)" class="i">m13</span> <span class="c">//false,false,true,true</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs23', 54)" onmouseover="showTip(event, 'fs23', 54)" class="i">m12</span> <span class="o">==</span> <span onmouseout="hideTip(event, 'fs24', 55)" onmouseover="showTip(event, 'fs24', 55)" class="i">m13</span> <span class="c">//false</span>
+<span onmouseout="hideTip(event, 'fs23', 56)" onmouseover="showTip(event, 'fs23', 56)" class="i">m12</span> <span class="o">!=</span> <span onmouseout="hideTip(event, 'fs24', 57)" onmouseover="showTip(event, 'fs24', 57)" class="i">m13</span> <span class="c">//true</span>
+<span onmouseout="hideTip(event, 'fs23', 58)" onmouseover="showTip(event, 'fs23', 58)" class="i">m12</span> <span class="o">.</span><span class="o">&lt;</span> <span onmouseout="hideTip(event, 'fs24', 59)" onmouseover="showTip(event, 'fs24', 59)" class="i">m13</span> <span class="c">//false,false,true,true</span>
+<span onmouseout="hideTip(event, 'fs23', 60)" onmouseover="showTip(event, 'fs23', 60)" class="i">m12</span> <span class="o">.</span><span class="o">&lt;=</span> <span onmouseout="hideTip(event, 'fs24', 61)" onmouseover="showTip(event, 'fs24', 61)" class="i">m13</span> <span class="c">//true,true,true,true</span>
+<span onmouseout="hideTip(event, 'fs23', 62)" onmouseover="showTip(event, 'fs23', 62)" class="i">m12</span> <span class="o">.</span><span class="o">&gt;</span> <span onmouseout="hideTip(event, 'fs24', 63)" onmouseover="showTip(event, 'fs24', 63)" class="i">m13</span> <span class="c">//false,false,false,false</span>
+<span onmouseout="hideTip(event, 'fs23', 64)" onmouseover="showTip(event, 'fs23', 64)" class="i">m12</span> <span class="o">.</span><span class="o">&gt;=</span> <span onmouseout="hideTip(event, 'fs24', 65)" onmouseover="showTip(event, 'fs24', 65)" class="i">m13</span> <span class="c">//true,true,false,false</span>
+<span onmouseout="hideTip(event, 'fs23', 66)" onmouseover="showTip(event, 'fs23', 66)" class="i">m12</span> <span class="o">.</span><span class="o">&lt;&gt;</span> <span onmouseout="hideTip(event, 'fs24', 67)" onmouseover="showTip(event, 'fs24', 67)" class="i">m13</span> <span class="c">//false,false,true,true</span>
 </code></pre></td>
 </tr>
 </table>
@@ -231,8 +231,8 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 70)" onmouseover="showTip(event, 'fs27', 70)" class="i">m14</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 71)" onmouseover="showTip(event, 'fs25', 71)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">1</span>]
-<span onmouseout="hideTip(event, 'fs25', 72)" onmouseover="showTip(event, 'fs25', 72)" class="i">m12</span><span class="o">.</span>[<span class="n">0</span>,<span class="n">0</span>] <span class="o">&lt;-</span> <span class="n">0.0</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 68)" onmouseover="showTip(event, 'fs25', 68)" class="i">m14</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 69)" onmouseover="showTip(event, 'fs23', 69)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">1</span>]
+<span onmouseout="hideTip(event, 'fs23', 70)" onmouseover="showTip(event, 'fs23', 70)" class="i">m12</span><span class="o">.</span>[<span class="n">0</span>,<span class="n">0</span>] <span class="o">&lt;-</span> <span class="n">0.0</span>
 </code></pre></td>
 </tr>
 </table>
@@ -242,8 +242,8 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs28', 73)" onmouseover="showTip(event, 'fs28', 73)" class="i">m15</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 74)" onmouseover="showTip(event, 'fs25', 74)" class="i">m12</span><span class="o">.</span>[<span class="n">1..</span><span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>]
-<span onmouseout="hideTip(event, 'fs25', 75)" onmouseover="showTip(event, 'fs25', 75)" class="i">m12</span><span class="o">.</span>[<span class="n">1..</span><span class="n">1</span>, <span class="n">0..</span><span class="n">1</span>] <span class="o">&lt;-</span> <span class="n">1.1</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs26', 71)" onmouseover="showTip(event, 'fs26', 71)" class="i">m15</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 72)" onmouseover="showTip(event, 'fs23', 72)" class="i">m12</span><span class="o">.</span>[<span class="n">1..</span><span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>]
+<span onmouseout="hideTip(event, 'fs23', 73)" onmouseover="showTip(event, 'fs23', 73)" class="i">m12</span><span class="o">.</span>[<span class="n">1..</span><span class="n">1</span>, <span class="n">0..</span><span class="n">1</span>] <span class="o">&lt;-</span> <span class="n">1.1</span>
 </code></pre></td>
 </tr>
 </table>
@@ -260,8 +260,8 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 76)" onmouseover="showTip(event, 'fs29', 76)" class="i">v16</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 77)" onmouseover="showTip(event, 'fs25', 77)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>]
-<span onmouseout="hideTip(event, 'fs25', 78)" onmouseover="showTip(event, 'fs25', 78)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>] <span class="o">&lt;-</span> <span class="o">!!</span>[<span class="n">1.0</span>; <span class="n">0.0</span>]
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 74)" onmouseover="showTip(event, 'fs27', 74)" class="i">v16</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 75)" onmouseover="showTip(event, 'fs23', 75)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>]
+<span onmouseout="hideTip(event, 'fs23', 76)" onmouseover="showTip(event, 'fs23', 76)" class="i">m12</span><span class="o">.</span>[<span class="n">1</span>,<span class="n">0..</span><span class="n">1</span>] <span class="o">&lt;-</span> <span class="o">!!</span>[<span class="n">1.0</span>; <span class="n">0.0</span>]
 </code></pre></td>
 </tr>
 </table>
@@ -271,8 +271,8 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs30', 79)" onmouseover="showTip(event, 'fs30', 79)" class="i">m17</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 80)" onmouseover="showTip(event, 'fs25', 80)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], [<span class="n">1</span>] ] 
-<span onmouseout="hideTip(event, 'fs25', 81)" onmouseover="showTip(event, 'fs25', 81)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], [<span class="n">1</span>] ] <span class="o">&lt;-</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 82)" onmouseover="showTip(event, 'fs4', 82)" class="t">Matrix</span>(<span class="n">2</span>, <span class="n">1</span>, [<span class="n">1.0</span>; <span class="n">0.0</span>])
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs28', 77)" onmouseover="showTip(event, 'fs28', 77)" class="i">m17</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 78)" onmouseover="showTip(event, 'fs23', 78)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], [<span class="n">1</span>] ] 
+<span onmouseout="hideTip(event, 'fs23', 79)" onmouseover="showTip(event, 'fs23', 79)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], [<span class="n">1</span>] ] <span class="o">&lt;-</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs4', 80)" onmouseover="showTip(event, 'fs4', 80)" class="t">Matrix</span>(<span class="n">2</span>, <span class="n">1</span>, [<span class="n">1.0</span>; <span class="n">0.0</span>])
 </code></pre></td>
 </tr>
 </table>
@@ -282,8 +282,8 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 83)" onmouseover="showTip(event, 'fs31', 83)" class="i">v18</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 84)" onmouseover="showTip(event, 'fs25', 84)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], <span class="n">1</span>] 
-<span onmouseout="hideTip(event, 'fs25', 85)" onmouseover="showTip(event, 'fs25', 85)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], <span class="n">1</span>] <span class="o">&lt;-</span> <span class="o">!!</span>[<span class="n">1.0</span>; <span class="n">0.0</span>]
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 81)" onmouseover="showTip(event, 'fs29', 81)" class="i">v18</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 82)" onmouseover="showTip(event, 'fs23', 82)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], <span class="n">1</span>] 
+<span onmouseout="hideTip(event, 'fs23', 83)" onmouseover="showTip(event, 'fs23', 83)" class="i">m12</span><span class="o">.</span>[ [<span class="n">0</span>;<span class="n">1</span>], <span class="n">1</span>] <span class="o">&lt;-</span> <span class="o">!!</span>[<span class="n">1.0</span>; <span class="n">0.0</span>]
 </code></pre></td>
 </tr>
 </table>
@@ -293,8 +293,8 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs32', 86)" onmouseover="showTip(event, 'fs32', 86)" class="i">v19</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 87)" onmouseover="showTip(event, 'fs25', 87)" class="i">m12</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs26', 88)" onmouseover="showTip(event, 'fs26', 88)" class="i">m13</span> <span class="o">.</span><span class="o">&lt;=</span> <span class="n">0.2</span>] <span class="c">//returns m12 elements where m13 is less than or equal 0.2 in column major order</span>
-<span onmouseout="hideTip(event, 'fs25', 89)" onmouseover="showTip(event, 'fs25', 89)" class="i">m12</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs26', 90)" onmouseover="showTip(event, 'fs26', 90)" class="i">m13</span> <span class="o">.</span><span class="o">&lt;=</span> <span class="n">0.2</span>] <span class="o">&lt;-</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs17', 91)" onmouseover="showTip(event, 'fs17', 91)" class="t">Vector</span>(<span class="n">0.0</span>) <span class="c">//set elements of m12 where m13 is less than or equal 0.2 to elements of given vector</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs30', 84)" onmouseover="showTip(event, 'fs30', 84)" class="i">v19</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 85)" onmouseover="showTip(event, 'fs23', 85)" class="i">m12</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs24', 86)" onmouseover="showTip(event, 'fs24', 86)" class="i">m13</span> <span class="o">.</span><span class="o">&lt;=</span> <span class="n">0.2</span>] <span class="c">//returns m12 elements where m13 is less than or equal 0.2 in column major order</span>
+<span onmouseout="hideTip(event, 'fs23', 87)" onmouseover="showTip(event, 'fs23', 87)" class="i">m12</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs24', 88)" onmouseover="showTip(event, 'fs24', 88)" class="i">m13</span> <span class="o">.</span><span class="o">&lt;=</span> <span class="n">0.2</span>] <span class="o">&lt;-</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs17', 89)" onmouseover="showTip(event, 'fs17', 89)" class="t">Vector</span>(<span class="n">0.0</span>) <span class="c">//set elements of m12 where m13 is less than or equal 0.2 to elements of given vector</span>
 </code></pre></td>
 </tr>
 </table>
@@ -303,7 +303,7 @@
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs33', 92)" onmouseover="showTip(event, 'fs33', 92)" class="i">v20</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 93)" onmouseover="showTip(event, 'fs25', 93)" class="i">m12</span><span class="o">.</span>[<span class="n">0..</span><span class="n">1</span>] 
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 90)" onmouseover="showTip(event, 'fs31', 90)" class="i">v20</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 91)" onmouseover="showTip(event, 'fs23', 91)" class="i">m12</span><span class="o">.</span>[<span class="n">0..</span><span class="n">1</span>] 
 </code></pre></td>
 </tr>
 </table>
@@ -317,8 +317,8 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs34', 94)" onmouseover="showTip(event, 'fs34', 94)" class="i">view</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 95)" onmouseover="showTip(event, 'fs25', 95)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs35', 96)" onmouseover="showTip(event, 'fs35', 96)" class="i">View</span>(<span class="n">1</span>,<span class="n">2</span>) <span class="c">// creates a linear slice 1..2 which shares memory with the input matrix</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs36', 97)" onmouseover="showTip(event, 'fs36', 97)" class="i">colView</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 98)" onmouseover="showTip(event, 'fs25', 98)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs37', 99)" onmouseover="showTip(event, 'fs37', 99)" class="i">ColView</span>(<span class="n">1</span>) <span class="c">// returns the 2nd column as a vector, no data is copied</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs32', 92)" onmouseover="showTip(event, 'fs32', 92)" class="i">view</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 93)" onmouseover="showTip(event, 'fs23', 93)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs33', 94)" onmouseover="showTip(event, 'fs33', 94)" class="i">View</span>(<span class="n">1</span>,<span class="n">2</span>) <span class="c">// creates a linear slice 1..2 which shares memory with the input matrix</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs34', 95)" onmouseover="showTip(event, 'fs34', 95)" class="i">colView</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 96)" onmouseover="showTip(event, 'fs23', 96)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs35', 97)" onmouseover="showTip(event, 'fs35', 97)" class="i">ColView</span>(<span class="n">1</span>) <span class="c">// returns the 2nd column as a vector, no data is copied</span>
 </code></pre></td>
 </tr>
 </table>
@@ -334,12 +334,12 @@
 <span class="l">5: </span>
 <span class="l">6: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs38', 100)" onmouseover="showTip(event, 'fs38', 100)" class="i">rowCount</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 101)" onmouseover="showTip(event, 'fs25', 101)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs39', 102)" onmouseover="showTip(event, 'fs39', 102)" class="i">RowCount</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs40', 103)" onmouseover="showTip(event, 'fs40', 103)" class="i">colCount</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 104)" onmouseover="showTip(event, 'fs25', 104)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs41', 105)" onmouseover="showTip(event, 'fs41', 105)" class="i">ColCount</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs42', 106)" onmouseover="showTip(event, 'fs42', 106)" class="i">rowCountL</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 107)" onmouseover="showTip(event, 'fs25', 107)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs43', 108)" onmouseover="showTip(event, 'fs43', 108)" class="i">LongRowCount</span> <span class="c">// int64</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs44', 109)" onmouseover="showTip(event, 'fs44', 109)" class="i">colCountL</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 110)" onmouseover="showTip(event, 'fs25', 110)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs45', 111)" onmouseover="showTip(event, 'fs45', 111)" class="i">LongColCount</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs46', 112)" onmouseover="showTip(event, 'fs46', 112)" class="i">dataVector</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 113)" onmouseover="showTip(event, 'fs25', 113)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs47', 114)" onmouseover="showTip(event, 'fs47', 114)" class="i">ColMajorDataVector</span> <span class="c">// no data is copied</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 115)" onmouseover="showTip(event, 'fs48', 115)" class="i">isDisposed</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 116)" onmouseover="showTip(event, 'fs25', 116)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs49', 117)" onmouseover="showTip(event, 'fs49', 117)" class="i">IsDisposed</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs36', 98)" onmouseover="showTip(event, 'fs36', 98)" class="i">rowCount</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 99)" onmouseover="showTip(event, 'fs23', 99)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs37', 100)" onmouseover="showTip(event, 'fs37', 100)" class="i">RowCount</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs38', 101)" onmouseover="showTip(event, 'fs38', 101)" class="i">colCount</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 102)" onmouseover="showTip(event, 'fs23', 102)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs39', 103)" onmouseover="showTip(event, 'fs39', 103)" class="i">ColCount</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs40', 104)" onmouseover="showTip(event, 'fs40', 104)" class="i">rowCountL</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 105)" onmouseover="showTip(event, 'fs23', 105)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs41', 106)" onmouseover="showTip(event, 'fs41', 106)" class="i">LongRowCount</span> <span class="c">// int64</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs42', 107)" onmouseover="showTip(event, 'fs42', 107)" class="i">colCountL</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 108)" onmouseover="showTip(event, 'fs23', 108)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs43', 109)" onmouseover="showTip(event, 'fs43', 109)" class="i">LongColCount</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs44', 110)" onmouseover="showTip(event, 'fs44', 110)" class="i">dataVector</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 111)" onmouseover="showTip(event, 'fs23', 111)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs45', 112)" onmouseover="showTip(event, 'fs45', 112)" class="i">ColMajorDataVector</span> <span class="c">// no data is copied</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs46', 113)" onmouseover="showTip(event, 'fs46', 113)" class="i">isDisposed</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 114)" onmouseover="showTip(event, 'fs23', 114)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs47', 115)" onmouseover="showTip(event, 'fs47', 115)" class="i">IsDisposed</span>
 </code></pre></td>
 </tr>
 </table>
@@ -350,7 +350,7 @@
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 118)" onmouseover="showTip(event, 'fs50', 118)" class="i">arr</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 119)" onmouseover="showTip(event, 'fs25', 119)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs51', 120)" onmouseover="showTip(event, 'fs51', 120)" class="f">ToArray2D</span>()
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs48', 116)" onmouseover="showTip(event, 'fs48', 116)" class="i">arr</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs23', 117)" onmouseover="showTip(event, 'fs23', 117)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs49', 118)" onmouseover="showTip(event, 'fs49', 118)" class="f">ToArray2D</span>()
 </code></pre></td>
 </tr>
 </table>
@@ -359,7 +359,7 @@
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs52', 121)" onmouseover="showTip(event, 'fs52', 121)" class="i">m21</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 122)" onmouseover="showTip(event, 'fs4', 122)" class="t">Matrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs53', 123)" onmouseover="showTip(event, 'fs53', 123)" class="f">Copy</span>(<span onmouseout="hideTip(event, 'fs21', 124)" onmouseover="showTip(event, 'fs21', 124)" class="i">m10</span>)
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 119)" onmouseover="showTip(event, 'fs50', 119)" class="i">m21</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 120)" onmouseover="showTip(event, 'fs4', 120)" class="t">Matrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs51', 121)" onmouseover="showTip(event, 'fs51', 121)" class="f">Copy</span>(<span onmouseout="hideTip(event, 'fs21', 122)" onmouseover="showTip(event, 'fs21', 122)" class="i">m10</span>)
 </code></pre></td>
 </tr>
 </table>
@@ -369,8 +369,8 @@
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs54', 125)" onmouseover="showTip(event, 'fs54', 125)" class="i">m22</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 126)" onmouseover="showTip(event, 'fs4', 126)" class="t">Matrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs55', 127)" onmouseover="showTip(event, 'fs55', 127)" class="f">Min</span>(<span onmouseout="hideTip(event, 'fs25', 128)" onmouseover="showTip(event, 'fs25', 128)" class="i">m12</span>, <span onmouseout="hideTip(event, 'fs26', 129)" onmouseover="showTip(event, 'fs26', 129)" class="i">m13</span>)
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs56', 130)" onmouseover="showTip(event, 'fs56', 130)" class="i">m23</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 131)" onmouseover="showTip(event, 'fs4', 131)" class="t">Matrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs57', 132)" onmouseover="showTip(event, 'fs57', 132)" class="f">Max</span>(<span onmouseout="hideTip(event, 'fs25', 133)" onmouseover="showTip(event, 'fs25', 133)" class="i">m12</span>, <span onmouseout="hideTip(event, 'fs26', 134)" onmouseover="showTip(event, 'fs26', 134)" class="i">m13</span>)
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs52', 123)" onmouseover="showTip(event, 'fs52', 123)" class="i">m22</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 124)" onmouseover="showTip(event, 'fs4', 124)" class="t">Matrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs53', 125)" onmouseover="showTip(event, 'fs53', 125)" class="f">Min</span>(<span onmouseout="hideTip(event, 'fs23', 126)" onmouseover="showTip(event, 'fs23', 126)" class="i">m12</span>, <span onmouseout="hideTip(event, 'fs24', 127)" onmouseover="showTip(event, 'fs24', 127)" class="i">m13</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs54', 128)" onmouseover="showTip(event, 'fs54', 128)" class="i">m23</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs4', 129)" onmouseover="showTip(event, 'fs4', 129)" class="t">Matrix</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs55', 130)" onmouseover="showTip(event, 'fs55', 130)" class="f">Max</span>(<span onmouseout="hideTip(event, 'fs23', 131)" onmouseover="showTip(event, 'fs23', 131)" class="i">m12</span>, <span onmouseout="hideTip(event, 'fs24', 132)" onmouseover="showTip(event, 'fs24', 132)" class="i">m13</span>)
 </code></pre></td>
 </tr>
 </table>
@@ -383,7 +383,7 @@
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs25', 135)" onmouseover="showTip(event, 'fs25', 135)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs58', 136)" onmouseover="showTip(event, 'fs58', 136)" class="f">Dispose</span>()
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs23', 133)" onmouseover="showTip(event, 'fs23', 133)" class="i">m12</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs56', 134)" onmouseover="showTip(event, 'fs56', 134)" class="f">Dispose</span>()
 </code></pre></td>
 </tr>
 </table>
@@ -393,7 +393,7 @@
 <div class="tip" id="fs1">namespace FCore</div>
 <div class="tip" id="fs2">namespace System</div>
 <div class="tip" id="fs3">val m1 : Matrix<br /><br />Full name: Matrix.m1</div>
-<div class="tip" id="fs4">Multiple items<br />type Matrix =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;new : data:float [,] -&gt; Matrix<br />&#160;&#160;new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; float) -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;float&gt; -&gt; Matrix<br />&#160;&#160;...<br /><br />Full name: FCore.Matrix<br /><br />--------------------<br />new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float [,] -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataSeq:seq&lt;float&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="tip" id="fs4">Multiple items<br />type Matrix =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;new : data:float [,] -&gt; Matrix<br />&#160;&#160;new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; float) -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;float&gt; -&gt; Matrix<br />&#160;&#160;...<br /><br />Full name: FCore.Matrix<br /><br />--------------------<br />new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float [,] -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="tip" id="fs5">val m2 : Matrix<br /><br />Full name: Matrix.m2</div>
 <div class="tip" id="fs6">val m3 : Matrix<br /><br />Full name: Matrix.m3</div>
 <div class="tip" id="fs7">val m4 : Matrix<br /><br />Full name: Matrix.m4</div>
@@ -411,43 +411,41 @@
 <div class="tip" id="fs19">module ExplicitConversion<br /><br />from FCore</div>
 <div class="tip" id="fs20">val m9 : Matrix<br /><br />Full name: Matrix.m9</div>
 <div class="tip" id="fs21">val m10 : Matrix<br /><br />Full name: Matrix.m10</div>
-<div class="tip" id="fs22">Multiple items<br />module List<br /><br />from Microsoft.FSharp.Collections<br /><br />--------------------<br />type List&lt;&#39;T&gt; =<br />&#160;&#160;| ( [] )<br />&#160;&#160;| ( :: ) of Head: &#39;T * Tail: &#39;T list<br />&#160;&#160;interface IEnumerable<br />&#160;&#160;interface IEnumerable&lt;&#39;T&gt;<br />&#160;&#160;member Head : &#39;T<br />&#160;&#160;member IsEmpty : bool<br />&#160;&#160;member Item : index:int -&gt; &#39;T with get<br />&#160;&#160;member Length : int<br />&#160;&#160;member Tail : &#39;T list<br />&#160;&#160;static member Cons : head:&#39;T * tail:&#39;T list -&gt; &#39;T list<br />&#160;&#160;static member Empty : &#39;T list<br /><br />Full name: Microsoft.FSharp.Collections.List&lt;_&gt;</div>
-<div class="tip" id="fs23">val toSeq : list:&#39;T list -&gt; seq&lt;&#39;T&gt;<br /><br />Full name: Microsoft.FSharp.Collections.List.toSeq</div>
-<div class="tip" id="fs24">val m11 : Matrix<br /><br />Full name: Matrix.m11</div>
-<div class="tip" id="fs25">val m12 : Matrix<br /><br />Full name: Matrix.m12</div>
-<div class="tip" id="fs26">val m13 : Matrix<br /><br />Full name: Matrix.m13</div>
-<div class="tip" id="fs27">val m14 : float<br /><br />Full name: Matrix.m14</div>
-<div class="tip" id="fs28">val m15 : Matrix<br /><br />Full name: Matrix.m15</div>
-<div class="tip" id="fs29">val v16 : Vector<br /><br />Full name: Matrix.v16</div>
-<div class="tip" id="fs30">val m17 : Matrix<br /><br />Full name: Matrix.m17</div>
-<div class="tip" id="fs31">val v18 : Vector<br /><br />Full name: Matrix.v18</div>
-<div class="tip" id="fs32">val v19 : Vector<br /><br />Full name: Matrix.v19</div>
-<div class="tip" id="fs33">val v20 : Vector<br /><br />Full name: Matrix.v20</div>
-<div class="tip" id="fs34">val view : Vector<br /><br />Full name: Matrix.view</div>
-<div class="tip" id="fs35">Multiple items<br />property Matrix.View: int64 * int64 -&gt; Vector<br /><br />--------------------<br />property Matrix.View: int * int -&gt; Vector</div>
-<div class="tip" id="fs36">val colView : Vector<br /><br />Full name: Matrix.colView</div>
-<div class="tip" id="fs37">Multiple items<br />property Matrix.ColView: int64 -&gt; Vector<br /><br />--------------------<br />property Matrix.ColView: int -&gt; Vector</div>
-<div class="tip" id="fs38">val rowCount : int<br /><br />Full name: Matrix.rowCount</div>
-<div class="tip" id="fs39">property Matrix.RowCount: int</div>
-<div class="tip" id="fs40">val colCount : int<br /><br />Full name: Matrix.colCount</div>
-<div class="tip" id="fs41">property Matrix.ColCount: int</div>
-<div class="tip" id="fs42">val rowCountL : int64<br /><br />Full name: Matrix.rowCountL</div>
-<div class="tip" id="fs43">property Matrix.LongRowCount: int64</div>
-<div class="tip" id="fs44">val colCountL : int64<br /><br />Full name: Matrix.colCountL</div>
-<div class="tip" id="fs45">property Matrix.LongColCount: int64</div>
-<div class="tip" id="fs46">val dataVector : Vector<br /><br />Full name: Matrix.dataVector</div>
-<div class="tip" id="fs47">property Matrix.ColMajorDataVector: Vector</div>
-<div class="tip" id="fs48">val isDisposed : bool<br /><br />Full name: Matrix.isDisposed</div>
-<div class="tip" id="fs49">property Matrix.IsDisposed: bool</div>
-<div class="tip" id="fs50">val arr : float [,]<br /><br />Full name: Matrix.arr</div>
-<div class="tip" id="fs51">member Matrix.ToArray2D : unit -&gt; float [,]</div>
-<div class="tip" id="fs52">val m21 : Matrix<br /><br />Full name: Matrix.m21</div>
-<div class="tip" id="fs53">static member Matrix.Copy : matrix:Matrix -&gt; Matrix</div>
-<div class="tip" id="fs54">val m22 : Matrix<br /><br />Full name: Matrix.m22</div>
-<div class="tip" id="fs55">static member Matrix.Min : matrix:Matrix -&gt; (MatrixAxis -&gt; Vector)<br />static member Matrix.Min : a:float * matrix:Matrix -&gt; Matrix<br />static member Matrix.Min : matrix:Matrix * a:float -&gt; Matrix<br />static member Matrix.Min : matrix1:Matrix * matrix2:Matrix -&gt; Matrix</div>
-<div class="tip" id="fs56">val m23 : Matrix<br /><br />Full name: Matrix.m23</div>
-<div class="tip" id="fs57">static member Matrix.Max : matrix:Matrix -&gt; (MatrixAxis -&gt; Vector)<br />static member Matrix.Max : a:float * matrix:Matrix -&gt; Matrix<br />static member Matrix.Max : matrix:Matrix * a:float -&gt; Matrix<br />static member Matrix.Max : matrix1:Matrix * matrix2:Matrix -&gt; Matrix</div>
-<div class="tip" id="fs58">member Matrix.Dispose : unit -&gt; unit</div>
+<div class="tip" id="fs22">val m11 : Matrix<br /><br />Full name: Matrix.m11</div>
+<div class="tip" id="fs23">val m12 : Matrix<br /><br />Full name: Matrix.m12</div>
+<div class="tip" id="fs24">val m13 : Matrix<br /><br />Full name: Matrix.m13</div>
+<div class="tip" id="fs25">val m14 : float<br /><br />Full name: Matrix.m14</div>
+<div class="tip" id="fs26">val m15 : Matrix<br /><br />Full name: Matrix.m15</div>
+<div class="tip" id="fs27">val v16 : Vector<br /><br />Full name: Matrix.v16</div>
+<div class="tip" id="fs28">val m17 : Matrix<br /><br />Full name: Matrix.m17</div>
+<div class="tip" id="fs29">val v18 : Vector<br /><br />Full name: Matrix.v18</div>
+<div class="tip" id="fs30">val v19 : Vector<br /><br />Full name: Matrix.v19</div>
+<div class="tip" id="fs31">val v20 : Vector<br /><br />Full name: Matrix.v20</div>
+<div class="tip" id="fs32">val view : Vector<br /><br />Full name: Matrix.view</div>
+<div class="tip" id="fs33">Multiple items<br />property Matrix.View: int64 * int64 -&gt; Vector<br /><br />--------------------<br />property Matrix.View: int * int -&gt; Vector</div>
+<div class="tip" id="fs34">val colView : Vector<br /><br />Full name: Matrix.colView</div>
+<div class="tip" id="fs35">Multiple items<br />property Matrix.ColView: int64 -&gt; Vector<br /><br />--------------------<br />property Matrix.ColView: int -&gt; Vector</div>
+<div class="tip" id="fs36">val rowCount : int<br /><br />Full name: Matrix.rowCount</div>
+<div class="tip" id="fs37">property Matrix.RowCount: int</div>
+<div class="tip" id="fs38">val colCount : int<br /><br />Full name: Matrix.colCount</div>
+<div class="tip" id="fs39">property Matrix.ColCount: int</div>
+<div class="tip" id="fs40">val rowCountL : int64<br /><br />Full name: Matrix.rowCountL</div>
+<div class="tip" id="fs41">property Matrix.LongRowCount: int64</div>
+<div class="tip" id="fs42">val colCountL : int64<br /><br />Full name: Matrix.colCountL</div>
+<div class="tip" id="fs43">property Matrix.LongColCount: int64</div>
+<div class="tip" id="fs44">val dataVector : Vector<br /><br />Full name: Matrix.dataVector</div>
+<div class="tip" id="fs45">property Matrix.ColMajorDataVector: Vector</div>
+<div class="tip" id="fs46">val isDisposed : bool<br /><br />Full name: Matrix.isDisposed</div>
+<div class="tip" id="fs47">property Matrix.IsDisposed: bool</div>
+<div class="tip" id="fs48">val arr : float [,]<br /><br />Full name: Matrix.arr</div>
+<div class="tip" id="fs49">member Matrix.ToArray2D : unit -&gt; float [,]</div>
+<div class="tip" id="fs50">val m21 : Matrix<br /><br />Full name: Matrix.m21</div>
+<div class="tip" id="fs51">static member Matrix.Copy : matrix:Matrix -&gt; Matrix</div>
+<div class="tip" id="fs52">val m22 : Matrix<br /><br />Full name: Matrix.m22</div>
+<div class="tip" id="fs53">static member Matrix.Min : matrix:Matrix -&gt; (MatrixAxis -&gt; Vector)<br />static member Matrix.Min : a:float * matrix:Matrix -&gt; Matrix<br />static member Matrix.Min : matrix:Matrix * a:float -&gt; Matrix<br />static member Matrix.Min : matrix1:Matrix * matrix2:Matrix -&gt; Matrix</div>
+<div class="tip" id="fs54">val m23 : Matrix<br /><br />Full name: Matrix.m23</div>
+<div class="tip" id="fs55">static member Matrix.Max : matrix:Matrix -&gt; (MatrixAxis -&gt; Vector)<br />static member Matrix.Max : a:float * matrix:Matrix -&gt; Matrix<br />static member Matrix.Max : matrix:Matrix * a:float -&gt; Matrix<br />static member Matrix.Max : matrix1:Matrix * matrix2:Matrix -&gt; Matrix</div>
+<div class="tip" id="fs56">member Matrix.Dispose : unit -&gt; unit</div>
 
         </div>
         <div class="span3">
