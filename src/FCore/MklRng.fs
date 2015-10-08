@@ -589,6 +589,8 @@ type MklRng =
             MklFunctions.D_Negbinom_Rnd(rng.streamPtr, size, a, p, res.NativeArray)
             new Matrix(rows, cols, res)
 
+    member this.Dispose() = (this:>IDisposable).Dispose()
+
     interface IDisposable with
         member this.Dispose() = this.DoDispose(true)
 
