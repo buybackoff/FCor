@@ -558,6 +558,12 @@ type internal MklFunctions() =
     static extern int s_sum_matrix(bool byRows, IntPtr varCount, IntPtr obsCount, float32* x, float32* res)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void b_any_matrix(bool byRows, IntPtr varCount, IntPtr obsCount, bool* x, bool* res)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void b_all_matrix(bool byRows, IntPtr varCount, IntPtr obsCount, bool* x, bool* res)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_prod_matrix(bool byRows, IntPtr varCount, IntPtr obsCount, float* x, float* res)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
@@ -1324,6 +1330,12 @@ type internal MklFunctions() =
 
     static member S_Sum_Matrix(byRows, varCount : int64, obsCount : int64, x, res) =
         s_sum_matrix(byRows, new IntPtr(varCount), new IntPtr(obsCount), x, res) |> validateRetCode
+
+    static member B_Any_Matrix(byRows, varCount : int64, obsCount : int64, x, res) =
+        b_any_matrix(byRows, new IntPtr(varCount), new IntPtr(obsCount), x, res)
+
+    static member B_All_Matrix(byRows, varCount : int64, obsCount : int64, x, res) =
+        b_all_matrix(byRows, new IntPtr(varCount), new IntPtr(obsCount), x, res)
 
     static member D_Prod_Matrix(byRows, varCount : int64, obsCount : int64, x, res) =
         d_prod_matrix(byRows, new IntPtr(varCount), new IntPtr(obsCount), x, res) 

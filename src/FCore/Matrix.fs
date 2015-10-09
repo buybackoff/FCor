@@ -592,6 +592,52 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         ArgumentChecks.throwIfContainsDisposed [matrix]
         new BoolMatrix(matrix.LongRowCount, matrix.LongColCount, BoolVector.Not matrix.ColMajorDataVector)
 
+    static member Any(matrix : BoolMatrix) =
+        ArgumentChecks.throwIfContainsDisposed [matrix]
+        fun (matrixAxis : MatrixAxis) ->
+            match matrixAxis with
+                | RowAxis ->
+                    let varCount = matrix.LongRowCount
+                    let obsCount = matrix.LongColCount
+                    if obsCount = 0L then BoolVector.Empty
+                    elif obsCount = 1L then BoolMatrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new BoolVector(varCount, false)
+                        MklFunctions.B_Any_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
+                | ColumnAxis ->
+                    let varCount = matrix.LongColCount
+                    let obsCount = matrix.LongRowCount 
+                    if obsCount = 0L then BoolVector.Empty
+                    elif obsCount = 1L then BoolMatrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new BoolVector(varCount, false)
+                        MklFunctions.B_Any_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
+
+    static member All(matrix : BoolMatrix) =
+        ArgumentChecks.throwIfContainsDisposed [matrix]
+        fun (matrixAxis : MatrixAxis) ->
+            match matrixAxis with
+                | RowAxis ->
+                    let varCount = matrix.LongRowCount
+                    let obsCount = matrix.LongColCount
+                    if obsCount = 0L then BoolVector.Empty
+                    elif obsCount = 1L then BoolMatrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new BoolVector(varCount, false)
+                        MklFunctions.B_All_Matrix(true, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
+                | ColumnAxis ->
+                    let varCount = matrix.LongColCount
+                    let obsCount = matrix.LongRowCount 
+                    if obsCount = 0L then BoolVector.Empty
+                    elif obsCount = 1L then BoolMatrix.Copy(matrix).ColMajorDataVector
+                    else
+                        let res = new BoolVector(varCount, false)
+                        MklFunctions.B_All_Matrix(false, varCount, obsCount, matrix.ColMajorDataVector.NativeArray, res.NativeArray)
+                        res
+
     member this.Dispose() = (this:>IDisposable).Dispose()
 
     interface IDisposable with

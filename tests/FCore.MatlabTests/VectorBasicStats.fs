@@ -45,6 +45,16 @@ module VectorBasicStats =
         ((v.Length > 0) ==> lazy(epsEqual 1e-15 [|prod(v)|] res))
 
     [<Property>]
+    let ``any``(v : bool[]) =
+        let V = new BoolVector(v)
+        (v.Length > 0) ==> lazy(any V = (v |> Array.reduce (||)))
+
+    [<Property>]
+    let ``all``(v : bool[]) =
+        let V = new BoolVector(v)
+        (v.Length > 0) ==> lazy(all V = (v |> Array.reduce (&&)))
+
+    [<Property>]
     let ``cumsum``(v : float[]) =
         setVector app "v" v
         app.Execute("res = cumsum(v);") |> ignore

@@ -728,6 +728,58 @@ extern "C" __declspec(dllexport) int s_sum_matrix(bool byRows, MKL_INT varCount,
 	return status;
 }
 
+extern "C" __declspec(dllexport) void b_any_matrix(bool byRows, MKL_INT varCount, MKL_INT obsCount, bool* x, bool* res)
+{
+	if (byRows)
+	{
+		memcpy(res, x, varCount);
+		for (MKL_INT i = 1; i < obsCount; i++)
+		{
+			for (MKL_INT j = 0; j < varCount; j++)
+			{
+				res[j] = res[j] || x[i * varCount + j];
+			}
+		}
+	}
+	else
+	{
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			res[i] = x[i*obsCount];
+			for (MKL_INT j = 1; j < obsCount; j++)
+			{
+				res[i] = res[i] || x[i*obsCount + j];
+			}
+		}
+	}
+}
+
+extern "C" __declspec(dllexport) void b_all_matrix(bool byRows, MKL_INT varCount, MKL_INT obsCount, bool* x, bool* res)
+{
+	if (byRows)
+	{
+		memcpy(res, x, varCount);
+		for (MKL_INT i = 1; i < obsCount; i++)
+		{
+			for (MKL_INT j = 0; j < varCount; j++)
+			{
+				res[j] = res[j] && x[i * varCount + j];
+			}
+		}
+	}
+	else
+	{
+		for (MKL_INT i = 0; i < varCount; i++)
+		{
+			res[i] = x[i*obsCount];
+			for (MKL_INT j = 1; j < obsCount; j++)
+			{
+				res[i] = res[i] && x[i*obsCount + j];
+			}
+		}
+	}
+}
+
 extern "C" __declspec(dllexport) void d_prod_matrix(bool byRows, MKL_INT varCount, MKL_INT obsCount, double* x, double* res)
 {
 	if (byRows)

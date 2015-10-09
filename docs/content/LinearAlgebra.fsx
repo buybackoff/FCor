@@ -7,11 +7,11 @@ Linear Algebra
 ==============
 FCore supports 5 matrix factorizations and related solvers:
 
-- Cholesky
-- LU
-- QR
-- Singular Value
-- Eigenvalue
+- `Cholesky`
+- `LU`
+- `QR`
+- `Singular Value`
+- `Eigenvalue`
 
 You can also calculate matrix-vector products and transpose a matrix in/out of place.
 *)

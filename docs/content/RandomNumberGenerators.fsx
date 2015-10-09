@@ -11,7 +11,7 @@ FCore supports all Basic Random Number Generators from MKL:
 - `R250` generalized feedback shift register pseudorandom generator
 - `MRG32K3A` combined multiple recursive pseudorandom generator with two components of order 3
 - `MCG59` 59-bit multiplicative congruential pseudorandom generator
-- `WH` Set of 273 Wichmann-Hill combined multiplicative congruential pseudorandom generators
+- `WH` set of 273 Wichmann-Hill combined multiplicative congruential pseudorandom generators
 - `MT19937` Mersenne Twister pseudorandom number generator
 - `SFMT19937` SIMD-oriented Fast Mersenne Twister pseudorandom number generator
 - `MT2203` set of 6024 Mersenne Twister pseudorandom number generators

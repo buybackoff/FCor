@@ -476,6 +476,20 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         MklFunctions.B_Not_Array(vector.LongLength, vector.NativeArray, res.NativeArray)
         res
 
+    static member Any(vector : BoolVector) =
+        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
+        let mutable res = false
+        MklFunctions.B_Any_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
+        res
+
+    static member All(vector : BoolVector) =
+        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
+        let mutable res = false
+        MklFunctions.B_All_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
+        res
+
     override this.ToString() = 
         ArgumentChecks.throwIfContainsDisposed [this]
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<bool>() true, null)

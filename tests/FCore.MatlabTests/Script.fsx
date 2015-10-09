@@ -15,8 +15,20 @@ open FCore.MatlabTests
 open FCore.MatlabTests.Util
 open FCore.ExplicitConversion
 
-let inline (<=>) (x : Vector) (y : Vector) = epsEqualArray (x.ToArray()) (y.ToArray()) epsEqualFloat 0.0
-//let app = new MLAppClass()
+let inline (<=>) (x : Matrix) (y : Matrix) = epsEqualArray2D (x.ToArray2D()) (y.ToArray2D()) epsEqualFloat 0.0
+let app = new MLAppClass()
+let rnd = new Random()
 
-#time
+
+//let piMC(n : int) =
+//    use rng1 = new MT19937Rng()
+//    use x1 = rand rng1 n : Vector
+//    use x2 = rand rng1 n : Vector
+//    use inCircle = (x1.AsExpr .^ 2) + (x2.AsExpr .^ 2) .<= 1.0 |> eval
+//    (inCircle.[inCircle].LongLength |> float)/float(n) * 4.0
+//
+//MklControl.SetMaxThreads(4)
+//#time
+//let pi = piMC 100000000
+//Math.PI
     

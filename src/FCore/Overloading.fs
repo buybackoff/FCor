@@ -198,6 +198,12 @@ module Overloading =
         static member Prod (DummyType, x) = Vector.Prod(x)
         static member Prod (DummyType, x) = Matrix.Prod(x)
 
+        static member Any (DummyType, x) = BoolVector.Any(x)
+        static member Any (DummyType, x) = BoolMatrix.Any(x)
+
+        static member All (DummyType, x) = BoolVector.All(x)
+        static member All (DummyType, x) = BoolMatrix.All(x)
+
         static member CumSum (DummyType, x) = Vector.CumSum(x)
         static member CumSum (DummyType, x) = Matrix.CumSum(x)
 

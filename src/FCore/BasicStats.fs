@@ -13,6 +13,10 @@ module BasicStats =
 
     let inline prod (x :'S) : 'U = ((^T or ^S) : (static member Prod: ^T * ^S -> ^U) DummyType, x)
 
+    let inline any (x :'S) : 'U = ((^T or ^S) : (static member Any: ^T * ^S -> ^U) DummyType, x)
+
+    let inline all (x :'S) : 'U = ((^T or ^S) : (static member All: ^T * ^S -> ^U) DummyType, x)
+
     let inline cumsum (x :'S) : 'U = ((^T or ^S) : (static member CumSum: ^T * ^S -> ^U) DummyType, x)
 
     let inline cumprod (x :'S) : 'U = ((^T or ^S) : (static member CumProd: ^T * ^S -> ^U) DummyType, x)

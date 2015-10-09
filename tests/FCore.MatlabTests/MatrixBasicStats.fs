@@ -54,6 +54,30 @@ module MatrixBasicStats =
         ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(epsEqual 1e-15 ((prod v axis).ToArray()) res))
 
     [<Property>]
+    let ``any``(v : bool[,]) (axis : MatrixAxis) =
+        let v = new BoolMatrix(v)
+        ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(
+                                                     let m = new Matrix(v.ToArray2D() |> Array2D.map (fun x -> if x then 1.0 else 0.0))
+                                                     match axis with
+                                                        | ColumnAxis -> setMatrix app "v" (m.ToArray2D())
+                                                        | RowAxis -> setMatrix app "v" (transpose(m).ToArray2D())
+                                                     app.Execute("res = any(v);") |> ignore
+                                                     let res = getBoolVector app "res"                                                    
+                                                     ((any v axis).ToArray()) = res))
+
+    [<Property>]
+    let ``all``(v : bool[,]) (axis : MatrixAxis) =
+        let v = new BoolMatrix(v)
+        ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(
+                                                     let m = new Matrix(v.ToArray2D() |> Array2D.map (fun x -> if x then 1.0 else 0.0))
+                                                     match axis with
+                                                        | ColumnAxis -> setMatrix app "v" (m.ToArray2D())
+                                                        | RowAxis -> setMatrix app "v" (transpose(m).ToArray2D())
+                                                     app.Execute("res = all(v);") |> ignore
+                                                     let res = getBoolVector app "res"                                                    
+                                                     ((all v axis).ToArray()) = res))
+
+    [<Property>]
     let ``cumsum``(v : float[,]) (axis : MatrixAxis) =
         let v = new Matrix(v)
         match axis with
