@@ -336,7 +336,7 @@ extern "C" __declspec(dllexport) int s_beta_rnd(VSLStreamStatePtr streamPtr, MKL
 extern "C" __declspec(dllexport) int d_bern_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, double p, double* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -346,7 +346,7 @@ extern "C" __declspec(dllexport) int d_bern_rnd(VSLStreamStatePtr streamPtr, MKL
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -357,7 +357,7 @@ extern "C" __declspec(dllexport) int d_bern_rnd(VSLStreamStatePtr streamPtr, MKL
 extern "C" __declspec(dllexport) int s_bern_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, float p, float* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -367,7 +367,7 @@ extern "C" __declspec(dllexport) int s_bern_rnd(VSLStreamStatePtr streamPtr, MKL
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -378,7 +378,7 @@ extern "C" __declspec(dllexport) int s_bern_rnd(VSLStreamStatePtr streamPtr, MKL
 extern "C" __declspec(dllexport) int d_geom_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, double p, double* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -388,7 +388,7 @@ extern "C" __declspec(dllexport) int d_geom_rnd(VSLStreamStatePtr streamPtr, MKL
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -399,7 +399,7 @@ extern "C" __declspec(dllexport) int d_geom_rnd(VSLStreamStatePtr streamPtr, MKL
 extern "C" __declspec(dllexport) int s_geom_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, float p, float* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -409,7 +409,7 @@ extern "C" __declspec(dllexport) int s_geom_rnd(VSLStreamStatePtr streamPtr, MKL
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -420,7 +420,7 @@ extern "C" __declspec(dllexport) int s_geom_rnd(VSLStreamStatePtr streamPtr, MKL
 extern "C" __declspec(dllexport) int d_binom_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, int ntrial, double p, double* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -430,7 +430,7 @@ extern "C" __declspec(dllexport) int d_binom_rnd(VSLStreamStatePtr streamPtr, MK
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -441,7 +441,7 @@ extern "C" __declspec(dllexport) int d_binom_rnd(VSLStreamStatePtr streamPtr, MK
 extern "C" __declspec(dllexport) int s_binom_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, int ntrial, float p, float* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -451,7 +451,7 @@ extern "C" __declspec(dllexport) int s_binom_rnd(VSLStreamStatePtr streamPtr, MK
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -462,7 +462,7 @@ extern "C" __declspec(dllexport) int s_binom_rnd(VSLStreamStatePtr streamPtr, MK
 extern "C" __declspec(dllexport) int d_hypergeom_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, int l, int s, int m, double* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -472,7 +472,7 @@ extern "C" __declspec(dllexport) int d_hypergeom_rnd(VSLStreamStatePtr streamPtr
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -483,7 +483,7 @@ extern "C" __declspec(dllexport) int d_hypergeom_rnd(VSLStreamStatePtr streamPtr
 extern "C" __declspec(dllexport) int s_hypergeom_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, int l, int s, int m, float* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -493,7 +493,7 @@ extern "C" __declspec(dllexport) int s_hypergeom_rnd(VSLStreamStatePtr streamPtr
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -504,7 +504,7 @@ extern "C" __declspec(dllexport) int s_hypergeom_rnd(VSLStreamStatePtr streamPtr
 extern "C" __declspec(dllexport) int d_poisson_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, double lambda, double* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -514,7 +514,7 @@ extern "C" __declspec(dllexport) int d_poisson_rnd(VSLStreamStatePtr streamPtr, 
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -525,7 +525,7 @@ extern "C" __declspec(dllexport) int d_poisson_rnd(VSLStreamStatePtr streamPtr, 
 extern "C" __declspec(dllexport) int s_poisson_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, float lambda, float* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -535,7 +535,7 @@ extern "C" __declspec(dllexport) int s_poisson_rnd(VSLStreamStatePtr streamPtr, 
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -546,7 +546,7 @@ extern "C" __declspec(dllexport) int s_poisson_rnd(VSLStreamStatePtr streamPtr, 
 extern "C" __declspec(dllexport) int d_negbinom_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, double a, double p, double* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -556,7 +556,7 @@ extern "C" __declspec(dllexport) int d_negbinom_rnd(VSLStreamStatePtr streamPtr,
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -567,7 +567,7 @@ extern "C" __declspec(dllexport) int d_negbinom_rnd(VSLStreamStatePtr streamPtr,
 extern "C" __declspec(dllexport) int s_negbinom_rnd(VSLStreamStatePtr streamPtr, MKL_INT n, float a, float p, float* x)
 {
 	int status;
-	int* sample = (int*)malloc(n*sizeof(int));
+	int* sample = (int*)mkl_malloc(n*sizeof(int),64);
 	if (sample == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -577,7 +577,7 @@ extern "C" __declspec(dllexport) int s_negbinom_rnd(VSLStreamStatePtr streamPtr,
 	{
 		x[i] = sample[i];
 	}
-	free(sample);
+	mkl_free(sample);
 	if (status != 0)
 	{
 		return VSLERROR;

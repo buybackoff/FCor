@@ -19,16 +19,22 @@ let inline (<=>) (x : Matrix) (y : Matrix) = epsEqualArray2D (x.ToArray2D()) (y.
 let app = new MLAppClass()
 let rnd = new Random()
 
+let v = !![[7.;1.4]
+           [3.;1.4]]:Matrix
+setMatrix app "v" (v.ToArray2D())
+app.Execute("res = kurtosis(v);") |> ignore
+let res = getVector app "res"
+let res2 = kurtosis v ColumnAxis
 
-//let piMC(n : int) =
-//    use rng1 = new MT19937Rng()
-//    use x1 = rand rng1 n : Vector
-//    use x2 = rand rng1 n : Vector
-//    use inCircle = (x1.AsExpr .^ 2) + (x2.AsExpr .^ 2) .<= 1.0 |> eval
-//    (inCircle.[inCircle].LongLength |> float)/float(n) * 4.0
-//
-//MklControl.SetMaxThreads(4)
-//#time
-//let pi = piMC 100000000
-//Math.PI
+let piMC(n : int) =
+    use rng1 = new MT19937Rng()
+    use x1 = rand rng1 n : Vector
+    use x2 = rand rng1 n : Vector
+    use inCircle = (x1.AsExpr .^ 2) + (x2.AsExpr .^ 2) .<= 1.0 |> eval
+    (inCircle.[inCircle].LongLength |> float)/float(n) * 4.0
+
+MklControl.SetMaxThreads(4)
+#time
+let pi = piMC 100000000
+Math.PI
     

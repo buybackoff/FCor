@@ -97,12 +97,14 @@ module MatrixOperators =
 
     [<Property>]
     let ``X .< a`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((X .< a) == (X .< A)) .&. ((X .< a).ToArray2D() = (x |> Array2D.map (fun z -> z < a)))
 
     [<Property>]
     let ``a .< X`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((a .< X) == (A .< X)) .&. ((a .< X).ToArray2D() = (x |> Array2D.map (fun z -> a < z)))
@@ -130,12 +132,14 @@ module MatrixOperators =
 
     [<Property>]
     let ``X .<= a`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((X .<= a) == (X .<= A)) .&. ((X .<= a).ToArray2D() = (x |> Array2D.map (fun z -> z <= a)))
 
     [<Property>]
     let ``a .<= X`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((a .<= X) == (A .<= X)) .&. ((a .<= X).ToArray2D() = (x |> Array2D.map (fun z -> a <= z)))
@@ -162,12 +166,14 @@ module MatrixOperators =
 
     [<Property>]
     let ``X .> a`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((X .> a) == (X .> A)) .&. ((X .> a).ToArray2D() = (x |> Array2D.map (fun z -> z > a)))
 
     [<Property>]
     let ``a .> X`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((a .> X) == (A .> X)) .&. ((a .> X).ToArray2D() = (x |> Array2D.map (fun z -> a > z)))
@@ -194,12 +200,14 @@ module MatrixOperators =
 
     [<Property>]
     let ``X .>= a`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((X .>= a) == (X .>= A)) .&. ((X .>= a).ToArray2D() = (x |> Array2D.map (fun z -> z >= a)))
 
     [<Property>]
     let ``a .>= X`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((a .>= X) == (A .>= X)) .&. ((a .>= X).ToArray2D() = (x |> Array2D.map (fun z -> a >= z)))
@@ -225,12 +233,14 @@ module MatrixOperators =
 
     [<Property>]
     let ``X .= a`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((X .= a) == (X .= A)) .&. ((X .= a).ToArray2D() = (x |> Array2D.map (fun z -> z = a)))
 
     [<Property>]
     let ``a .= X`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((a .= X) == (A .= X)) .&. ((a .= X).ToArray2D() = (x |> Array2D.map (fun z -> a = z)))
@@ -257,12 +267,14 @@ module MatrixOperators =
 
     [<Property>]
     let ``X .<> a`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((X .<> a) == (X .<> A)) .&. ((X .<> a).ToArray2D() = (x |> Array2D.map (fun z -> z <> a)))
 
     [<Property>]
     let ``a .<> X`` (x : float[,]) (a : float) =
+        let x = x |> fixEmpty
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((a .<> X) == (A .<> X)) .&. ((a .<> X).ToArray2D() = (x |> Array2D.map (fun z -> a <> z)))

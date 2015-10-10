@@ -316,12 +316,12 @@ extern "C" __declspec(dllexport) int d_variance_matrix(bool byRows, MKL_INT varC
 	MKL_INT xstorage;
 	double* mean;
 	double* raw2;
-	mean = (double*)malloc(varCount*sizeof(double));
-	raw2 = (double*)malloc(varCount*sizeof(double));
+	mean = (double*)mkl_malloc(varCount*sizeof(double),64);
+	raw2 = (double*)mkl_malloc(varCount*sizeof(double),64);
 	if (raw2 == nullptr || mean == nullptr)
 	{
-		free(raw2);
-		free(mean);
+		mkl_free(raw2);
+		mkl_free(mean);
 		return OUTOFMEMORY;
 	}
 	if (byRows)
@@ -340,8 +340,8 @@ extern "C" __declspec(dllexport) int d_variance_matrix(bool byRows, MKL_INT varC
 	status = vsldSSCompute(task, VSL_SS_2C_MOM, VSL_SS_METHOD_FAST);
 	status = vslSSDeleteTask( &task );
 
-	free(mean);
-	free(raw2);
+	mkl_free(mean);
+	mkl_free(raw2);
 
 	if (status != 0)
 	{
@@ -357,12 +357,12 @@ extern "C" __declspec(dllexport) int s_variance_matrix(bool byRows, MKL_INT varC
 	MKL_INT xstorage;
 	float* mean;
 	float* raw2;
-	mean = (float*)malloc(varCount*sizeof(float));
-	raw2 = (float*)malloc(varCount*sizeof(float));
+	mean = (float*)mkl_malloc(varCount*sizeof(float),64);
+	raw2 = (float*)mkl_malloc(varCount*sizeof(float),64);
 	if (raw2 == nullptr || mean == nullptr)
 	{
-		free(raw2);
-		free(mean);
+		mkl_free(raw2);
+		mkl_free(mean);
 		return OUTOFMEMORY;
 	}
 	if (byRows)
@@ -381,8 +381,8 @@ extern "C" __declspec(dllexport) int s_variance_matrix(bool byRows, MKL_INT varC
 	status = vslsSSCompute(task, VSL_SS_2C_MOM, VSL_SS_METHOD_FAST);
 	status = vslSSDeleteTask(&task);
 
-	free(mean);
-	free(raw2);
+	mkl_free(mean);
+	mkl_free(raw2);
 
 
 	if (status != 0)
@@ -401,18 +401,18 @@ extern "C" __declspec(dllexport) int d_skewness_matrix(bool byRows, MKL_INT varC
 	double* r2;
 	double* r3;
 	double* mean;
-	c2 = (double*)malloc(varCount*sizeof(double));
-	c3 = (double*)malloc(varCount*sizeof(double));
-	r2 = (double*)malloc(varCount*sizeof(double));
-	r3 = (double*)malloc(varCount*sizeof(double));
-	mean = (double*)malloc(varCount*sizeof(double));
+	c2 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	c3 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	r2 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	r3 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	mean = (double*)mkl_malloc(varCount*sizeof(double),64);
 	if (c2 == nullptr || c3 == nullptr || r2 == nullptr || r3 == nullptr || mean == nullptr)
 	{
-		free(c2);
-		free(c3);
-		free(r2);
-		free(r3);
-		free(mean);
+		mkl_free(c2);
+		mkl_free(c3);
+		mkl_free(r2);
+		mkl_free(r3);
+		mkl_free(mean);
 		return OUTOFMEMORY;
 	}
 
@@ -442,11 +442,11 @@ extern "C" __declspec(dllexport) int d_skewness_matrix(bool byRows, MKL_INT varC
 		res[i] *= factor;
 	}
 
-	free(mean);
-	free(c2);
-	free(c3);
-	free(r2);
-	free(r3);
+	mkl_free(mean);
+	mkl_free(c2);
+	mkl_free(c3);
+	mkl_free(r2);
+	mkl_free(r3);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -463,18 +463,18 @@ extern "C" __declspec(dllexport) int s_skewness_matrix(bool byRows, MKL_INT varC
 	float* r2;
 	float* r3;
 	float* mean;
-	c2 = (float*)malloc(varCount*sizeof(float));
-	c3 = (float*)malloc(varCount*sizeof(float));
-	r2 = (float*)malloc(varCount*sizeof(float));
-	r3 = (float*)malloc(varCount*sizeof(float));
-	mean = (float*)malloc(varCount*sizeof(float));
+	c2 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	c3 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	r2 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	r3 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	mean = (float*)mkl_malloc(varCount*sizeof(float),64);
 	if (c2 == nullptr || c3 == nullptr || r2 == nullptr || r3 == nullptr || mean == nullptr)
 	{
-		free(c2);
-		free(c3);
-		free(r2);
-		free(r3);
-		free(mean);
+		mkl_free(c2);
+		mkl_free(c3);
+		mkl_free(r2);
+		mkl_free(r3);
+		mkl_free(mean);
 		return OUTOFMEMORY;
 	}
 
@@ -504,11 +504,11 @@ extern "C" __declspec(dllexport) int s_skewness_matrix(bool byRows, MKL_INT varC
 		res[i] *= factor;
 	}
 
-	free(mean);
-	free(c2);
-	free(c3);
-	free(r2);
-	free(r3);
+	mkl_free(mean);
+	mkl_free(c2);
+	mkl_free(c3);
+	mkl_free(r2);
+	mkl_free(r3);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -527,22 +527,22 @@ extern "C" __declspec(dllexport) int d_kurtosis_matrix(bool byRows, MKL_INT varC
 	double* r4;
 	double* mean;
 
-	c2 = (double*)malloc(varCount*sizeof(double));
-	c3 = (double*)malloc(varCount*sizeof(double));
-	c4 = (double*)malloc(varCount*sizeof(double));
-	r2 = (double*)malloc(varCount*sizeof(double));
-	r3 = (double*)malloc(varCount*sizeof(double));
-	r4 = (double*)malloc(varCount*sizeof(double));
-	mean = (double*)malloc(varCount*sizeof(double));
+	c2 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	c3 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	c4 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	r2 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	r3 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	r4 = (double*)mkl_malloc(varCount*sizeof(double),64);
+	mean = (double*)mkl_malloc(varCount*sizeof(double),64);
 	if (c2 == nullptr || c3 == nullptr || c4 == nullptr || r2 == nullptr || r3 == nullptr || r4 == nullptr || mean == nullptr)
 	{
-		free(c2);
-		free(c3);
-		free(c4);
-		free(r2);
-		free(r3);
-		free(r4);
-		free(mean);
+		mkl_free(c2);
+		mkl_free(c3);
+		mkl_free(c4);
+		mkl_free(r2);
+		mkl_free(r3);
+		mkl_free(r4);
+		mkl_free(mean);
 		return OUTOFMEMORY;
 	}
 
@@ -588,13 +588,13 @@ extern "C" __declspec(dllexport) int d_kurtosis_matrix(bool byRows, MKL_INT varC
 	}
 
 
-	free(mean);
-	free(c2);
-	free(c3);
-	free(c4);
-	free(r2);
-	free(r3);
-	free(r4);
+	mkl_free(mean);
+	mkl_free(c2);
+	mkl_free(c3);
+	mkl_free(c4);
+	mkl_free(r2);
+	mkl_free(r3);
+	mkl_free(r4);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -613,22 +613,22 @@ extern "C" __declspec(dllexport) int s_kurtosis_matrix(bool byRows, MKL_INT varC
 	float* r4;
 	float* mean;
 
-	c2 = (float*)malloc(varCount*sizeof(float));
-	c3 = (float*)malloc(varCount*sizeof(float));
-	c4 = (float*)malloc(varCount*sizeof(float));
-	r2 = (float*)malloc(varCount*sizeof(float));
-	r3 = (float*)malloc(varCount*sizeof(float));
-	r4 = (float*)malloc(varCount*sizeof(float));
-	mean = (float*)malloc(varCount*sizeof(float));
+	c2 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	c3 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	c4 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	r2 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	r3 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	r4 = (float*)mkl_malloc(varCount*sizeof(float),64);
+	mean = (float*)mkl_malloc(varCount*sizeof(float),64);
 	if (c2 == nullptr || c3 == nullptr || c4 == nullptr || r2 == nullptr || r3 == nullptr || r4 == nullptr || mean == nullptr)
 	{
-		free(c2);
-		free(c3);
-		free(c4);
-		free(r2);
-		free(r3);
-		free(r4);
-		free(mean);
+		mkl_free(c2);
+		mkl_free(c3);
+		mkl_free(c4);
+		mkl_free(r2);
+		mkl_free(r3);
+		mkl_free(r4);
+		mkl_free(mean);
 		return OUTOFMEMORY;
 	}
 
@@ -662,13 +662,13 @@ extern "C" __declspec(dllexport) int s_kurtosis_matrix(bool byRows, MKL_INT varC
 		res[i] = (3 + res[i]) * factor;
 	}
 
-	free(mean);
-	free(c2);
-	free(c3);
-	free(c4);
-	free(r2);
-	free(r3);
-	free(r4);
+	mkl_free(mean);
+	mkl_free(c2);
+	mkl_free(c3);
+	mkl_free(c4);
+	mkl_free(r2);
+	mkl_free(r3);
+	mkl_free(r4);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -928,7 +928,7 @@ extern "C" __declspec(dllexport) int d_cov_matrix(MKL_INT varCount, MKL_INT obsC
 {
 	intptr_t xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
 	VSLSSTaskPtr task;
-	double* mean = (double*)calloc(varCount, sizeof(double));
+	double* mean = (double*)mkl_calloc(varCount, sizeof(double),64);
 	if (mean == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -938,7 +938,7 @@ extern "C" __declspec(dllexport) int d_cov_matrix(MKL_INT varCount, MKL_INT obsC
 	status = vsldSSEditCovCor(task, mean, res, &covStorage, 0, 0 );
 	status = vsldSSCompute(task, VSL_SS_COV, VSL_SS_METHOD_FAST );
 	status = vslSSDeleteTask( &task );
-	free(mean);
+	mkl_free(mean);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -950,7 +950,7 @@ extern "C" __declspec(dllexport) int s_cov_matrix(MKL_INT varCount, MKL_INT obsC
 {
 	intptr_t xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
 	VSLSSTaskPtr task;
-	float* mean = (float*)malloc(varCount*sizeof(float));
+	float* mean = (float*)mkl_malloc(varCount*sizeof(float),64);
 	if (mean == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -960,7 +960,7 @@ extern "C" __declspec(dllexport) int s_cov_matrix(MKL_INT varCount, MKL_INT obsC
 	status = vslsSSEditCovCor(task, mean, res, &covStorage, 0, 0 );
 	status = vslsSSCompute(task, VSL_SS_COV, VSL_SS_METHOD_FAST );
 	status = vslSSDeleteTask( &task );
-	free(mean);
+	mkl_free(mean);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -972,12 +972,12 @@ extern "C" __declspec(dllexport) int d_corr_matrix(MKL_INT varCount, MKL_INT obs
 {
 	intptr_t xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
 	VSLSSTaskPtr task;
-	double* mean = (double*)calloc(varCount, sizeof(double));
-	double* cov = (double*)calloc(varCount*varCount, sizeof(double));
+	double* mean = (double*)mkl_calloc(varCount, sizeof(double),64);
+	double* cov = (double*)mkl_calloc(varCount*varCount, sizeof(double),64);
 	if (cov == nullptr || mean == nullptr)
 	{
-		free(cov);
-		free(mean);
+		mkl_free(cov);
+		mkl_free(mean);
 		return OUTOFMEMORY;
 	}
 	int status = vsldSSNewTask( &task, &varCount, &obsCount, &xstorage, x, 0, 0 );
@@ -985,8 +985,8 @@ extern "C" __declspec(dllexport) int d_corr_matrix(MKL_INT varCount, MKL_INT obs
 	status = vsldSSEditCovCor(task, mean, cov, &corrStorage, res, &corrStorage);
 	status = vsldSSCompute(task, VSL_SS_COV|VSL_SS_COR, VSL_SS_METHOD_FAST);
 	status = vslSSDeleteTask( &task );
-	free(mean);
-	free(cov);
+	mkl_free(mean);
+	mkl_free(cov);
 	if (status != 0)
 	{
 		return VSLERROR;
@@ -1010,12 +1010,12 @@ extern "C" __declspec(dllexport) int s_corr_matrix(MKL_INT varCount, MKL_INT obs
 {
 	intptr_t xstorage = VSL_SS_MATRIX_STORAGE_ROWS;
 	VSLSSTaskPtr task;
-	float* mean = (float*)malloc(varCount*sizeof(float));
+	float* mean = (float*)mkl_malloc(varCount*sizeof(float),64);
 	if (mean == nullptr)
 	{
 		return OUTOFMEMORY;
 	}
-	float* cov = (float*)malloc(varCount*varCount*sizeof(float));
+	float* cov = (float*)mkl_malloc(varCount*varCount*sizeof(float),64);
 	if (cov == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -1025,8 +1025,8 @@ extern "C" __declspec(dllexport) int s_corr_matrix(MKL_INT varCount, MKL_INT obs
 	status = vslsSSEditCovCor(task, mean, cov, &covStorage, res, &covStorage);
 	status = vslsSSCompute(task, VSL_SS_COR, VSL_SS_METHOD_FAST );
 	status = vslSSDeleteTask( &task );
-	free(mean);
-	free(cov);
+	mkl_free(mean);
+	mkl_free(cov);
 	if (status != 0)
 	{
 		return VSLERROR;

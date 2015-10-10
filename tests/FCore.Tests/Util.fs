@@ -25,3 +25,7 @@ module Util =
         |> Seq.cast<bool>
         |> Seq.toArray
         |> Array.fold (&&) true
+
+    let fixEmpty (a : 'T[,]) =
+        if a.Length = 0 then Array2D.zeroCreate<'T> 0 0 
+        else a

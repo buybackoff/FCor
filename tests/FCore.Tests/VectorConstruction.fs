@@ -65,7 +65,7 @@ module VectorConstruction =
     let ``Copy Vector`` (data : float[]) = 
         let v = new Vector(data)
         let s = Vector.Copy(v)
-        s.ToArray() <=> v.ToArray() && (s.NativeArray <> v.NativeArray)
+        s.ToArray() <=> v.ToArray() && (s.NativeArray <> v.NativeArray || (s.LongLength = 0L && v.LongLength = 0L))
 
     [<Property>]
     let ``Concat Vector seq`` (data : float[][]) =

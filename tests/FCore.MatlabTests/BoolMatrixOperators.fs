@@ -87,12 +87,14 @@ module BoolMatrixOperators =
 
     [<Property>]
     let ``X .< a`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((X .< a) == (X .< A)) .&. ((X .< a).ToArray2D() = (x |> Array2D.map (fun z -> z < a)))
 
     [<Property>]
     let ``a .< X`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((a .< X) == (A .< X)) .&. ((a .< X).ToArray2D() = (x |> Array2D.map (fun z -> a < z)))
@@ -120,12 +122,14 @@ module BoolMatrixOperators =
 
     [<Property>]
     let ``X .<= a`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((X .<= a) == (X .<= A)) .&. ((X .<= a).ToArray2D() = (x |> Array2D.map (fun z -> z <= a)))
 
     [<Property>]
     let ``a .<= X`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((a .<= X) == (A .<= X)) .&. ((a .<= X).ToArray2D() = (x |> Array2D.map (fun z -> a <= z)))
@@ -152,12 +156,14 @@ module BoolMatrixOperators =
 
     [<Property>]
     let ``X .> a`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((X .> a) == (X .> A)) .&. ((X .> a).ToArray2D() = (x |> Array2D.map (fun z -> z > a)))
 
     [<Property>]
     let ``a .> X`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((a .> X) == (A .> X)) .&. ((a .> X).ToArray2D() = (x |> Array2D.map (fun z -> a > z)))
@@ -184,12 +190,14 @@ module BoolMatrixOperators =
 
     [<Property>]
     let ``X .>= a`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((X .>= a) == (X .>= A)) .&. ((X .>= a).ToArray2D() = (x |> Array2D.map (fun z -> z >= a)))
 
     [<Property>]
     let ``a .>= X`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((a .>= X) == (A .>= X)) .&. ((a .>= X).ToArray2D() = (x |> Array2D.map (fun z -> a >= z)))
@@ -216,12 +224,14 @@ module BoolMatrixOperators =
 
     [<Property>]
     let ``X .= a`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((X .= a) == (X .= A)) .&. ((X .= a).ToArray2D() = (x |> Array2D.map (fun z -> z = a)))
 
     [<Property>]
     let ``a .= X`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((a .= X) == (A .= X)) .&. ((a .= X).ToArray2D() = (x |> Array2D.map (fun z -> z = a)))
@@ -248,12 +258,14 @@ module BoolMatrixOperators =
 
     [<Property>]
     let ``X .<> a`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((X .<> a) == (X .<> A)) .&. ((X .<> a).ToArray2D() = (x |> Array2D.map (fun z -> z <> a)))
 
     [<Property>]
     let ``a .<> X`` (x : bool[,]) (a : bool) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         let A = new BoolMatrix(a)
         ((a .<> X) == (A .<> X)) .&. ((a .<> X).ToArray2D() = (x |> Array2D.map (fun z -> z <> a)))
@@ -392,6 +404,7 @@ module BoolMatrixOperators =
 
     [<Property>]
     let ``Not X`` (x : bool[,]) =
+        let x = x |> fixEmpty
         let X = new BoolMatrix(x)
         (BoolMatrix.Not(X)).ToArray2D() = (x |> Array2D.map not) 
 

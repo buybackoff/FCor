@@ -84,7 +84,7 @@ template<typename T, typename GETRF>
 int lu_factor(MKL_INT m, MKL_INT n, T* L, T* U, int* pivot, GETRF getrf)
 {
 	int info;
-    MKL_INT* ipiv = (MKL_INT*)malloc(m*sizeof(MKL_INT));
+    MKL_INT* ipiv = (MKL_INT*)mkl_malloc(m*sizeof(MKL_INT),64);
 	if (ipiv == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -121,7 +121,7 @@ int lu_factor(MKL_INT m, MKL_INT n, T* L, T* U, int* pivot, GETRF getrf)
 			pivot[i] = pivot[ipiv[i] - 1];
 			pivot[ipiv[i] - 1] = a;
 		}
-		free(ipiv);
+		mkl_free(ipiv);
 	}
 	else
 	{
@@ -153,7 +153,7 @@ int lu_factor(MKL_INT m, MKL_INT n, T* L, T* U, int* pivot, GETRF getrf)
 			pivot[i] = pivot[ipiv[i] - 1];
 			pivot[ipiv[i] - 1] = a;
 		}
-		free(ipiv);
+		mkl_free(ipiv);
 	}
 	return 0;
 }
@@ -161,7 +161,7 @@ int lu_factor(MKL_INT m, MKL_INT n, T* L, T* U, int* pivot, GETRF getrf)
 template<typename T, typename GETRF, typename GETRI>
 int lu_inverse(MKL_INT n, T* x, GETRF getrf, GETRI getri)
 {
-	MKL_INT* pivot = (MKL_INT*)malloc(n*sizeof(MKL_INT));
+	MKL_INT* pivot = (MKL_INT*)mkl_malloc(n*sizeof(MKL_INT),64);
 	if (pivot == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -169,33 +169,33 @@ int lu_inverse(MKL_INT n, T* x, GETRF getrf, GETRI getri)
 	int info =  getrf(LAPACK_COL_MAJOR, n, n, x, n, pivot);
 	if (info < 0)
 	{
-		free(pivot);
+		mkl_free(pivot);
 		return MKLARGERROR;
 	}
 	if (info > 0)
 	{
-		free(pivot);
+		mkl_free(pivot);
 		return SINGULAR;
 	}
 	info = getri(LAPACK_COL_MAJOR, n, x, n, pivot);
 	if (info < 0)
 	{
-		free(pivot);
+		mkl_free(pivot);
 		return MKLARGERROR;
 	}
 	if (info > 0)
 	{
-		free(pivot);
+		mkl_free(pivot);
 		return SINGULAR;
 	}
-	free(pivot);
+	mkl_free(pivot);
 	return 0;
 }
 
 template<typename T, typename GESV>
 int lu_solve(MKL_INT n, MKL_INT nrhs, T* A, T* B, GESV gesv)
 {
-	MKL_INT* pivot = (MKL_INT*)malloc(n*sizeof(MKL_INT));
+	MKL_INT* pivot = (MKL_INT*)mkl_malloc(n*sizeof(MKL_INT),64);
 	if (pivot == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -203,15 +203,15 @@ int lu_solve(MKL_INT n, MKL_INT nrhs, T* A, T* B, GESV gesv)
 	int info =  gesv(LAPACK_COL_MAJOR, n, nrhs, A, n, pivot, B, n);
 	if (info < 0)
 	{
-		free(pivot);
+		mkl_free(pivot);
 		return MKLARGERROR;
 	}
 	if (info > 0)
 	{
-		free(pivot);
+		mkl_free(pivot);
 		return SINGULAR;
 	}
-	free(pivot);
+	mkl_free(pivot);
 	return 0;
 }
 
@@ -221,7 +221,7 @@ int qr_factor(MKL_INT m, MKL_INT n, T* x, T* Q, T* R, GEQRF geqrf, ORGQR orgqr)
 	int info;
 	if (m >= n)
 	{
-		T* tau = (T*)malloc(n*sizeof(T));
+		T* tau = (T*)mkl_malloc(n*sizeof(T),64);
 		if (tau == nullptr)
 		{
 			return OUTOFMEMORY;
@@ -229,7 +229,7 @@ int qr_factor(MKL_INT m, MKL_INT n, T* x, T* Q, T* R, GEQRF geqrf, ORGQR orgqr)
 		info = geqrf(LAPACK_COL_MAJOR, m, n, Q, m, tau);
 		if (info < 0)
 		{
-			free(tau);
+			mkl_free(tau);
 			return MKLARGERROR;
 		}
 		for (MKL_INT i = 0; i < n; i++)
@@ -242,30 +242,30 @@ int qr_factor(MKL_INT m, MKL_INT n, T* x, T* Q, T* R, GEQRF geqrf, ORGQR orgqr)
 		info = orgqr(LAPACK_COL_MAJOR, m, n, n, Q, m, tau);
 		if (info < 0)
 		{
-			free(tau);
+			mkl_free(tau);
 			return MKLARGERROR;
 		}
-		free(tau);
+		mkl_free(tau);
 	}
 	else
 	{
-		T* qTemp = (T*)malloc(m*n*sizeof(T));
+		T* qTemp = (T*)mkl_malloc(m*n*sizeof(T),64);
 		if (qTemp == nullptr)
 		{
 			return OUTOFMEMORY;
 		}
 		memcpy(qTemp, x, m*n*sizeof(T));
-		T* tau = (T*)malloc(m*sizeof(T));
+		T* tau = (T*)mkl_malloc(m*sizeof(T),64);
 		if (tau == nullptr)
 		{
-			free(qTemp);
+			mkl_free(qTemp);
 			return OUTOFMEMORY;
 		}
 		info = geqrf(LAPACK_COL_MAJOR, m, n, qTemp, m, tau);
 		if (info < 0)
 		{
-			free(qTemp);
-			free(tau);
+			mkl_free(qTemp);
+			mkl_free(tau);
 			return MKLARGERROR;
 		}
 		for (MKL_INT i = 0; i < m; i++)
@@ -282,13 +282,13 @@ int qr_factor(MKL_INT m, MKL_INT n, T* x, T* Q, T* R, GEQRF geqrf, ORGQR orgqr)
 		info = orgqr(LAPACK_COL_MAJOR, m, m, m, qTemp, m, tau);
 		if (info < 0)
 		{
-			free(qTemp);
-			free(tau);
+			mkl_free(qTemp);
+			mkl_free(tau);
 			return MKLARGERROR;
 		}
 		memcpy(Q, qTemp, m * m * sizeof(T));
-		free(tau);
-		free(qTemp);
+		mkl_free(tau);
+		mkl_free(qTemp);
 	}
 	return info;
 }
@@ -296,7 +296,7 @@ int qr_factor(MKL_INT m, MKL_INT n, T* x, T* Q, T* R, GEQRF geqrf, ORGQR orgqr)
 template<typename T, typename GELSY>
 int qr_solve(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, int* rank, T cond, GELSY gelsy)
 {
-    T* xTemp = (T*)malloc(m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T));
+    T* xTemp = (T*)mkl_malloc(m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T),64);
 	if (xTemp == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -312,18 +312,18 @@ int qr_solve(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, int* rank, T 
 			memcpy(xTemp + i * n, B + i * m, m*sizeof(T));
 		}
 	}
-	MKL_INT* jpvt = (MKL_INT*)calloc(n,sizeof(MKL_INT));
+	MKL_INT* jpvt = (MKL_INT*)mkl_calloc(n,sizeof(MKL_INT),64);
 	if (jpvt == nullptr)
 	{
-		free(xTemp);
+		mkl_free(xTemp);
 		return OUTOFMEMORY;
 	}
 	MKL_INT r = 0;
 	lapack_int info =  gelsy(LAPACK_COL_MAJOR, m, n, nrhs, A, m, xTemp, m > n ? m : n, jpvt, cond, &r);
 	if (info < 0)
 	{
-		free(xTemp);
-		free(jpvt);
+		mkl_free(xTemp);
+		mkl_free(jpvt);
 		return MKLARGERROR;
 	}
 	*rank = r;
@@ -341,15 +341,15 @@ int qr_solve(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, int* rank, T 
 	{
 		memcpy(x, xTemp, m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T));
 	}
-    free(xTemp);
-	free(jpvt);
+    mkl_free(xTemp);
+	mkl_free(jpvt);
 	return 0;
 }
 
 template<typename T, typename GELS>
 int qr_solve_full(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, GELS gels)
 {
-    T* xTemp = (T*)malloc(m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T));
+    T* xTemp = (T*)mkl_malloc(m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T),64);
 	if (xTemp == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -369,12 +369,12 @@ int qr_solve_full(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, GELS gel
 	int info =  gels(LAPACK_COL_MAJOR, 'N', m, n, nrhs, A, m, xTemp, m > n ? m : n);
 	if (info < 0)
 	{
-		free(xTemp);
+		mkl_free(xTemp);
 		return MKLARGERROR;
 	}
 	if (info > 0)
 	{
-		free(xTemp);
+		mkl_free(xTemp);
 		return NOTFULLRANK;
 	}
 	if (m > n)
@@ -391,14 +391,14 @@ int qr_solve_full(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, GELS gel
 	{
 		memcpy(x, xTemp, m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T));
 	}
-    free(xTemp);
+    mkl_free(xTemp);
 	return 0;
 }
 
 template<typename T, typename GESVD>
 int svd_factor(MKL_INT m, MKL_INT n, T* x, T* U, T* S, T* Vt, GESVD gesvd)
 {
-	T* superB = (T*)malloc((m > n ? n  : m )*sizeof(T));
+	T* superB = (T*)mkl_malloc((m > n ? n  : m )*sizeof(T),64);
 	if (superB == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -406,22 +406,22 @@ int svd_factor(MKL_INT m, MKL_INT n, T* x, T* U, T* S, T* Vt, GESVD gesvd)
 	int info =  gesvd(LAPACK_COL_MAJOR, 'S', 'S', m, n, x, m, S, U, m, Vt, m < n ? m : n, superB);
 	if (info < 0)
 	{
-		free(superB);
+		mkl_free(superB);
 		return MKLARGERROR;
 	}
 	if (info > 0)
 	{
-		free(superB);
+		mkl_free(superB);
 		return NOCONVERGE;
 	}
-	free(superB);
+	mkl_free(superB);
 	return 0;
 }
 
 template<typename T, typename GELSS>
 int svd_solve(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, int* rank, T cond, GELSS gelss)
 {
-    T* xTemp = (T*)malloc(m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T));
+    T* xTemp = (T*)mkl_malloc(m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T),64);
 	if (xTemp == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -438,24 +438,24 @@ int svd_solve(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, int* rank, T
 		}
 	}
 
-	T* s = (T*)malloc((m > n ? n : m)*sizeof(T));
+	T* s = (T*)mkl_malloc((m > n ? n : m)*sizeof(T),64);
 	if (s == nullptr)
 	{
-		free(xTemp);
+		mkl_free(xTemp);
 		return OUTOFMEMORY;
 	}
 	MKL_INT r = 0;
 	int info =  gelss(LAPACK_COL_MAJOR, m, n, nrhs, A, m, xTemp, m > n ? m : n, s, cond, &r);
 	if (info < 0)
 	{
-		free(xTemp);
-		free(s);
+		mkl_free(xTemp);
+		mkl_free(s);
 		return MKLARGERROR;
 	}
 	if (info > 0)
 	{
-		free(xTemp);
-		free(s);
+		mkl_free(xTemp);
+		mkl_free(s);
 		return NOCONVERGE;
 	}
 	*rank = r;
@@ -473,8 +473,8 @@ int svd_solve(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, int* rank, T
 	{
 		memcpy(x, xTemp, m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T));
 	}
-    free(xTemp);
-	free(s);
+    mkl_free(xTemp);
+	mkl_free(s);
 	return 0;
 }
 
@@ -483,7 +483,7 @@ int svd_values(MKL_INT m, MKL_INT n, T* x, T* y, GESVD gesvd)
 {
 	T* u = 0;
 	T* vt = 0;
-	T* superB = (T*)malloc((m > n ? n  : m )*sizeof(T));
+	T* superB = (T*)mkl_malloc((m > n ? n  : m )*sizeof(T),64);
 	if (superB == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -491,15 +491,15 @@ int svd_values(MKL_INT m, MKL_INT n, T* x, T* y, GESVD gesvd)
 	int info =  gesvd(LAPACK_COL_MAJOR, 'N', 'N', m, n, x, m, y, u, 1, vt, 1, superB);
 	if (info < 0)
 	{
-		free(superB);
+		mkl_free(superB);
 		return MKLARGERROR;
 	}
 	if (info > 0)
 	{
-		free(superB);
+		mkl_free(superB);
 		return NOCONVERGE;
 	}
-	free(superB);
+	mkl_free(superB);
 	return 0;
 }
 
@@ -521,17 +521,17 @@ int eigen_factor(MKL_INT n, T* Z, T* D, SYEVD syevd)
 	}
 	lwork = (intptr_t)work;
 	liwork = iwork;
-	T* wrk = (T*)malloc(lwork*sizeof(T));
-	intptr_t* iwrk = (intptr_t*)malloc(liwork*sizeof(intptr_t));
+	T* wrk = (T*)mkl_malloc(lwork*sizeof(T),64);
+	intptr_t* iwrk = (intptr_t*)mkl_malloc(liwork*sizeof(intptr_t),64);
 	syevd(&job, &uplo, &N, Z, &N, D, wrk, &lwork, iwrk, &liwork, &info);
 	if (info != 0)
 	{
-		free(wrk);
-		free(iwrk);
+		mkl_free(wrk);
+		mkl_free(iwrk);
 		return NOCONVERGE;
 	}
-	free(wrk);
-	free(iwrk);
+	mkl_free(wrk);
+	mkl_free(iwrk);
 	return 0;
 }
 
@@ -553,17 +553,17 @@ int eigen_values(MKL_INT n, T* x, T* D, SYEVD syevd)
 	}
 	lwork = (intptr_t)work;
 	liwork = iwork;
-	T* wrk = (T*)malloc(lwork*sizeof(T));
-	intptr_t* iwrk = (intptr_t*)malloc(liwork*sizeof(intptr_t));
+	T* wrk = (T*)mkl_malloc(lwork*sizeof(T),64);
+	intptr_t* iwrk = (intptr_t*)mkl_malloc(liwork*sizeof(intptr_t),64);
 	syevd(&job, &uplo, &N, x, &N, D, wrk, &lwork, iwrk, &liwork, &info);
 	if (info != 0)
 	{
-		free(wrk);
-		free(iwrk);
+		mkl_free(wrk);
+		mkl_free(iwrk);
 		return NOCONVERGE;
 	}
-	free(wrk);
-	free(iwrk);
+	mkl_free(wrk);
+	mkl_free(iwrk);
 	return 0;
 }
 

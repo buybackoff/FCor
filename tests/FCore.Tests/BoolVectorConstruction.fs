@@ -62,7 +62,7 @@ module BoolVectorConstruction =
     let ``Copy BoolVector`` (data : bool[]) = 
         let v = new BoolVector(data)
         let s = BoolVector.Copy(v)
-        s = v && (s.NativeArray <> v.NativeArray)
+        s = v && (s.NativeArray <> v.NativeArray || (s.LongLength = 0L && v.LongLength = 0L))
 
     [<Property>]
     let ``Concat BoolVector seq`` (data : bool[][]) =

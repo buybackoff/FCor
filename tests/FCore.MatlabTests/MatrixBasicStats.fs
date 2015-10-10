@@ -35,6 +35,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``sum``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -45,6 +46,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``prod``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -55,6 +57,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``any``(v : bool[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new BoolMatrix(v)
         ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(
                                                      let m = new Matrix(v.ToArray2D() |> Array2D.map (fun x -> if x then 1.0 else 0.0))
@@ -67,6 +70,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``all``(v : bool[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new BoolMatrix(v)
         ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(
                                                      let m = new Matrix(v.ToArray2D() |> Array2D.map (fun x -> if x then 1.0 else 0.0))
@@ -79,6 +83,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``cumsum``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -90,6 +95,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``cumprod``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -101,6 +107,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``min``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -111,6 +118,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``max``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -121,6 +129,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``mean``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = new Matrix(v)
         match axis with
             | ColumnAxis -> setMatrix app "v" (v.ToArray2D())
@@ -131,6 +140,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``var``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = v |> Array2D.map (fun x -> if Double.IsInfinity(x) || abs(x) = Double.MaxValue || abs(x) = Double.Epsilon then 1.0 else x)
         let v = new Matrix(v)
         match axis with
@@ -142,6 +152,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``skewness``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = v |> Array2D.map regDouble
         let v = new Matrix(v)
         match axis with
@@ -153,6 +164,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``kurtosis``(v : float[,]) (axis : MatrixAxis) =
+        let v = v |> fixEmpty
         let v = v |> Array2D.map regDouble
         let v = new Matrix(v)
         match axis with
@@ -202,7 +214,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``cov``(v : float[,]) =
-        let v = v |> Array2D.map regDouble
+        let v = v |> fixEmpty |> Array2D.map regDouble
         setMatrix app "v" v
         app.Execute("res = cov(v);") |> ignore
         let res = getMatrix app "res"
@@ -211,7 +223,7 @@ module MatrixBasicStats =
 
     [<Property>]
     let ``corr``(v : float[,]) =
-        let v = v |> Array2D.map regDouble
+        let v = v |> fixEmpty |> Array2D.map regDouble
         setMatrix app "v" v
         app.Execute("res = corr(v);") |> ignore
         let res = getMatrix app "res"

@@ -6,6 +6,10 @@ open MLApp
 
 module Util =
 
+    let fixEmpty (a : 'T[,]) =
+        if a.Length = 0 then Array2D.zeroCreate<'T> 0 0 
+        else a
+
     let getMatrix (app : MLAppClass) (varName : string) =
         app.Execute(sprintf "is_nan=isnan(%s);is_empty=isempty(%s)" varName varName ) |> ignore
         let is_empty = app.GetVariable("is_empty", "base"):?>bool
@@ -63,7 +67,7 @@ module Util =
                             | :? float as v -> Array.create 1 v
                             | :? Array as v ->
                                 if v.GetLength(0) > 1 && v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
-                                let v = v:?>float[,]
+                                let v = v:?>float[,] |> fixEmpty
                                 if v.GetLength(0) > v.GetLength(1) then
                                     Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[i, 0])
                                 else
@@ -80,7 +84,7 @@ module Util =
                             | :? float as v -> Array.create 1 v
                             | :? Array as v ->
                                 if v.GetLength(0) > 1 && v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
-                                let v = v:?>float[,]
+                                let v = v:?>float[,] |> fixEmpty
                                 if v.GetLength(0) > v.GetLength(1) then
                                     Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[i, 0])
                                 else
@@ -100,7 +104,7 @@ module Util =
                 | :? bool as v -> Array.create 1 v
                 | :? Array as v ->
                     if v.GetLength(0) > 1 && v.GetLength(1) > 1 then raise (new ArgumentException("not vector"))
-                    let v = v:?>bool[,]
+                    let v = v:?>bool[,] |> fixEmpty
                     if v.GetLength(0) > v.GetLength(1) then
                         Array.init (max (v.GetLength(0)) (v.GetLength(1))) (fun i -> v.[i, 0])
                     else
@@ -197,8 +201,6 @@ module Util =
     let array2DFilter (pred : 'T -> bool) (x : 'T[,])=
         seq{for i in 0..x.GetLength(0)-1 do for j in 0..x.GetLength(1)-1 do yield x.[i, j]} |> Seq.filter pred |> Seq.toArray
 
-    let fixEmpty (a : 'T[,]) =
-        if a.Length = 0 then Array2D.zeroCreate<'T> 0 0 
-        else a
+
         
 

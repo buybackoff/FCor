@@ -22,12 +22,18 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         let mutable arr = IntPtr.Zero
         if length < 0L then
             new BoolVector(length, arr |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
+        elif length = 0L then new BoolVector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
         else
             let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
-            MklFunctions.B_Create_Array(length, nativeArrayPtr)
-            let nativeArray = arr |> NativePtr.ofNativeInt<bool>
-            MklFunctions.B_Fill_Array(init, length, nativeArray)
-            new BoolVector(length, nativeArray, IntPtr.Zero, false, None)
+            if init = false then
+                MklFunctions.B_Create_Zero_Array(length, nativeArrayPtr)
+                let nativeArray = arr |> NativePtr.ofNativeInt<bool>
+                new BoolVector(length, nativeArray, IntPtr.Zero, false, None)
+            else
+                MklFunctions.B_Create_Array(length, nativeArrayPtr)
+                let nativeArray = arr |> NativePtr.ofNativeInt<bool>
+                MklFunctions.B_Fill_Array(init, length, nativeArray)
+                new BoolVector(length, nativeArray, IntPtr.Zero, false, None)
 
     new(length : int, init : bool) =
         let length = length |> int64
@@ -36,21 +42,27 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     new(data : bool seq) =
         let data = data |> Seq.toArray
         let length = data.GetLongLength(0)
-        let mutable arr = IntPtr.Zero
-        let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
-        MklFunctions.B_Create_Array(length, nativeArrayPtr)
-        let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
-        MklFunctions.B_Copy_Array(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<bool>, arr |> NativePtr.ofNativeInt<bool>) 
-        gcHandle.Free()
-        new BoolVector(length, arr |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
+        if length = 0L then
+            new BoolVector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
+        else
+            let mutable arr = IntPtr.Zero
+            let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
+            MklFunctions.B_Create_Array(length, nativeArrayPtr)
+            let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
+            MklFunctions.B_Copy_Array(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<bool>, arr |> NativePtr.ofNativeInt<bool>) 
+            gcHandle.Free()
+            new BoolVector(length, arr |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
 
     new(data : bool[], copyData : bool) =
         if copyData then
             new BoolVector(data)
         else
             let length = data.GetLongLength(0)
-            let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
-            new BoolVector(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<bool>, GCHandle.ToIntPtr(gcHandle), true, None)
+            if length = 0L then
+                new BoolVector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
+            else
+                let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
+                new BoolVector(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<bool>, GCHandle.ToIntPtr(gcHandle), true, None)
 
     new(data : bool) = new BoolVector([|data|], false)
 
@@ -244,9 +256,11 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     static member Copy(vector : BoolVector) =
         ArgumentChecks.throwIfContainsDisposed [vector]
-        let res = new BoolVector(vector.LongLength, false)
-        MklFunctions.B_Copy_Array(vector.LongLength, vector.NativeArray, res.NativeArray)
-        res
+        if vector.LongLength = 0L then BoolVector.Empty
+        else
+            let res = new BoolVector(vector.LongLength, false)
+            MklFunctions.B_Copy_Array(vector.LongLength, vector.NativeArray, res.NativeArray)
+            res
 
 
     static member (==) (vector1: BoolVector, vector2: BoolVector) =
@@ -882,12 +896,19 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         let mutable arr = IntPtr.Zero
         if length < 0L then 
              new Vector(length, arr |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
+        elif length = 0L then
+            new Vector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
         else
             let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
-            MklFunctions.D_Create_Array(length, nativeArrayPtr)
-            let nativeArray = arr |> NativePtr.ofNativeInt<float>
-            MklFunctions.D_Fill_Array(init, length, nativeArray)
-            new Vector(length, nativeArray, IntPtr.Zero, false, None)
+            if init = 0.0 then
+                MklFunctions.D_Create_Zero_Array(length, nativeArrayPtr)
+                let nativeArray = arr |> NativePtr.ofNativeInt<float>
+                new Vector(length, nativeArray, IntPtr.Zero, false, None)
+            else
+                MklFunctions.D_Create_Array(length, nativeArrayPtr)
+                let nativeArray = arr |> NativePtr.ofNativeInt<float>
+                MklFunctions.D_Fill_Array(init, length, nativeArray)
+                new Vector(length, nativeArray, IntPtr.Zero, false, None)
 
     new(length : int, init : float) =
         let length = length |> int64
@@ -896,21 +917,27 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
     new(data : float seq) =
         let data = data |> Seq.toArray
         let length = data.GetLongLength(0)
-        let mutable arr = IntPtr.Zero
-        let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
-        MklFunctions.D_Create_Array(length, nativeArrayPtr)
-        let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
-        MklFunctions.D_Copy_Array(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<float>, arr |> NativePtr.ofNativeInt<float>) 
-        gcHandle.Free()
-        new Vector(length, arr |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
+        if length = 0L then
+            new Vector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
+        else
+            let mutable arr = IntPtr.Zero
+            let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
+            MklFunctions.D_Create_Array(length, nativeArrayPtr)
+            let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
+            MklFunctions.D_Copy_Array(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<float>, arr |> NativePtr.ofNativeInt<float>) 
+            gcHandle.Free()
+            new Vector(length, arr |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
 
     new(data : float[], copyData : bool) =
         if copyData then
             new Vector(data)
         else
             let length = data.GetLongLength(0)
-            let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
-            new Vector(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<float>, GCHandle.ToIntPtr(gcHandle), true, None)
+            if length = 0L then
+                new Vector(0L, IntPtr.Zero |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
+            else
+                let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
+                new Vector(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<float>, GCHandle.ToIntPtr(gcHandle), true, None)
 
     new(data : float) = new Vector([|data|], false)
 
@@ -1112,9 +1139,11 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static member Copy(vector : Vector) =
         ArgumentChecks.throwIfContainsDisposed [vector]
-        let res = new Vector(vector.LongLength, 0.0)
-        MklFunctions.D_Copy_Array(vector.LongLength, vector.NativeArray, res.NativeArray)
-        res
+        if vector.LongLength = 0L then Vector.Empty
+        else
+            let res = new Vector(vector.LongLength, 0.0)
+            MklFunctions.D_Copy_Array(vector.LongLength, vector.NativeArray, res.NativeArray)
+            res
 
 
     static member (==) (vector1: Vector, vector2: Vector) =
@@ -1670,15 +1699,19 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static member CumSum(vector : Vector) =
         ArgumentChecks.throwIfContainsDisposed [vector]
-        let res = new Vector(vector.LongLength, 0.0)
-        MklFunctions.D_CumSum_Matrix(false, 1L, vector.LongLength, vector.NativeArray, res.NativeArray)
-        res
+        if vector.LongLength = 0L then Vector.Empty
+        else
+            let res = new Vector(vector.LongLength, 0.0)
+            MklFunctions.D_CumSum_Matrix(false, 1L, vector.LongLength, vector.NativeArray, res.NativeArray)
+            res
 
     static member CumProd(vector : Vector) =
         ArgumentChecks.throwIfContainsDisposed [vector]
-        let res = new Vector(vector.LongLength, 0.0)
-        MklFunctions.D_CumProd_Matrix(false, 1L, vector.LongLength, vector.NativeArray, res.NativeArray)
-        res
+        if vector.LongLength = 0L then Vector.Empty
+        else
+            let res = new Vector(vector.LongLength, 0.0)
+            MklFunctions.D_CumProd_Matrix(false, 1L, vector.LongLength, vector.NativeArray, res.NativeArray)
+            res
 
     static member Min(vector : Vector) =
         ArgumentChecks.throwIfContainsDisposed [vector]

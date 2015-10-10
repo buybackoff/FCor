@@ -23,24 +23,27 @@ int get_bool_slice(MKL_INT n, T* x, bool* b, T*& y, __int64& ny)
 			trueCount++;
 		}
 	}
-	if (y == nullptr)
+	ny = trueCount;
+	if (trueCount > 0)
 	{
-		y = (T*)malloc(trueCount*sizeof(T));
 		if (y == nullptr)
 		{
-			return OUTOFMEMORY;
+			y = (T*)mkl_malloc(trueCount*sizeof(T),64);
+			if (y == nullptr)
+			{
+				return OUTOFMEMORY;
+			}
 		}
-	}
 
-	MKL_INT index = 0;
-	for (MKL_INT i = 0; i < n; i++)
-	{
-		if (b[i])
+		MKL_INT index = 0;
+		for (MKL_INT i = 0; i < n; i++)
 		{
-			y[index++] = x[i];
+			if (b[i])
+			{
+				y[index++] = x[i];
+			}
 		}
 	}
-	ny = trueCount;
 	return 0;
 }
 

@@ -17,6 +17,8 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
     do 
       if rowCount < 0L || colCount < 0L then raise (new ArgumentException("BoolMatrix row and column count must be >= 0"))
       if colMajorDataVector.LongLength <> rowCount * colCount then raise (new ArgumentException("BoolMatrix row and column count not compatible with data length"))
+      if rowCount = 0L && colCount > 0L then colCount <- 0L
+      if colCount = 0L && rowCount > 0L then rowCount <- 0L
 
     static let empty = new BoolMatrix(0L, 0L, BoolVector.Empty)
 
@@ -27,7 +29,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         new BoolMatrix(colMajorDataVector.LongLength, 1L, colMajorDataVector)
 
     new(rowCount : int64, colCount : int64, init : bool) =
-        if rowCount < 0L || colCount < 0L then 
+        if rowCount <= 0L || colCount <= 0L then 
             new BoolMatrix(rowCount, colCount, BoolVector.Empty)
         else
             let length = rowCount * colCount
@@ -40,7 +42,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         new BoolMatrix(rowCount, colCount, init)
 
     new(rowCount : int64, colCount : int64, colMajorDataSeq : seq<bool>) =
-        if rowCount < 0L || colCount < 0L then 
+        if rowCount <= 0L || colCount <= 0L then 
             new BoolMatrix(rowCount, colCount, BoolVector.Empty)
         else
             let v = new BoolVector(colMajorDataSeq)
@@ -412,11 +414,13 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     static member Copy(matrix : BoolMatrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix]
-        let rows = matrix.LongRowCount
-        let cols = matrix.LongColCount
-        let res = new BoolMatrix(rows, cols, false)
-        MklFunctions.B_Copy_Array(matrix.ColMajorDataVector.LongLength, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
-        res
+        if matrix.LongLength = 0L then BoolMatrix.Empty 
+        else
+            let rows = matrix.LongRowCount
+            let cols = matrix.LongColCount
+            let res = new BoolMatrix(rows, cols, false)
+            MklFunctions.B_Copy_Array(matrix.ColMajorDataVector.LongLength, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+            res
 
     member this.AsExpr
         with get() = 
@@ -590,7 +594,9 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     static member Not (matrix : BoolMatrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix]
-        new BoolMatrix(matrix.LongRowCount, matrix.LongColCount, BoolVector.Not matrix.ColMajorDataVector)
+        if matrix.LongLength = 0L then BoolMatrix.Empty
+        else
+            new BoolMatrix(matrix.LongRowCount, matrix.LongColCount, BoolVector.Not matrix.ColMajorDataVector)
 
     static member Any(matrix : BoolMatrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix]
@@ -903,6 +909,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
     do 
       if rowCount < 0L || colCount < 0L then raise (new ArgumentException("Matrix row and column count must be >= 0"))
       if colMajorDataVector.LongLength <> rowCount * colCount then raise (new ArgumentException("Matrix row and column count not compatible with data length"))
+      if rowCount = 0L && colCount > 0L then colCount <- 0L
+      if colCount = 0L && rowCount > 0L then rowCount <- 0L
 
     static let empty = new Matrix(0L, 0L, Vector.Empty)
 
@@ -913,7 +921,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(colMajorDataVector.LongLength, 1L, colMajorDataVector)
 
     new(rowCount : int64, colCount : int64, init : float) =
-        if rowCount < 0L || colCount < 0L then 
+        if rowCount <= 0L || colCount <= 0L then 
             new Matrix(rowCount, colCount, Vector.Empty)
         else
             let length = rowCount * colCount
@@ -926,7 +934,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(rowCount, colCount, init)
 
     new(rowCount : int64, colCount : int64, colMajorDataSeq : seq<float>) =
-        if rowCount < 0L || colCount < 0L then 
+        if rowCount <= 0L || colCount <= 0L then 
             new Matrix(rowCount, colCount, Vector.Empty)
         else
             let v = new Vector(colMajorDataSeq)
@@ -2137,11 +2145,13 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
     static member Copy(matrix : Matrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix]
-        let rows = matrix.LongRowCount
-        let cols = matrix.LongColCount
-        let res = new Matrix(rows, cols, 0.0)
-        MklFunctions.D_Copy_Array(matrix.ColMajorDataVector.LongLength, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
-        res
+        if matrix.LongLength = 0L then Matrix.Empty
+        else
+            let rows = matrix.LongRowCount
+            let cols = matrix.LongColCount
+            let res = new Matrix(rows, cols, 0.0)
+            MklFunctions.D_Copy_Array(matrix.ColMajorDataVector.LongLength, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
+            res
 
 
     static member Chol(matrix: Matrix) =

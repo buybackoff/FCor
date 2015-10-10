@@ -33,7 +33,7 @@ type internal MklFunctions() =
 
     [<Literal>]
     static let x64Zip = "FCore.MKL.x64.zip"
-
+    
     static do
         try
             let BUFFERSIZE = 1000000
@@ -103,7 +103,13 @@ type internal MklFunctions() =
     static extern int d_create_array(IntPtr length, FloatPtr* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int d_create_zero_array(IntPtr length, FloatPtr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern int b_create_array(IntPtr length, BoolPtr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int b_create_zero_array(IntPtr length, BoolPtr* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_fill_array(float a, IntPtr length, float* array)
@@ -122,6 +128,18 @@ type internal MklFunctions() =
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void set_max_threads(IntPtr num_threads)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void free_buffers()
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void thread_free_buffers()
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void disable_fast_mm()
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int64 mem_stat()
 
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
@@ -856,8 +874,14 @@ type internal MklFunctions() =
     static member D_Create_Array(length : int64, array) =
         d_create_array(new IntPtr(length), array) |> validateRetCode
 
+    static member D_Create_Zero_Array(length : int64, array) =
+        d_create_zero_array(new IntPtr(length), array) |> validateRetCode
+
     static member B_Create_Array(length : int64, array) =
         b_create_array(new IntPtr(length), array) |> validateRetCode
+
+    static member B_Create_Zero_Array(length : int64, array) =
+        b_create_zero_array(new IntPtr(length), array) |> validateRetCode
 
     static member D_Fill_Array(a, length : int64, array : nativeptr<float>) =
        d_fill_array(a, new IntPtr(length), array) 
@@ -874,6 +898,14 @@ type internal MklFunctions() =
     static member Free_Array(x : IntPtr) = free_array(x)
 
     static member Set_Max_Threads(n : int) = set_max_threads(new IntPtr(n))
+
+    static member Free_Buffers() = free_buffers()
+
+    static member Thread_Free_Buffers() = thread_free_buffers()
+
+    static member Disable_Fast_MM() = disable_fast_mm()
+
+    static member Mem_Stat() = mem_stat()
 
 
     static member B_Get_Bool_Slice(length : int64, fromArray, predicate, resArray, resLength) =
