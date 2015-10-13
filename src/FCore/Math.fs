@@ -29,6 +29,8 @@ module Math =
 
     let inline norminv (x :'S) : 'S = ((^T or ^S) : (static member Norminv: ^T * ^S -> ^S) DummyType, x)
 
+    let inline axpby (a : 'U) (x :'S) (b : 'U) (y : 'S) : 'S = ((^T or ^S) : (static member Axpby: ^T * ^U * ^S * ^U * ^S -> ^S) DummyType, a, x, b, y)
+
     let inline I< ^T, ^S when ^T : (static member Identity : ^S * ^S ->  ^T)> (rows : ^S) (cols : ^S) : ^T =
         (^T : (static member Identity  : ^S * ^S -> ^T ) rows, cols)
 
@@ -44,6 +46,6 @@ module Math =
 
     let inline eval (expr :'S) : 'U = ((^T or ^S) : (static member EvalIn: ^T * ^S * ^U option -> ^U) DummyType, expr, None)
 
-    let inline evalIn (res : 'U) (expr :'S) : 'U = ((^T or ^S) : (static member EvalIn: ^T * ^S * ^U option -> ^U) DummyType, expr, (Some res))
+    let inline evalIn (expr :'S) (res : 'U) = ((^T or ^S) : (static member EvalIn: ^T * ^S * ^U option -> ^U) DummyType, expr, (Some res)) |> ignore
 
     let inline iif (boolExpr :'S) (trueExpr : 'U) (falseExpr : 'V) : 'Z = ((^T or ^S) : (static member IIf: ^T * ^S * ^U * ^V -> ^Z) DummyType, boolExpr, trueExpr, falseExpr)

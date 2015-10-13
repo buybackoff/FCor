@@ -14,9 +14,14 @@ module VectorOperators =
     let app = new MLAppClass()
     do app.Visible <- 0
 
+    let rnd = new Random()
+
     let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
 
     let inline epsEqual eps (x : float[]) (y :float[])  = epsEqualArray x y epsEqualFloat eps
+
+    let regDouble x =
+        if Double.IsNaN(x) || Double.IsNegativeInfinity(x) || Double.IsPositiveInfinity(x) || x = Double.MaxValue ||x = Double.MinValue || x = Double.Epsilon || x = -Double.Epsilon then rnd.NextDouble() else x
 
     [<Property>]
     let ``X == X`` (x : float[]) =
@@ -397,15 +402,19 @@ module VectorOperators =
 
     [<Property>]
     let ``X ./ a`` (x : float[]) (a : float) =
+        let x = x |> Array.map regDouble
+        let a = regDouble a
         let X = new Vector(x)
         let A = new Vector(a)
         (epsEqual 1e-14 ((X ./ a).ToArray()) ((X ./ A).ToArray())) .&. (epsEqual 1e-14 ((X ./ a).ToArray()) (x |> Array.map (fun z -> z / a)))
 
     [<Property>]
     let ``a ./ X`` (x : float[]) (a : float) =
+        let x = x |> Array.map regDouble
+        let a = regDouble a
         let X = new Vector(x)
         let A = new Vector(a)
-        (epsEqual 1e-14 ((a ./ X).ToArray()) ((A ./ X).ToArray())) .&. (epsEqual 1e-14 ((a ./ X).ToArray()) (x |> Array.map (fun z -> a / z)))
+        (epsEqual 1e-13 ((a ./ X).ToArray()) ((A ./ X).ToArray())) .&. (epsEqual 1e-13 ((a ./ X).ToArray()) (x |> Array.map (fun z -> a / z)))
 
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X .^ Y`` (x : float[]) (y : float[]) =

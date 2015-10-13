@@ -676,7 +676,7 @@ module MatrixExpr =
     let ``EvalIn -MatrixExpr`` (x : float[,]) =
         let X = new Matrix(x)
         let res = -X
-        let evalRes = evalIn X (-X.AsExpr)
+        evalIn (-X.AsExpr) X
         X <=> res
 
     [<Fact>]
@@ -761,6 +761,11 @@ module MatrixExpr =
         let Y = new Matrix(y)
         let aY = a .* Y
         (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr (a .* Y) !!b) in res.ToArray2D() |> Array2D.mapi (fun i j x -> res.[i,j] <==> if X.[i,j] then aY.[i,j] else b) = Array2D.create res.RowCount res.ColCount true)
+
+    [<Property>]
+    let ``eval iif X a b`` (v : bool[,]) (a : float) (b : float) =
+        let X = new BoolMatrix(v)
+        (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr a b) in res.ToArray2D() |> Array2D.mapi (fun i j x -> res.[i,j] <==> if X.[i,j] then a else b) = Array2D.create res.RowCount res.ColCount true)
 
 
     [<Property>]

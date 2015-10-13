@@ -7,6 +7,45 @@ open Microsoft.FSharp.NativeInterop
 open System.Collections.Generic
 open FCore.ExplicitConversion
 
+[<Struct>]
+type DataBuffer<'T when 'T : unmanaged>(length : int64, nativeArray : nativeptr<'T>, isView: bool) =
+
+     member this.LongLength = length
+     member this.NativeArray = nativeArray
+     member this.IsView = isView
+
+     member this.Dispose() = if not isView then MklFunctions.Free_Array(nativeArray |> NativePtr.toNativeInt)
+
+     static member CreateBoolBuffer(length : int64) =
+          let mutable arr = IntPtr.Zero
+          let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
+          MklFunctions.B_Create_Array(length, nativeArrayPtr)
+          let nativeArray = arr |> NativePtr.ofNativeInt<bool>
+          new DataBuffer<bool>(length, nativeArray, false)
+
+     static member CreateBoolBuffer(length : int64, fill : bool) =
+          let mutable arr = IntPtr.Zero
+          let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<BoolPtr>
+          MklFunctions.B_Create_Array(length, nativeArrayPtr)
+          let nativeArray = arr |> NativePtr.ofNativeInt<bool>
+          MklFunctions.B_Fill_Array(fill, length, nativeArray)
+          new DataBuffer<bool>(length, nativeArray, false)
+
+     static member CreateFloatBuffer(length : int64) =
+          let mutable arr = IntPtr.Zero
+          let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
+          MklFunctions.D_Create_Array(length, nativeArrayPtr)
+          let nativeArray = arr |> NativePtr.ofNativeInt<float>
+          new DataBuffer<float>(length, nativeArray, false)
+
+     static member CreateFloatBuffer(length : int64, fill : float) =
+          let mutable arr = IntPtr.Zero
+          let nativeArrayPtr = &&arr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<FloatPtr>
+          MklFunctions.D_Create_Array(length, nativeArrayPtr)
+          let nativeArray = arr |> NativePtr.ofNativeInt<float>
+          MklFunctions.D_Fill_Array(fill, length, nativeArray)
+          new DataBuffer<float>(length, nativeArray, false)
+
 type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : IntPtr, isView : bool, parentVector : BoolVector option) as this =
     let mutable isDisposed = false
     do
@@ -64,7 +103,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
                 let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
                 new BoolVector(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<bool>, GCHandle.ToIntPtr(gcHandle), true, None)
 
-    new(data : bool) = new BoolVector([|data|], false)
+    new(data : bool) = new BoolVector(1L, data)
 
     new(length : int, initializer : int -> bool) =
         let data = Array.init length initializer
@@ -76,6 +115,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     member this.LongLength = length
 
     member this.NativeArray = nativeArray
+
+    member internal this.DataBuffer = new DataBuffer<bool>(length, nativeArray, isView)
 
     member this.IsDisposed =
         if length = 0L then false
@@ -97,6 +138,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     static member op_Explicit(v : bool array) = new BoolVector(v)
 
     static member op_Explicit(v : BoolVector) = v
+
+    static member op_Explicit(v : BoolVector) = v.AsExpr
 
     static member EvalSliceLength
         with get() = evalSliceLength
@@ -555,9 +598,9 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 and BoolVectorExpr = 
     | Scalar of bool
     | Var of BoolVector
-    | UnaryFunction of BoolVectorExpr * (BoolVector -> BoolVector -> unit) * string
-    | BinaryFunction of BoolVectorExpr * BoolVectorExpr * (BoolVector -> BoolVector -> BoolVector -> unit) * string
-    | BinaryVectorFunction of VectorExpr * VectorExpr * (Vector -> Vector -> BoolVector -> unit) * string
+    | UnaryFunction of BoolVectorExpr * (DataBuffer<bool> -> DataBuffer<bool> -> unit) * string
+    | BinaryFunction of BoolVectorExpr * BoolVectorExpr * (DataBuffer<bool> -> DataBuffer<bool> -> DataBuffer<bool> -> unit) * string
+    | BinaryVectorFunction of VectorExpr * VectorExpr * (DataBuffer<float> -> DataBuffer<float> -> DataBuffer<bool> -> unit) * string
     | IfFunction of BoolVectorExpr * BoolVectorExpr * BoolVectorExpr
 
     member this.Length =
@@ -573,106 +616,74 @@ and BoolVectorExpr =
 
     static member op_Explicit(v : BoolVector) = v.AsExpr
 
-    static member DeScalar(boolVectorExpr : BoolVectorExpr) = 
-        match boolVectorExpr with
-            | Scalar(_)  -> boolVectorExpr
-            | Var(v)  -> v.AsExpr
-            | UnaryFunction(v, f, label) ->
-                let v = BoolVectorExpr.DeScalar(v)
-                match v with
-                    | Scalar(u) ->
-                        let res = new BoolVector(false)
-                        f !!u res
-                        res.AsExpr
-                    | _ -> UnaryFunction(v, f, label) 
-            | BinaryFunction(v1, v2, f, label) ->
-                let v1 = BoolVectorExpr.DeScalar(v1)
-                let v2 = BoolVectorExpr.DeScalar(v2)
-                match v1, v2 with
-                    | Scalar(u1), Scalar(u2) ->
-                        let res = new BoolVector(false)
-                        f !!u1 !!u2 res
-                        res.AsExpr
-                    | _ -> BinaryFunction(v1, v2, f, label)
-            | BinaryVectorFunction(v1, v2, f, label) ->
-                let v1 = VectorExpr.DeScalar(v1)
-                let v2 = VectorExpr.DeScalar(v2)
-                match v1, v2 with
-                    | VectorExpr.Scalar(u1), VectorExpr.Scalar(u2) ->
-                        let res = new BoolVector(false)
-                        f !!u1 !!u2 res
-                        res.AsExpr
-                    | _ -> BinaryVectorFunction(v1, v2, f, label)
-            | IfFunction(v1, v2, v3) ->
-                let v1 = BoolVectorExpr.DeScalar(v1)
-                let v2 = BoolVectorExpr.DeScalar(v2)
-                let v3 = BoolVectorExpr.DeScalar(v3)
-                match v1, v2, v3 with
-                    | Scalar(u1), Scalar(u2), Scalar(u3) ->
-                        let res = if u1 then u2 else u3
-                        Scalar(res)
-                    | _ -> IfFunction(v1, v2, v3)
-
     static member EvalSlice (boolVectorExpr : BoolVectorExpr) (sliceStart : int64) (sliceLen : int64) (memPool : MemoryPool) = 
         match boolVectorExpr with
-            | Scalar(v) -> new BoolVector(v), memPool
+            | Scalar(a) ->
+                let v : DataBuffer<bool> = memPool.GetBoolVector(1L)
+                NativePtr.write v.NativeArray a
+                v, memPool
             | Var(v) ->
-                ArgumentChecks.throwIfContainsDisposed [v]
-                v.View(sliceStart, sliceStart + sliceLen - 1L), memPool
+                let offsetAddr = IntPtr((v.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                new DataBuffer<bool>(sliceLen, offsetAddr, true), memPool
             | UnaryFunction(v, f, _) -> 
                 let v, memPool = BoolVectorExpr.EvalSlice v sliceStart sliceLen memPool
-                if memPool.Contains(v) then
-                    f v v
-                    v, memPool
-                else
-                    let res = memPool.GetBoolVector(sliceLen)
+                if v.IsView then
+                    let res = memPool.GetBoolVector(v.LongLength)
                     f v res
                     res, memPool
+                else
+                    f v v
+                    v, memPool
             | BinaryFunction(v1, v2, f, _) -> 
                 let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                if memPool.Contains(v1) then
+                if not v1.IsView && v1.LongLength >= v2.LongLength then
                     f v1 v2 v1
-                    memPool.UnUse v2
+                    if not v2.IsView then memPool.UnUseBool v2.NativeArray
                     v1, memPool
-                elif memPool.Contains(v2) then
+                elif not v2.IsView && v2.LongLength >= v1.LongLength then
                     f v1 v2 v2
+                    if not v1.IsView then memPool.UnUseBool v1.NativeArray
                     v2, memPool
                 else
-                    let res = memPool.GetBoolVector(sliceLen)
+                    let res = memPool.GetBoolVector(max v1.LongLength v2.LongLength)
                     f v1 v2 res
+                    if not v1.IsView then memPool.UnUseBool v1.NativeArray
+                    if not v2.IsView then memPool.UnUseBool v2.NativeArray
                     res, memPool
             | BinaryVectorFunction(v1, v2, f, _) -> 
-                let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
-                let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                let res = memPool.GetBoolVector(sliceLen)
+                let (v1 : DataBuffer<float>), memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
+                let (v2 : DataBuffer<float>), memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
+                let res = memPool.GetBoolVector(max v1.LongLength v2.LongLength)
                 f v1 v2 res
-                memPool.UnUse(v1:Vector)
-                memPool.UnUse(v2)
+                if not v1.IsView then memPool.UnUseFloat v1.NativeArray
+                if not v2.IsView then memPool.UnUseFloat v2.NativeArray
                 res, memPool
             | IfFunction(b, v1, v2) -> 
                 let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart sliceLen memPool
                 let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                if memPool.Contains(boolVector) then
+                if not boolVector.IsView then
                     MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, boolVector.NativeArray)
-                    memPool.UnUse v1
-                    memPool.UnUse v2
+                    if not v1.IsView then memPool.UnUseBool v1.NativeArray
+                    if not v2.IsView then memPool.UnUseBool v2.NativeArray
                     boolVector, memPool
-                elif memPool.Contains(v1) then
+                elif not v1.IsView && v1.LongLength >= boolVector.LongLength then
                     MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v1.NativeArray)
-                    memPool.UnUse v2
+                    if not v2.IsView then memPool.UnUseBool v2.NativeArray
                     v1, memPool
-                elif memPool.Contains(v2) then
+                elif not v2.IsView && v2.LongLength >= boolVector.LongLength then
                     MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v2.NativeArray)
+                    if not v1.IsView then memPool.UnUseBool v1.NativeArray
                     v2, memPool
                 else
-                    let res = memPool.GetBoolVector(sliceLen)
+                    let res = memPool.GetBoolVector(boolVector.LongLength)
                     MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, res.NativeArray)
+                    if not v1.IsView then memPool.UnUseBool v1.NativeArray
+                    if not v2.IsView then memPool.UnUseBool v2.NativeArray
                     res, memPool
 
     static member EvalIn(boolVectorExpr : BoolVectorExpr, res : BoolVector option) =
-        let boolVectorExpr = BoolVectorExpr.DeScalar(boolVectorExpr)
         let length = boolVectorExpr.Length
         let res = 
             match length with
@@ -689,16 +700,77 @@ and BoolVectorExpr =
             let m = len / n
             let k = len % n
             use memPool = new MemoryPool()
-            for i in 0L..(m-1L) do
-                let sliceStart = i * n
-                let v, _ = BoolVectorExpr.EvalSlice boolVectorExpr sliceStart n memPool
-                res.SetSlice(Some sliceStart, Some(sliceStart + n - 1L), v)
-                memPool.UnUseAll()
 
-            if k > 0L then
-                let sliceStart = m * n
-                let v, _ = BoolVectorExpr.EvalSlice boolVectorExpr sliceStart k memPool
-                res.SetSlice(Some sliceStart, Some(sliceStart + k - 1L), v)
+            match boolVectorExpr with
+                | Scalar(a) -> 
+                    res.[0L] <- a
+                | Var(v) ->
+                    if res.NativeArray <> v.NativeArray then
+                        MklFunctions.B_Copy_Array(v.LongLength, v.NativeArray, res.NativeArray)
+                | UnaryFunction(v, f, _) -> 
+                    for i in 0L..(m-1L) do
+                        let sliceStart = i * n
+                        let v, memPool = BoolVectorExpr.EvalSlice v sliceStart n memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                        f v (new DataBuffer<bool>(n, offsetAddr, true))
+                        memPool.UnUseAll()
+
+                    if k > 0L then
+                        let sliceStart = m * n
+                        let v, _ = BoolVectorExpr.EvalSlice v sliceStart k memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                        f v (new DataBuffer<bool>(k, offsetAddr, true))
+
+                | BinaryFunction(v1, v2, f, _) -> 
+                    for i in 0L..(m-1L) do
+                        let sliceStart = i * n
+                        let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart n memPool
+                        let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart n memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                        f v1 v2 (new DataBuffer<bool>(n, offsetAddr, true))
+                        memPool.UnUseAll()
+
+                    if k > 0L then
+                        let sliceStart = m * n
+                        let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart k memPool
+                        let v2, _ = BoolVectorExpr.EvalSlice v2 sliceStart k memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                        f v1 v2 (new DataBuffer<bool>(k, offsetAddr, true))
+
+                | BinaryVectorFunction(v1, v2, f, _) -> 
+                    for i in 0L..(m-1L) do
+                        let sliceStart = i * n
+                        let v1, memPool = VectorExpr.EvalSlice v1 sliceStart n memPool
+                        let v2, memPool = VectorExpr.EvalSlice v2 sliceStart n memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                        f v1 v2 (new DataBuffer<bool>(n, offsetAddr, true))
+                        memPool.UnUseAll()
+
+                    if k > 0L then
+                        let sliceStart = m * n
+                        let v1, memPool = VectorExpr.EvalSlice v1 sliceStart k memPool
+                        let v2, _ = VectorExpr.EvalSlice v2 sliceStart k memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                        f v1 v2 (new DataBuffer<bool>(k, offsetAddr, true))
+
+                | IfFunction(b, v1, v2) -> 
+                    for i in 0L..(m-1L) do
+                        let sliceStart = i * n
+                        let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart n memPool
+                        let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart n memPool
+                        let v2, memPool = BoolVectorExpr.EvalSlice v2 sliceStart n memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                        MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, offsetAddr)
+                        memPool.UnUseAll()
+
+                    if k > 0L then
+                        let sliceStart = m * n
+                        let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart k memPool
+                        let v1, memPool = BoolVectorExpr.EvalSlice v1 sliceStart k memPool
+                        let v2, _ = BoolVectorExpr.EvalSlice v2 sliceStart k memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart) |> NativePtr.ofNativeInt<bool>
+                        MklFunctions.B_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, offsetAddr)
+
         res
 
     static member (.<) (vector1 : BoolVectorExpr, vector2 : BoolVectorExpr) =
@@ -939,7 +1011,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
                 let gcHandle = GCHandle.Alloc(data, GCHandleType.Pinned)
                 new Vector(length, gcHandle.AddrOfPinnedObject() |> NativePtr.ofNativeInt<float>, GCHandle.ToIntPtr(gcHandle), true, None)
 
-    new(data : float) = new Vector([|data|], false)
+    new(data : float) = new Vector(1L, data)
 
     new(length : int, initializer : int -> float) =
         let data = Array.init length initializer
@@ -951,6 +1023,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
     member this.LongLength = length
 
     member this.NativeArray = nativeArray
+
+    member internal this.DataBuffer = new DataBuffer<float>(length, nativeArray, isView)
 
     member this.IsDisposed =
         if length = 0L then false
@@ -975,6 +1049,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     static member op_Explicit(v : Vector) =
         v.[0]
+
+    static member op_Explicit(v : Vector) = v.AsExpr
 
     static member EvalSliceLength
         with get() = evalSliceLength
@@ -1681,6 +1757,17 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         MklFunctions.D_Trunc_Array(len, vector.NativeArray, res.NativeArray)
         res
 
+    static member Axpby(a : float, vector1 : Vector, b : float, vector2 : Vector) =
+        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.LongLength = 0L && vector2.LongLength = 0L then Vector.Empty
+        else
+            if vector1.LongLength <> vector2.LongLength then raise (new ArgumentException("Vector length mismatch"))
+
+            let len = vector1.LongLength
+            let res = new Vector(len, 0.0)
+            MklFunctions.D_Array_Axpby_Array(len, vector1.NativeArray, a, vector2.NativeArray, b, res.NativeArray)
+            res
+
 
 
     static member Sum(vector : Vector) =
@@ -1826,8 +1913,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 and VectorExpr = 
     | Scalar of float
     | Var of Vector
-    | UnaryFunction of VectorExpr * (Vector -> Vector -> unit) * string
-    | BinaryFunction of VectorExpr * VectorExpr * (Vector -> Vector -> Vector -> unit) * string
+    | UnaryFunction of VectorExpr * (DataBuffer<float> -> DataBuffer<float> -> unit) * string
+    | BinaryFunction of VectorExpr * VectorExpr * (DataBuffer<float> -> DataBuffer<float> -> DataBuffer<float> -> unit) * string
     | IfFunction of BoolVectorExpr * VectorExpr * VectorExpr
 
     member this.Length =
@@ -1837,37 +1924,6 @@ and VectorExpr =
             | UnaryFunction(v, _, _) -> v.Length
             | BinaryFunction(v1, v2, _, _) -> ArgumentChecks.getElementwiseLength v1.Length v2.Length
             | IfFunction(v1, v2, v3) -> ArgumentChecks.getElementwiseLengthIf v1.Length v2.Length v3.Length
-
-    static member DeScalar(vectorExpr : VectorExpr) =
-        match vectorExpr with
-            | Scalar(_) -> vectorExpr
-            | Var(v) -> v.AsExpr
-            | UnaryFunction(v, f, label) ->
-                let v = VectorExpr.DeScalar(v)
-                match v with
-                    | Scalar(u) ->
-                        let res = new Vector(0.0)
-                        f !!u res
-                        res.AsExpr
-                    | _ -> UnaryFunction(v, f, label)    
-            | BinaryFunction(v1, v2, f, label) ->
-                let v1 = VectorExpr.DeScalar(v1)
-                let v2 = VectorExpr.DeScalar(v2)
-                match v1, v2 with
-                    | Scalar(u1), Scalar(u2) ->
-                        let res = new Vector(0.0)
-                        f !!u1 !!u2 res
-                        res.AsExpr
-                    | _ -> BinaryFunction(v1, v2, f, label)
-            | IfFunction(v1, v2, v3) ->
-                let v1 = BoolVectorExpr.DeScalar(v1)
-                let v2 = VectorExpr.DeScalar(v2)
-                let v3 = VectorExpr.DeScalar(v3)
-                match v1, v2, v3 with
-                    | BoolVectorExpr.Scalar(u1), Scalar(u2), Scalar(u3) ->
-                        let res = if u1 then u2 else u3
-                        Scalar(res)
-                    | _ -> IfFunction(v1, v2, v3)
 
     static member FuseAxpby(vectorExpr : VectorExpr) =
         match vectorExpr with
@@ -1883,55 +1939,63 @@ and VectorExpr =
 
     static member EvalSlice (vectorExpr : VectorExpr) (sliceStart : int64) (sliceLen : int64) (memPool : MemoryPool) =
         match vectorExpr with
-            | Scalar(v) -> 
-                new Vector(v), memPool
+            | Scalar(a) -> 
+                let v : DataBuffer<float> = memPool.GetVector(1L)
+                NativePtr.write v.NativeArray a
+                v, memPool
             | Var(v) ->
-                ArgumentChecks.throwIfContainsDisposed [v]
-                v.View(sliceStart, sliceStart + sliceLen - 1L), memPool
+                let offsetAddr = IntPtr((v.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart*8L) |> NativePtr.ofNativeInt<float>
+                new DataBuffer<float>(sliceLen, offsetAddr, true), memPool
             | UnaryFunction(v, f, _) -> 
                 let v, memPool = VectorExpr.EvalSlice v sliceStart sliceLen memPool
-                if memPool.Contains(v) then
+                if not v.IsView then
                     f v v
                     v, memPool
                 else
-                    let res = memPool.GetVector(sliceLen)
+                    let res = memPool.GetVector(v.LongLength)
                     f v res
                     res, memPool
             | BinaryFunction(v1, v2, f, _) -> 
                 let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                if memPool.Contains(v1) then
+                if not v1.IsView && v1.LongLength >= v2.LongLength then
                     f v1 v2 v1
-                    memPool.UnUse v2
+                    if not v2.IsView then memPool.UnUseFloat v2.NativeArray
                     v1, memPool
-                elif memPool.Contains(v2) then
+                elif not v2.IsView && v2.LongLength >= v1.LongLength then
                     f v1 v2 v2
+                    if not v1.IsView then memPool.UnUseFloat v1.NativeArray
                     v2, memPool
                 else
-                    let res = memPool.GetVector(sliceLen)
+                    let res = memPool.GetVector(max v1.LongLength v2.LongLength)
                     f v1 v2 res
+                    if not v1.IsView then memPool.UnUseFloat v1.NativeArray
+                    if not v2.IsView then memPool.UnUseFloat v2.NativeArray
                     res, memPool
             | IfFunction(b, v1, v2) -> 
                 let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart sliceLen memPool
                 let v1, memPool = VectorExpr.EvalSlice v1 sliceStart sliceLen memPool
                 let v2, memPool = VectorExpr.EvalSlice v2 sliceStart sliceLen memPool
-                if memPool.Contains(v1) then
+                if not v1.IsView && v1.LongLength >= boolVector.LongLength then
                     MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v1.NativeArray)
-                    memPool.UnUse v2
-                    memPool.UnUse boolVector
+                    if not v2.IsView then memPool.UnUseFloat v2.NativeArray
+                    if not boolVector.IsView then memPool.UnUseBool boolVector.NativeArray
                     v1, memPool
-                elif memPool.Contains(v2) then
+                elif not v2.IsView && v2.LongLength >= boolVector.LongLength then
                     MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, v2.NativeArray)
-                    memPool.UnUse boolVector
+                    if not boolVector.IsView then memPool.UnUseBool boolVector.NativeArray
+                    if not v1.IsView then memPool.UnUseFloat v1.NativeArray
                     v2, memPool
                 else
-                    let res = memPool.GetVector(sliceLen)
+                    let res = memPool.GetVector(boolVector.LongLength)
                     MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, res.NativeArray)
-                    memPool.UnUse boolVector
+                    if not boolVector.IsView then memPool.UnUseBool boolVector.NativeArray
+                    if not v1.IsView then memPool.UnUseFloat v1.NativeArray
+                    if not v2.IsView then memPool.UnUseFloat v2.NativeArray
                     res, memPool
 
     static member EvalIn(vectorExpr : VectorExpr, res : Vector option) =
-        let vectorExpr = vectorExpr |> (VectorExpr.DeScalar>>VectorExpr.FuseAxpby)
+        let vectorExpr = vectorExpr |> VectorExpr.FuseAxpby
         let length = vectorExpr.Length
         let res = 
             match length with
@@ -1948,16 +2012,61 @@ and VectorExpr =
             let m = len / n
             let k = len % n
             use memPool = new MemoryPool()
-            for i in 0L..(m-1L) do
-                let sliceStart = i * n
-                let v, _ = VectorExpr.EvalSlice vectorExpr sliceStart n memPool
-                res.SetSlice(Some(sliceStart), Some(sliceStart + n - 1L), v)
-                memPool.UnUseAll()
 
-            if k > 0L then
-                let sliceStart = m * n
-                let v, _ = VectorExpr.EvalSlice vectorExpr sliceStart k memPool
-                res.SetSlice(Some(sliceStart), Some(sliceStart + k - 1L), v)
+            match vectorExpr with
+                | Scalar(a) -> 
+                    res.[0L] <- a
+                | Var(v) ->
+                    if res.NativeArray <> v.NativeArray then
+                        MklFunctions.D_Copy_Array(v.LongLength, v.NativeArray, res.NativeArray)
+                | UnaryFunction(v, f, _) -> 
+                    for i in 0L..(m-1L) do
+                        let sliceStart = i * n
+                        let v, memPool = VectorExpr.EvalSlice v sliceStart n memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart*8L) |> NativePtr.ofNativeInt<float>
+                        f v (new DataBuffer<float>(n, offsetAddr, true))
+                        memPool.UnUseAll()
+
+                    if k > 0L then
+                        let sliceStart = m * n
+                        let v, _ = VectorExpr.EvalSlice v sliceStart k memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart*8L) |> NativePtr.ofNativeInt<float>
+                        f v (new DataBuffer<float>(k, offsetAddr, true))
+
+                | BinaryFunction(v1, v2, f, _) -> 
+                    for i in 0L..(m-1L) do
+                        let sliceStart = i * n
+                        let v1, memPool = VectorExpr.EvalSlice v1 sliceStart n memPool
+                        let v2, memPool = VectorExpr.EvalSlice v2 sliceStart n memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart*8L) |> NativePtr.ofNativeInt<float>
+                        f v1 v2 (new DataBuffer<float>(n, offsetAddr, true))
+                        memPool.UnUseAll()
+
+                    if k > 0L then
+                        let sliceStart = m * n
+                        let v1, memPool = VectorExpr.EvalSlice v1 sliceStart k memPool
+                        let v2, _ = VectorExpr.EvalSlice v2 sliceStart k memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart*8L) |> NativePtr.ofNativeInt<float>
+                        f v1 v2 (new DataBuffer<float>(k, offsetAddr, true))
+
+                | IfFunction(b, v1, v2) -> 
+                    for i in 0L..(m-1L) do
+                        let sliceStart = i * n
+                        let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart n memPool
+                        let v1, memPool = VectorExpr.EvalSlice v1 sliceStart n memPool
+                        let v2, memPool = VectorExpr.EvalSlice v2 sliceStart n memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart*8L) |> NativePtr.ofNativeInt<float>
+                        MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, offsetAddr)
+                        memPool.UnUseAll()
+
+                    if k > 0L then
+                        let sliceStart = m * n
+                        let boolVector, memPool = BoolVectorExpr.EvalSlice b sliceStart k memPool
+                        let v1, memPool = VectorExpr.EvalSlice v1 sliceStart k memPool
+                        let v2, _ = VectorExpr.EvalSlice v2 sliceStart k memPool
+                        let offsetAddr = IntPtr((res.NativeArray |> NativePtr.toNativeInt).ToInt64() + sliceStart*8L) |> NativePtr.ofNativeInt<float>
+                        MklFunctions.D_IIf_Arrays(v1.LongLength, v1.NativeArray, v2.LongLength, v2.NativeArray, boolVector.LongLength, boolVector.NativeArray, offsetAddr)
+
         res
 
     static member (.<) (vector1 : VectorExpr, vector2 : VectorExpr) =
@@ -2102,9 +2211,11 @@ and VectorExpr =
     static member (.*) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
         BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Mul_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Mul_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Mul_Array(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Scalar_Mul_Array(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
                                                         MklFunctions.D_Array_Mul_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2126,9 +2237,11 @@ and VectorExpr =
     static member (+) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
         BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Add_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Add_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Add_Array(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Scalar_Add_Array(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
                                                         MklFunctions.D_Array_Add_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2150,9 +2263,11 @@ and VectorExpr =
     static member (./) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
         BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Div_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Div_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Array_Div_Scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Array_Div_Scalar(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
                                                         MklFunctions.D_Array_Div_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2175,9 +2290,11 @@ and VectorExpr =
     static member (-) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
         BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Sub_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Sub_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Array_Sub_Scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Array_Sub_Scalar(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
                                                         MklFunctions.D_Array_Sub_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2202,9 +2319,11 @@ and VectorExpr =
     static member (.^) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
         BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Pow_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Pow_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Array_Pow_scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Array_Pow_scalar(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                         let len = v1.LongLength
                                                         MklFunctions.D_Array_Pow_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2331,57 +2450,81 @@ and PoolVector<'T>(vector : 'T) =
 
 and MemoryPool() =
 
-    let boolVectorPool = new Dictionary<nativeptr<bool>, PoolVector<BoolVector>>() 
-    let vectorPool = new Dictionary<nativeptr<float>, PoolVector<Vector>>()
+    let boolVectorPool = new Dictionary<nativeptr<bool>, PoolVector<DataBuffer<bool>>>() 
+    let vectorPool = new Dictionary<nativeptr<float>, PoolVector<DataBuffer<float>>>()
+    let boolScalarPool = new Dictionary<nativeptr<bool>, PoolVector<DataBuffer<bool>>>() 
+    let scalarPool = new Dictionary<nativeptr<float>, PoolVector<DataBuffer<float>>>()
 
     member this.GetBoolVector(length : int64) =
-        match boolVectorPool.Values |> Seq.tryFind (fun poolVector -> not poolVector.IsUsed && poolVector.Vector.LongLength >= length) with
-            | Some(v) -> 
-                 v.IsUsed <- true
-                 if v.Vector.LongLength <> length then
-                     v.Vector.View(0L, length - 1L)
-                 else
+        if length <> 1L then
+            match boolVectorPool.Values |> Seq.tryFind (fun poolVector -> not poolVector.IsUsed && poolVector.Vector.LongLength >= length) with
+                | Some(v) -> 
+                     v.IsUsed <- true
+                     if v.Vector.LongLength = length then
+                         v.Vector
+                     else
+                         new DataBuffer<bool>(length, v.Vector.NativeArray, false)// isView is a proxy here for 'not created in memory pool'
+                | None ->
+                    let v = DataBuffer<bool>.CreateBoolBuffer(length)
+                    boolVectorPool.Add(v.NativeArray, new PoolVector<_>(v))
+                    v
+        else
+            match boolScalarPool.Values |> Seq.tryFind (fun poolVector -> not poolVector.IsUsed) with
+                | Some(v) -> 
+                     v.IsUsed <- true
                      v.Vector
-            | None ->
-                let v = new BoolVector(length, false)
-                boolVectorPool.Add(v.NativeArray, new PoolVector<_>(v))
-                v
+                | None ->
+                    let v = DataBuffer<bool>.CreateBoolBuffer(1L)
+                    boolScalarPool.Add(v.NativeArray, new PoolVector<_>(v))
+                    v
 
     member this.GetVector(length : int64) =
-        match vectorPool.Values |> Seq.tryFind (fun poolVector -> not poolVector.IsUsed && poolVector.Vector.LongLength >= length) with
-            | Some(v) -> 
-                 v.IsUsed <- true
-                 if v.Vector.LongLength <> length then
-                     v.Vector.View(0L, length - 1L)
-                 else
+        if length <> 1L then
+            match vectorPool.Values |> Seq.tryFind (fun poolVector -> not poolVector.IsUsed && poolVector.Vector.LongLength >= length) with
+                | Some(v) -> 
+                     v.IsUsed <- true
+                     if v.Vector.LongLength = length then
+                         v.Vector
+                     else
+                         new DataBuffer<float>(length, v.Vector.NativeArray, false)// isView is a proxy here for 'not created in memory pool'
+                | None ->
+                    let v = DataBuffer<float>.CreateFloatBuffer(length)
+                    vectorPool.Add(v.NativeArray, new PoolVector<_>(v))
+                    v
+        else
+            match scalarPool.Values |> Seq.tryFind (fun poolVector -> not poolVector.IsUsed) with
+                | Some(v) -> 
+                     v.IsUsed <- true
                      v.Vector
-            | None ->
-                let v = new Vector(length, 0.0)
-                vectorPool.Add(v.NativeArray, new PoolVector<Vector>(v))
-                v
+                | None ->
+                    let v = DataBuffer<float>.CreateFloatBuffer(1L)
+                    scalarPool.Add(v.NativeArray, new PoolVector<_>(v))
+                    v
 
-    member this.Contains(boolVector : BoolVector) =
-        boolVectorPool.ContainsKey(boolVector.NativeArray)
+    member this.UnUseBool(nativeArray : nativeptr<bool>) =
+        if boolVectorPool.ContainsKey(nativeArray) then
+            boolVectorPool.[nativeArray].IsUsed <- false
+        if boolScalarPool.ContainsKey(nativeArray) then
+            boolScalarPool.[nativeArray].IsUsed <- false
 
-    member this.Contains(vector : Vector) =
-        vectorPool.ContainsKey(vector.NativeArray)
-
-    member this.UnUse(boolVector : BoolVector) =
-        if boolVectorPool.ContainsKey(boolVector.NativeArray) then
-            boolVectorPool.[boolVector.NativeArray].IsUsed <- false
-
-    member this.UnUse(vector : Vector) =
-        if vectorPool.ContainsKey(vector.NativeArray) then
-            vectorPool.[vector.NativeArray].IsUsed <- false
+    member this.UnUseFloat(nativeArray : nativeptr<float>) =
+        if vectorPool.ContainsKey(nativeArray) then
+            vectorPool.[nativeArray].IsUsed <- false
+        if scalarPool.ContainsKey(nativeArray) then
+            scalarPool.[nativeArray].IsUsed <- false
 
     member this.UnUseAll() =
         boolVectorPool.Values |> Seq.iter (fun v -> v.IsUsed <- false)
         vectorPool.Values |> Seq.iter (fun v -> v.IsUsed <- false)
+        boolScalarPool.Values |> Seq.iter (fun v -> v.IsUsed <- false)
+        scalarPool.Values |> Seq.iter (fun v -> v.IsUsed <- false)
            
     interface IDisposable with
         member this.Dispose() = 
-             boolVectorPool |> Seq.iter (fun kv -> let vector = kv.Value.Vector in (vector:>IDisposable).Dispose())  
-             vectorPool |> Seq.iter (fun kv -> let vector = kv.Value.Vector in (vector:>IDisposable).Dispose())  
+             boolVectorPool |> Seq.iter (fun kv -> let vector = kv.Value.Vector in vector.Dispose())  
+             vectorPool |> Seq.iter (fun kv -> let vector = kv.Value.Vector in vector.Dispose())  
+             boolScalarPool |> Seq.iter (fun kv -> let vector = kv.Value.Vector in vector.Dispose())  
+             scalarPool |> Seq.iter (fun kv -> let vector = kv.Value.Vector in vector.Dispose()) 
               
 
         

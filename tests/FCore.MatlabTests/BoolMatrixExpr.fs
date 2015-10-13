@@ -376,7 +376,7 @@ module BoolMatrixExpr =
     let ``EvalIn Not BoolMatrixExpr`` (x : bool[,]) =
         let X = new BoolMatrix(x)
         let res = BoolMatrix.Not X
-        let evalRes = evalIn X (BoolMatrixExpr.Not X.AsExpr)
+        evalIn (BoolMatrixExpr.Not X.AsExpr) X
         X = res
 
     [<Fact>]
@@ -466,6 +466,11 @@ module BoolMatrixExpr =
         let Y = new BoolMatrix(y)
         let aY = a .&& Y
         (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr (a .&& Y) !!b) in res.ToArray2D() |> Array2D.mapi (fun i j x -> res.[i,j] = if X.[i,j] then aY.[i,j] else b) = Array2D.create res.RowCount res.ColCount true)
+
+    [<Property>]
+    let ``eval iif X a b`` (v : bool[,]) (a : bool) (b : bool) =
+        let X = new BoolMatrix(v)
+        (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr a b) in res.ToArray2D() |> Array2D.mapi (fun i j x -> res.[i,j] = if X.[i,j] then a else b) = Array2D.create res.RowCount res.ColCount true)
 
 
     [<Fact>]

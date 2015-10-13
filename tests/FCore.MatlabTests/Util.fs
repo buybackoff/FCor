@@ -127,6 +127,7 @@ module Util =
         Convert.ToBoolean(app.GetVariable(varName, "base"))
 
     let setMatrix (app : MLAppClass) (varName : string) (v : float[,]) =
+        let v = v |> fixEmpty
         if v.Length = 1 && Double.IsNaN(v.[0, 0]) then
             app.Execute(sprintf "%s = [NaN];" varName) |> ignore
         elif v.Length = 1 && Double.IsNegativeInfinity(v.[0, 0]) then
@@ -137,6 +138,7 @@ module Util =
             app.PutWorkspaceData(varName, "base", v)
 
     let setBoolMatrix (app : MLAppClass) (varName : string) (v : bool[,]) =
+        let v = v |> fixEmpty
         app.PutWorkspaceData(varName, "base", v)
 
     let setVector (app : MLAppClass) (varName : string) (v : float[]) =

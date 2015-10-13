@@ -75,6 +75,9 @@ module Overloading =
         static member Norminv (DummyType, x) = VectorExpr.Norminv(x)
         static member Norminv (DummyType, x) = MatrixExpr.Norminv(x)
 
+        static member Axpby (DummyType, a, x : Vector, b, y : Vector) = Vector.Axpby(a, x, b, y)
+        static member Axpby (DummyType, a, x : Matrix, b, y : Matrix) : Matrix = !!Vector.Axpby(a, x.ColMajorDataVector, b, y.ColMajorDataVector)
+
         static member Concat (DummyType, x) = BoolVector.Concat(x)
         static member Concat (DummyType, x) = Vector.Concat(x)
 
@@ -118,20 +121,20 @@ module Overloading =
             BoolVectorExpr.IfFunction(boolExpr, trueExpr, falseExpr)
 
         static member IIf (DummyType, boolExpr : BoolVectorExpr, trueVector : BoolVector, falseVector : BoolVector) =
-            BoolVectorExpr.IfFunction(boolExpr, BoolVectorExpr.Var(trueVector), BoolVectorExpr.Var(falseVector))
+            BoolVectorExpr.IfFunction(boolExpr, trueVector.AsExpr, falseVector.AsExpr)
 
         static member IIf (DummyType, boolExpr : BoolVectorExpr, trueValue : bool, falseValue : bool) =
-            BoolVectorExpr.IfFunction(boolExpr, BoolVectorExpr.Var(new BoolVector(trueValue)), BoolVectorExpr.Var(new BoolVector(falseValue)))
+            BoolVectorExpr.IfFunction(boolExpr, BoolVectorExpr.Scalar(trueValue), BoolVectorExpr.Scalar(falseValue))
 
 
         static member IIf (DummyType, boolExpr : BoolVectorExpr, trueExpr : VectorExpr, falseExpr : VectorExpr) =
             VectorExpr.IfFunction(boolExpr, trueExpr, falseExpr)
 
         static member IIf (DummyType, boolExpr : BoolVectorExpr, trueVector : Vector, falseVector : Vector) =
-            VectorExpr.IfFunction(boolExpr, VectorExpr.Var(trueVector), VectorExpr.Var(falseVector))
+            VectorExpr.IfFunction(boolExpr, trueVector.AsExpr, falseVector.AsExpr)
 
         static member IIf (DummyType, boolExpr : BoolVectorExpr, trueValue : float, falseValue : float) =
-            VectorExpr.IfFunction(boolExpr, VectorExpr.Var(new Vector(trueValue)), VectorExpr.Var(new Vector(falseValue)))
+            VectorExpr.IfFunction(boolExpr, VectorExpr.Scalar(trueValue), VectorExpr.Scalar(falseValue))
 
 
 
@@ -139,20 +142,20 @@ module Overloading =
             BoolMatrixExpr.IfFunction(boolExpr, trueExpr, falseExpr)
 
         static member IIf (DummyType, boolExpr : BoolMatrixExpr, trueMatrix : BoolMatrix, falseMatrix : BoolMatrix) =
-            BoolMatrixExpr.IfFunction(boolExpr, BoolMatrixExpr.Var(trueMatrix), BoolMatrixExpr.Var(falseMatrix))
+            BoolMatrixExpr.IfFunction(boolExpr, trueMatrix.AsExpr, falseMatrix.AsExpr)
 
         static member IIf (DummyType, boolExpr : BoolMatrixExpr, trueValue : bool, falseValue : bool) =
-            BoolMatrixExpr.IfFunction(boolExpr, BoolMatrixExpr.Var(new BoolMatrix(trueValue)), BoolMatrixExpr.Var(new BoolMatrix(falseValue)))
+            BoolMatrixExpr.IfFunction(boolExpr, BoolMatrixExpr.Scalar(trueValue), BoolMatrixExpr.Scalar(falseValue))
 
 
         static member IIf (DummyType, boolExpr : BoolMatrixExpr, trueExpr : MatrixExpr, falseExpr : MatrixExpr) =
             MatrixExpr.IfFunction(boolExpr, trueExpr, falseExpr)
 
         static member IIf (DummyType, boolExpr : BoolMatrixExpr, trueMatrix : Matrix, falseMatrix : Matrix) =
-            MatrixExpr.IfFunction(boolExpr, MatrixExpr.Var(trueMatrix), MatrixExpr.Var(falseMatrix))
+            MatrixExpr.IfFunction(boolExpr, trueMatrix.AsExpr, falseMatrix.AsExpr)
 
         static member IIf (DummyType, boolExpr : BoolMatrixExpr, trueValue : float, falseValue : float) =
-            MatrixExpr.IfFunction(boolExpr, MatrixExpr.Var(new Matrix(trueValue)), MatrixExpr.Var(new Matrix(falseValue)))
+            MatrixExpr.IfFunction(boolExpr, MatrixExpr.Scalar(trueValue), MatrixExpr.Scalar(falseValue))
 
 
         static member Chol (DummyType, x) = Matrix.Chol(x)

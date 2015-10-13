@@ -74,9 +74,10 @@ void scalar_div_array(T a, MKL_INT n, T* x, T* result)
 template<typename T>
 void array_div_scalar(T a, MKL_INT n, T* x, T* result)
 {
+	T b = 1.0 / a;
 	for (MKL_INT i = 0; i < n; i++)
 	{
-		result[i] = x[i] / a;
+		result[i] = x[i] * b;
 	}
 }
 
@@ -103,7 +104,7 @@ void min_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 {
 	if (nx == 1)
 	{
-		if (isnan(x[0]))
+		if (x[0] != x[0])
 		{
 			for (MKL_INT i = 0; i < ny; i++)
 			{
@@ -114,13 +115,13 @@ void min_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 		{
 			for (MKL_INT i = 0; i < ny; i++)
 			{
-				if (isnan(y[i]))
+				if (y[i] != y[i])
 				{
 					result[i] = nan("");
 				}
 				else
 				{
-					result[i] = fmin(x[0], y[i]);
+					result[i] = x[0] <= y[i] ? x[0] : y[i];
 				}
 			}
 		}
@@ -128,7 +129,7 @@ void min_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 	}
 	else if (ny == 1)
 	{
-		if (isnan(y[0]))
+		if (y[0] != y[0])
 		{
 			for (MKL_INT i = 0; i < nx; i++)
 			{
@@ -139,13 +140,13 @@ void min_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 		{
 			for (MKL_INT i = 0; i < nx; i++)
 			{
-				if (isnan(x[i]))
+				if (x[i] != x[i])
 				{
 					result[i] = nan("");
 				}
 				else
 				{
-					result[i] = fmin(x[i], y[0]);
+					result[i] = x[i] <= y[0] ? x[i] : y[0];
 				}
 			}
 		}
@@ -154,13 +155,13 @@ void min_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
-			if (isnan(x[i]) || isnan(y[i]))
+			if ((x[i] != x[i]) || (y[i] != y[i]))
 			{
 				result[i] = nan("");
 			}
 			else
 			{
-				result[i] = fmin(x[i], y[i]);
+				result[i] = x[i] <= y[i] ? x[i] : y[i];
 			}
 		}
 	}
@@ -171,7 +172,7 @@ void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 {
 	if (nx == 1)
 	{
-		if (isnan(x[0]))
+		if (x[0] != x[0])
 		{
 			for (MKL_INT i = 0; i < ny; i++)
 			{
@@ -182,13 +183,13 @@ void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 		{
 			for (MKL_INT i = 0; i < ny; i++)
 			{
-				if (isnan(y[i]))
+				if (y[i] != y[i])
 				{
 					result[i] = nan("");
 				}
 				else
 				{
-					result[i] = fmax(x[0], y[i]);
+					result[i] = x[0] >= y[i] ? x[0] : y[i]; 
 				}
 			}
 		}
@@ -196,7 +197,7 @@ void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 	}
 	else if (ny == 1)
 	{
-		if (isnan(y[0]))
+		if (y[0] != y[0])
 		{
 			for (MKL_INT i = 0; i < nx; i++)
 			{
@@ -207,13 +208,13 @@ void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 		{
 			for (MKL_INT i = 0; i < nx; i++)
 			{
-				if (isnan(x[i]))
+				if (x[i] != x[i])
 				{
 					result[i] = nan("");
 				}
 				else
 				{
-					result[i] = fmax(x[i], y[0]);
+					result[i] = x[i] >= y[0] ? x[i] : y[0]; 
 				}
 			}
 		}
@@ -222,13 +223,13 @@ void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 	{
 		for (MKL_INT i = 0; i < nx; i++)
 		{
-			if (isnan(x[i]) || isnan(y[i]))
+			if ((x[i] != x[i]) || (y[i] != y[i])) 
 			{
 				result[i] = nan("");
 			}
 			else
 			{
-				result[i] = fmax(x[i], y[i]);
+				result[i] = x[i] >= y[i] ? x[i] : y[i]; 
 			}
 		}
 	}
@@ -237,7 +238,14 @@ void max_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, T* result)
 template<typename T>
 void iif_arrays(MKL_INT nx, T* x, MKL_INT ny, T* y, MKL_INT nb, bool* b, T* result)
 {
-	if (nx == 1 && ny == nb)
+	if (nx == 1 && ny == 1)
+	{
+		for (MKL_INT i = 0; i < nb; i++)
+		{
+			result[i] = b[i] ? x[0] : y[0];
+		}
+	}
+	else if (nx == 1 && ny == nb)
 	{
 		for (MKL_INT i = 0; i < nb; i++)
 		{
@@ -460,7 +468,12 @@ extern "C" __declspec(dllexport) void s_array_div_scalar(float a, MKL_INT n, flo
 
 extern "C" __declspec(dllexport) void d_scalar_div_array(double a, MKL_INT n, double* x, double* result)
 {
-	scalar_div_array(a, n, x, result);
+	//scalar_div_array(a, n, x, result);
+	vdInv(n, x, result);
+	for (MKL_INT i = 0; i < n; i++)
+	{
+		result[i] = a * result[i];
+	}
 }
 
 extern "C" __declspec(dllexport) void s_scalar_div_array(float a, MKL_INT n, float* x, float* result)

@@ -134,6 +134,8 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     static member op_Explicit(v : BoolMatrix) = v
 
+    static member op_Explicit(v : BoolVector) = new BoolMatrix(v)
+
     member this.View
         with get(fromIndex : int64, toIndex : int64) =
             colMajorDataVector.View(fromIndex, toIndex)
@@ -684,9 +686,9 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 and BoolMatrixExpr = 
     | Scalar of bool
     | Var of BoolMatrix
-    | UnaryFunction of BoolMatrixExpr * (BoolVector -> BoolVector -> unit) * string
-    | BinaryFunction of BoolMatrixExpr * BoolMatrixExpr * (BoolVector -> BoolVector -> BoolVector -> unit) * string
-    | BinaryMatrixFunction of MatrixExpr * MatrixExpr * (Vector -> Vector -> BoolVector -> unit) * string
+    | UnaryFunction of BoolMatrixExpr * (DataBuffer<bool> -> DataBuffer<bool> -> unit) * string
+    | BinaryFunction of BoolMatrixExpr * BoolMatrixExpr * (DataBuffer<bool> -> DataBuffer<bool> -> DataBuffer<bool> -> unit) * string
+    | BinaryMatrixFunction of MatrixExpr * MatrixExpr * (DataBuffer<float> -> DataBuffer<float> -> DataBuffer<bool> -> unit) * string
     | IfFunction of BoolMatrixExpr * BoolMatrixExpr * BoolMatrixExpr
 
     member this.AsBoolVectorExpr =
@@ -1025,6 +1027,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(dataRows)
 
     static member op_Explicit(v : Matrix) = v
+
+    static member op_Explicit(v : Vector) = new Matrix(v)
 
     member this.View
         with get(fromIndex : int64, toIndex : int64) =
@@ -2378,8 +2382,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 and MatrixExpr = 
     | Scalar of float
     | Var of Matrix
-    | UnaryFunction of MatrixExpr * (Vector -> Vector -> unit) * string
-    | BinaryFunction of MatrixExpr * MatrixExpr * (Vector -> Vector -> Vector -> unit) * string
+    | UnaryFunction of MatrixExpr * (DataBuffer<float> -> DataBuffer<float> -> unit) * string
+    | BinaryFunction of MatrixExpr * MatrixExpr * (DataBuffer<float> -> DataBuffer<float> -> DataBuffer<float> -> unit) * string
     | IfFunction of BoolMatrixExpr * MatrixExpr * MatrixExpr
 
     member this.AsVectorExpr =
@@ -2555,9 +2559,11 @@ and MatrixExpr =
     static member (.*) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
         BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Mul_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Mul_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Mul_Array(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Scalar_Mul_Array(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
                                                        MklFunctions.D_Array_Mul_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2579,9 +2585,11 @@ and MatrixExpr =
     static member (+) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
         BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Add_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Add_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Add_Array(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Scalar_Add_Array(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
                                                        MklFunctions.D_Array_Add_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2603,9 +2611,11 @@ and MatrixExpr =
     static member (./) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
         BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Div_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Div_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Array_Div_Scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Array_Div_Scalar(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
                                                        MklFunctions.D_Array_Div_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2628,9 +2638,11 @@ and MatrixExpr =
     static member (-) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
         BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Sub_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Sub_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Array_Sub_Scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Array_Sub_Scalar(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
                                                        MklFunctions.D_Array_Sub_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),
@@ -2655,9 +2667,11 @@ and MatrixExpr =
     static member (.^) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
         BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
                                                     if v1.LongLength = 1L then
-                                                        MklFunctions.D_Scalar_Pow_Array(v1.[0], v2.LongLength, v2.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v1.NativeArray
+                                                        MklFunctions.D_Scalar_Pow_Array(a, v2.LongLength, v2.NativeArray, res.NativeArray)
                                                     elif v2.LongLength = 1L then
-                                                        MklFunctions.D_Array_Pow_scalar(v2.[0], v1.LongLength, v1.NativeArray, res.NativeArray)
+                                                        let a = NativePtr.read v2.NativeArray
+                                                        MklFunctions.D_Array_Pow_scalar(a, v1.LongLength, v1.NativeArray, res.NativeArray)
                                                     else
                                                        let len = v1.LongLength
                                                        MklFunctions.D_Array_Pow_Array(len, v1.NativeArray, v2.NativeArray, res.NativeArray)),

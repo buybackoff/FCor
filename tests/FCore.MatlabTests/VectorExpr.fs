@@ -680,7 +680,7 @@ module VectorExpr =
     let ``EvalIn -VectorExpr`` (x : float[]) =
         let X = new Vector(x)
         let res = -X
-        let evalRes = evalIn X (-X.AsExpr)
+        evalIn (-X.AsExpr) X
         X <=> res
 
     [<Fact>]
@@ -765,6 +765,12 @@ module VectorExpr =
         let Y = new Vector(y)
         let aY = a .* Y
         (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr (a .* Y) !!b) in res.ToArray() |> Array.mapi (fun i x -> res.[i] <==> if X.[i] then aY.[i] else b) |> Array.fold (&&) true)
+
+    [<Property>]
+    let ``eval iif X a b`` (v : bool[]) (a : float) (b : float) =
+        let X = new BoolVector(v)
+        (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr a b) in res.ToArray() |> Array.mapi (fun i x -> res.[i] <==> if X.[i] then a else b) |> Array.fold (&&) true)
+
 
     [<Property>]
     let ``eval large vector`` (n : int) =

@@ -215,18 +215,20 @@ module MatrixBasicStats =
     [<Property>]
     let ``cov``(v : float[,]) =
         let v = v |> fixEmpty |> Array2D.map regDouble
-        setMatrix app "v" v
-        app.Execute("res = cov(v);") |> ignore
-        let res = getMatrix app "res"
-        let v = new Matrix(v)
-        ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(epsEqual2D 1e-8 ((cov v).ToArray2D()) res))
+        ((v.GetLength(0) > 1 && v.GetLength(1) > 1) ==> lazy(
+                                                    setMatrix app "v" v
+                                                    app.Execute("res = cov(v);") |> ignore
+                                                    let res = getMatrix app "res"
+                                                    let v = new Matrix(v)       
+                                                    epsEqual2D 1e-8 ((cov v).ToArray2D()) res))
 
     [<Property>]
     let ``corr``(v : float[,]) =
         let v = v |> fixEmpty |> Array2D.map regDouble
-        setMatrix app "v" v
-        app.Execute("res = corr(v);") |> ignore
-        let res = getMatrix app "res"
-        let v = new Matrix(v)
-        ((v.RowCount > 1 && v.ColCount > 1) ==> lazy(epsEqual2D 1e-8 ((corr v).ToArray2D()) res))
+        ((v.GetLength(0) > 1 && v.GetLength(1) > 1) ==> lazy(
+                                                    setMatrix app "v" v
+                                                    app.Execute("res = corr(v);") |> ignore
+                                                    let res = getMatrix app "res"
+                                                    let v = new Matrix(v)       
+                                                    epsEqual2D 1e-8 ((corr v).ToArray2D()) res))
 

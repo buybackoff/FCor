@@ -374,7 +374,7 @@ module BoolVectorExpr =
     let ``EvalIn Not BoolVectorExpr`` (x : bool[]) =
         let X = new BoolVector(x)
         let res = BoolVector.Not X
-        let evalRes = evalIn X (BoolVectorExpr.Not X.AsExpr)
+        evalIn (BoolVectorExpr.Not X.AsExpr) X
         X = res
 
     [<Fact>]
@@ -464,6 +464,11 @@ module BoolVectorExpr =
         let Y = new BoolVector(y)
         let aY = a .&& Y
         (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr (a .&& Y) !!b) in res.ToArray() |> Array.mapi (fun i x -> res.[i] = if X.[i] then aY.[i] else b) |> Array.fold (&&) true)
+
+    [<Property>]
+    let ``eval iif X a b`` (v : bool[]) (a : bool) (b : bool) =
+        let X = new BoolVector(v)
+        (v.Length > 0) ==> lazy(let res = eval (iif X.AsExpr a b) in res.ToArray() |> Array.mapi (fun i x -> res.[i] = if X.[i] then a else b) |> Array.fold (&&) true)
 
 
     [<Fact>]
