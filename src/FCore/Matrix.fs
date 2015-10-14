@@ -1521,7 +1521,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         ArgumentChecks.throwIfContainsDisposed [matrix]
         ArgumentChecks.throwIfContainsDisposed [vector]
         let m = new Matrix(vector)
-        matrix * m
+        (matrix * m).ColMajorDataVector
 
     static member (^*) (matrix1 : Matrix, matrix2 : Matrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
@@ -1540,8 +1540,14 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
     static member (.*) (a: float, matrix : Matrix) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, a .* matrix.ColMajorDataVector)
 
+    static member (*) (a: float, matrix : Matrix) =
+        a .* matrix
+
     static member (.*) (matrix : Matrix, a :  float) =
         a .* matrix
+
+    static member (*) (matrix : Matrix, a :  float) =
+        matrix .* a
 
     static member (.*) (matrix1 : Matrix, matrix2 : Matrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
@@ -1576,8 +1582,14 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
     static member (./) (a: float, matrix : Matrix) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, a ./ matrix.ColMajorDataVector)
 
+    static member (/) (a: float, matrix : Matrix) =
+        a ./ matrix
+
     static member (./) (matrix : Matrix, a :  float) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector ./ a)
+
+    static member (/) (matrix : Matrix, a :  float) =
+        matrix ./ a
 
     static member (./) (matrix1 : Matrix, matrix2 : Matrix) =
         ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
@@ -2579,8 +2591,14 @@ and MatrixExpr =
     static member (.*) (matrixExpr : MatrixExpr, a :  float) =
         matrixExpr .* Scalar(a)
 
+    static member (*) (matrixExpr : MatrixExpr, a :  float) =
+        matrixExpr .* a
+
     static member (.*) (a :  float, matrixExpr : MatrixExpr) =
         Scalar(a) .* matrixExpr 
+
+    static member (*) (a :  float, matrixExpr : MatrixExpr) =
+        a .* matrixExpr
 
     static member (+) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =
         BinaryFunction(matrixExpr1, matrixExpr2, (fun v1 v2 res ->
@@ -2631,8 +2649,14 @@ and MatrixExpr =
     static member (./) (matrixExpr : MatrixExpr, a :  float) =
         matrixExpr ./ Scalar(a)
 
+    static member (/) (matrixExpr : MatrixExpr, a :  float) =
+        matrixExpr ./ a
+
     static member (./) (a :  float, matrixExpr : MatrixExpr) =
         Scalar(a) ./ matrixExpr
+
+    static member (/) (a :  float, matrixExpr : MatrixExpr) =
+        a ./ matrixExpr
 
 
     static member (-) (matrixExpr1 : MatrixExpr, matrixExpr2 : MatrixExpr) =

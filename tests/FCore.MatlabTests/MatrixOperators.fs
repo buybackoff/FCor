@@ -20,6 +20,8 @@ module MatrixOperators =
 
     let inline epsEqual eps (x : float[,]) (y :float[,])  = epsEqualArray2D x y epsEqualFloat eps
 
+    let inline epsEqual1D eps (x : float[]) (y :float[])  = epsEqualArray x y epsEqualFloat eps
+
     let regDouble x =
         if Double.IsNaN(x) || Double.IsNegativeInfinity(x) || Double.IsPositiveInfinity(x) || x = Double.MaxValue ||x = Double.MinValue || x = Double.Epsilon || x = -Double.Epsilon then rnd.NextDouble() else x
 
@@ -329,8 +331,8 @@ module MatrixOperators =
                 let a = new Matrix(x)
                 let b = new Vector(b)
                 let r = app.Execute("c = a * b;")
-                let z = getMatrix app "c"
-                epsEqual 1e-13 ((a * b).ToArray2D()) z            
+                let z = getVector app "c"
+                epsEqual1D 1e-13 ((a * b).ToArray()) z            
                 )
 
 
@@ -458,11 +460,21 @@ module MatrixOperators =
         ((X .* a).ToArray2D() <=> (X .* A).ToArray2D()) .&. ((X .* a).ToArray2D() <=> (x |> Array2D.map (fun z -> z * a)))
 
     [<Property>]
+    let ``X * a`` (x : float[,]) (a : float) =
+        let X = new Matrix(x)
+        ((X * a).ToArray2D() <=> (x |> Array2D.map (fun z -> z * a)))
+
+    [<Property>]
     let ``a .* X`` (x : float[,]) (a : float) =
         let X = new Matrix(x)
         let A = new Matrix(a)
         ((a .* X).ToArray2D() <=> (A .* X).ToArray2D()) .&. ((a .* X).ToArray2D() <=> (x |> Array2D.map (fun z -> a * z)))
-    
+ 
+    [<Property>]
+    let ``a * X`` (x : float[,]) (a : float) =
+        let X = new Matrix(x)
+        ((a * X).ToArray2D() <=> (x |> Array2D.map (fun z -> a * z)))
+           
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X ./ Y`` (x : float[,]) (y : float[,]) =
         let X = new Matrix(x)
@@ -496,12 +508,26 @@ module MatrixOperators =
         (epsEqual 1e-13 ((X ./ a).ToArray2D()) ((X ./ A).ToArray2D())) .&. (epsEqual 1e-13 ((X ./ a).ToArray2D()) (x |> Array2D.map (fun z -> z / a)))
 
     [<Property>]
+    let ``X / a`` (x : float[,]) (a : float) =
+        let x = x |> Array2D.map regDouble
+        let a = regDouble a
+        let X = new Matrix(x)
+        (epsEqual 1e-13 ((X / a).ToArray2D()) (x |> Array2D.map (fun z -> z / a)))
+
+    [<Property>]
     let ``a ./ X`` (x : float[,]) (a : float) =
         let x = x |> Array2D.map regDouble
         let a = regDouble a
         let X = new Matrix(x)
         let A = new Matrix(a)
         (epsEqual 1e-14 ((a ./ X).ToArray2D()) ((A ./ X).ToArray2D())) .&. (epsEqual 1e-14 ((a ./ X).ToArray2D()) (x |> Array2D.map (fun z -> a / z)))
+
+    [<Property>]
+    let ``a / X`` (x : float[,]) (a : float) =
+        let x = x |> Array2D.map regDouble
+        let a = regDouble a
+        let X = new Matrix(x)
+        (epsEqual 1e-14 ((a / X).ToArray2D()) (x |> Array2D.map (fun z -> a / z)))
 
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X .^ Y`` (x : float[,]) (y : float[,]) =

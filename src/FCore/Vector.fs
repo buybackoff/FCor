@@ -1421,9 +1421,15 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         MklFunctions.D_Scalar_Mul_Array(a, len, vector.NativeArray, res.NativeArray)
         res 
 
+    static member (*) (a: float, vector : Vector) =
+        a .* vector
+
     static member (.*) (vector : Vector, a :  float) =
         ArgumentChecks.throwIfContainsDisposed [vector]
         a .* vector
+
+    static member (*) (vector : Vector, a :  float) =
+        vector .* a
 
     static member (.*) (vector1 : Vector, vector2 : Vector) =
         ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
@@ -1469,12 +1475,18 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         MklFunctions.D_Scalar_Div_Array(a, len, vector.NativeArray, res.NativeArray)
         res 
 
+    static member (/) (a: float, vector : Vector) =
+        a ./ vector
+
     static member (./) (vector : Vector, a :  float) =
         ArgumentChecks.throwIfContainsDisposed [vector]
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Array_Div_Scalar(a, len, vector.NativeArray, res.NativeArray)
         res 
+
+    static member (/) (vector : Vector, a :  float) =
+        vector ./ a
 
     static member (./) (vector1 : Vector, vector2 : Vector) =
         ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
@@ -2231,8 +2243,14 @@ and VectorExpr =
     static member (.*) (vectorExpr : VectorExpr, a :  float) =
         vectorExpr .* Scalar(a)
 
+    static member (*) (vectorExpr : VectorExpr, a :  float) =
+        vectorExpr .* a
+
     static member (.*) (a :  float, vectorExpr : VectorExpr) =
         Scalar(a) .* vectorExpr
+
+    static member (*) (a :  float, vectorExpr : VectorExpr) =
+        a .* vectorExpr
 
     static member (+) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =
         BinaryFunction(vectorExpr1, vectorExpr2, (fun v1 v2 res ->
@@ -2283,8 +2301,14 @@ and VectorExpr =
     static member (./) (vectorExpr : VectorExpr, a :  float) =
         vectorExpr ./ Scalar(a)
 
+    static member (/) (vectorExpr : VectorExpr, a :  float) =
+        vectorExpr ./ a
+
     static member (./) (a :  float, vectorExpr : VectorExpr) =
         Scalar(a) ./ vectorExpr
+
+    static member (/) (a :  float, vectorExpr : VectorExpr) =
+        a ./ vectorExpr
 
 
     static member (-) (vectorExpr1 : VectorExpr, vectorExpr2 : VectorExpr) =

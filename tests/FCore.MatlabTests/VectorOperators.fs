@@ -373,10 +373,20 @@ module VectorOperators =
         ((X .* a).ToArray() <=> (X .* A).ToArray()) .&. ((X .* a).ToArray() <=> (x |> Array.map (fun z -> z * a)))
 
     [<Property>]
+    let ``X * a`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        ((X * a).ToArray() <=> (x |> Array.map (fun z -> z * a)))
+
+    [<Property>]
     let ``a .* X`` (x : float[]) (a : float) =
         let X = new Vector(x)
         let A = new Vector(a)
         ((a .* X).ToArray() <=> (A .* X).ToArray()) .&. ((a .* X).ToArray() <=> (x |> Array.map (fun z -> a * z)))
+
+    [<Property>]
+    let ``a * X`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        ((a * X).ToArray() <=> (x |> Array.map (fun z -> a * z)))
     
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X ./ Y`` (x : float[]) (y : float[]) =
@@ -409,12 +419,26 @@ module VectorOperators =
         (epsEqual 1e-14 ((X ./ a).ToArray()) ((X ./ A).ToArray())) .&. (epsEqual 1e-14 ((X ./ a).ToArray()) (x |> Array.map (fun z -> z / a)))
 
     [<Property>]
+    let ``X / a`` (x : float[]) (a : float) =
+        let x = x |> Array.map regDouble
+        let a = regDouble a
+        let X = new Vector(x)
+        (epsEqual 1e-14 ((X / a).ToArray()) (x |> Array.map (fun z -> z / a)))
+
+    [<Property>]
     let ``a ./ X`` (x : float[]) (a : float) =
         let x = x |> Array.map regDouble
         let a = regDouble a
         let X = new Vector(x)
         let A = new Vector(a)
         (epsEqual 1e-13 ((a ./ X).ToArray()) ((A ./ X).ToArray())) .&. (epsEqual 1e-13 ((a ./ X).ToArray()) (x |> Array.map (fun z -> a / z)))
+
+    [<Property>]
+    let ``a / X`` (x : float[]) (a : float) =
+        let x = x |> Array.map regDouble
+        let a = regDouble a
+        let X = new Vector(x)
+        (epsEqual 1e-13 ((a / X).ToArray()) (x |> Array.map (fun z -> a / z)))
 
     [<Property(MaxTest=1000)>]
     let ``Throws arg exception if length mismatch in X .^ Y`` (x : float[]) (y : float[]) =

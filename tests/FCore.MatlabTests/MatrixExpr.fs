@@ -330,9 +330,19 @@ module MatrixExpr =
         (x.Length > 0) ==> lazy(eval (X.AsExpr .* a) <=> (X .* a))
 
     [<Property>]
+    let ``MatrixExpr * scalar`` (x : float[,]) (a : float) =
+        let X = new Matrix(x)
+        (x.Length > 0) ==> lazy(eval (X.AsExpr * a) <=> (X * a))
+
+    [<Property>]
     let ``scalar .* MatrixExpr`` (x : float[,]) (a : float) =
         let X = new Matrix(x)
         (x.Length > 0) ==> lazy(eval (a .* X.AsExpr) <=> (a .* X))
+
+    [<Property>]
+    let ``scalar * MatrixExpr`` (x : float[,]) (a : float) =
+        let X = new Matrix(x)
+        (x.Length > 0) ==> lazy(eval (a * X.AsExpr) <=> (a * X))
 
 
     [<Property>]
@@ -365,9 +375,19 @@ module MatrixExpr =
         (x.Length > 0) ==> lazy(eval (X.AsExpr ./ a) <=> (X ./ a))
 
     [<Property>]
+    let ``MatrixExpr / scalar`` (x : float[,]) (a : float) =
+        let X = new Matrix(x)
+        (x.Length > 0) ==> lazy(eval (X.AsExpr / a) <=> (X / a))
+
+    [<Property>]
     let ``scalar ./ MatrixExpr`` (x : float[,]) (a : float) =
         let X = new Matrix(x)
         (x.Length > 0) ==> lazy(eval (a ./ X.AsExpr) <=> (a ./ X))
+
+    [<Property>]
+    let ``scalar / MatrixExpr`` (x : float[,]) (a : float) =
+        let X = new Matrix(x)
+        (x.Length > 0) ==> lazy(eval (a / X.AsExpr) <=> (a / X))
 
     [<Property>]
     let ``MatrixExpr + MatrixExpr`` (v : (float*float)[,]) =

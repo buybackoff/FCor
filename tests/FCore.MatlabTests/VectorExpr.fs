@@ -334,9 +334,19 @@ module VectorExpr =
         (x.Length > 0) ==> lazy(eval (X.AsExpr .* a) <=> (X .* a))
 
     [<Property>]
+    let ``VectorExpr * scalar`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        (x.Length > 0) ==> lazy(eval (X.AsExpr * a) <=> (X * a))
+
+    [<Property>]
     let ``scalar .* VectorExpr`` (x : float[]) (a : float) =
         let X = new Vector(x)
         (x.Length > 0) ==> lazy(eval (a .* X.AsExpr) <=> (a .* X))
+
+    [<Property>]
+    let ``scalar * VectorExpr`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        (x.Length > 0) ==> lazy(eval (a * X.AsExpr) <=> (a * X))
 
 
     [<Property>]
@@ -369,9 +379,19 @@ module VectorExpr =
         (x.Length > 0) ==> lazy(eval (X.AsExpr ./ a) <=> (X ./ a))
 
     [<Property>]
+    let ``VectorExpr / scalar`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        (x.Length > 0) ==> lazy(eval (X.AsExpr / a) <=> (X / a))
+
+    [<Property>]
     let ``scalar ./ VectorExpr`` (x : float[]) (a : float) =
         let X = new Vector(x)
         (x.Length > 0) ==> lazy(eval (a ./ X.AsExpr) <=> (a ./ X))
+
+    [<Property>]
+    let ``scalar / VectorExpr`` (x : float[]) (a : float) =
+        let X = new Vector(x)
+        (x.Length > 0) ==> lazy(eval (a / X.AsExpr) <=> (a / X))
 
     [<Property>]
     let ``VectorExpr + VectorExpr`` (v : (float*float)[]) =

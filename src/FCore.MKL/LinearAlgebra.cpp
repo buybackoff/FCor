@@ -84,7 +84,7 @@ template<typename T, typename GETRF>
 int lu_factor(MKL_INT m, MKL_INT n, T* L, T* U, int* pivot, GETRF getrf)
 {
 	int info;
-    MKL_INT* ipiv = (MKL_INT*)mkl_malloc(m*sizeof(MKL_INT),64);
+    MKL_INT* ipiv = (MKL_INT*)mkl_malloc((m < n ? m : n)*sizeof(MKL_INT),64);
 	if (ipiv == nullptr)
 	{
 		return OUTOFMEMORY;
@@ -117,9 +117,10 @@ int lu_factor(MKL_INT m, MKL_INT n, T* L, T* U, int* pivot, GETRF getrf)
 		}
 		for (MKL_INT i = 0; i < n; i++)
 		{
-			MKL_INT a = pivot[i];
-			pivot[i] = pivot[ipiv[i] - 1];
-			pivot[ipiv[i] - 1] = a;
+			int a = pivot[i];
+			MKL_INT k = ipiv[i] - 1;
+			pivot[i] = pivot[k];
+			pivot[k] = a;
 		}
 		mkl_free(ipiv);
 	}
@@ -147,11 +148,12 @@ int lu_factor(MKL_INT m, MKL_INT n, T* L, T* U, int* pivot, GETRF getrf)
 		{
 			pivot[i] = i;
 		}
-		for (int i = 0; i < m; i++)
+		for (MKL_INT i = 0; i < m; i++)
 		{
-			MKL_INT a = pivot[i];
-			pivot[i] = pivot[ipiv[i] - 1];
-			pivot[ipiv[i] - 1] = a;
+			int a = pivot[i];
+			MKL_INT k = ipiv[i] - 1;
+			pivot[i] = pivot[k];
+			pivot[k] = a;
 		}
 		mkl_free(ipiv);
 	}

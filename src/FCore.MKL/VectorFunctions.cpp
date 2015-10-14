@@ -75,10 +75,11 @@ template<typename T>
 void array_div_scalar(T a, MKL_INT n, T* x, T* result)
 {
 	T b = 1.0 / a;
-	for (MKL_INT i = 0; i < n; i++)
-	{
-		result[i] = x[i] * b;
-	}
+	scalar_mul_array(b, n, x, result);
+	//for (MKL_INT i = 0; i < n; i++)
+	//{
+	//	result[i] = x[i] * b;
+	//}
 }
 
 template<typename T>
@@ -418,7 +419,10 @@ extern "C" __declspec(dllexport) void b_not_array(MKL_INT n, bool* x, bool* resu
 
 extern "C" __declspec(dllexport) void d_scalar_mul_array(double a, MKL_INT n, double* x, double* result)
 {
-	scalar_mul_array(a, n, x, result);
+	//scalar_mul_array(a, n, x, result);
+	MKL_INT one = 1;
+	dcopy(&n, x, &one, result, &one);
+	dscal(&n, &a, result, &one);
 }
 
 extern "C" __declspec(dllexport) void s_scalar_mul_array(float a, MKL_INT n, float* x, float* result)
@@ -470,10 +474,11 @@ extern "C" __declspec(dllexport) void d_scalar_div_array(double a, MKL_INT n, do
 {
 	//scalar_div_array(a, n, x, result);
 	vdInv(n, x, result);
-	for (MKL_INT i = 0; i < n; i++)
-	{
-		result[i] = a * result[i];
-	}
+	scalar_mul_array(a, n, result, result);
+	//for (MKL_INT i = 0; i < n; i++)
+	//{
+	//	result[i] = a * result[i];
+	//}
 }
 
 extern "C" __declspec(dllexport) void s_scalar_div_array(float a, MKL_INT n, float* x, float* result)
