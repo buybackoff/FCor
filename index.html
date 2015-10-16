@@ -52,14 +52,14 @@
 Main features:</p>
 
 <ul>
-<li>strong typing: use <code>BoolVector</code>, <code>Vector</code>, <code>BoolMatrix</code> and <code>Matrix</code> types in overloaded functions and operators</li>
+<li>strong and static typing: use <code>BoolVector</code>, <code>Vector</code>, <code>BoolMatrix</code> and <code>Matrix</code> types in overloaded functions and operators</li>
 <li>FCore uses unmanaged memory so you can create vectors and matrices of virtually any size (64 bit memory required)</li>
 <li>most functions use Math Kernel Library (MKL) or C implementation for maximum performance on Intel</li>
 <li>elementwise operators: <code>.*</code>, <code>./</code>, <code>.&lt;</code> etc</li>
 <li>access to all high quality random number generators from MKL</li>
 <li>access to matrix factorizations and solvers from MKL</li>
 <li>overloaded functions, e.g. <code>rand</code> can return a vector or a matrix, <code>mean</code> can take a vector or matrix and axis etc.</li>
-<li>evaluate vector and matrix expressions without creating temporary objects, e.g. <code>(a .* X + b .* Y) |&gt; eval</code></li>
+<li>evaluate vector and matrix expressions without creating temporary objects, e.g. <code>(a * X + b * Y) |&gt; eval</code></li>
 <li>vector and matrix slicing and indexing</li>
 </ul>
 
@@ -84,6 +84,7 @@ Main features:</p>
 <span class="l">15: </span>
 <span class="l">16: </span>
 <span class="l">17: </span>
+<span class="l">18: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="prep">#r</span> <span class="s">&quot;FCore.dll&quot;</span>
 <span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FCore</span>
@@ -102,6 +103,7 @@ Main features:</p>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 32)" onmouseover="showTip(event, 'fs20', 32)" class="i">variance1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs21', 33)" onmouseover="showTip(event, 'fs21', 33)" class="f">var</span> <span onmouseout="hideTip(event, 'fs8', 34)" onmouseover="showTip(event, 'fs8', 34)" class="i">vector1</span> <span class="c">// calculate variance of a vector</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 35)" onmouseover="showTip(event, 'fs22', 35)" class="i">variance2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs21', 36)" onmouseover="showTip(event, 'fs21', 36)" class="f">var</span> <span onmouseout="hideTip(event, 'fs12', 37)" onmouseover="showTip(event, 'fs12', 37)" class="i">matrix1</span> <span onmouseout="hideTip(event, 'fs23', 38)" onmouseover="showTip(event, 'fs23', 38)" class="p">ColumnAxis</span> <span class="c">// calculate variance of each column of a matrix</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 39)" onmouseover="showTip(event, 'fs24', 39)" class="i">vector4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 40)" onmouseover="showTip(event, 'fs25', 40)" class="f">log</span>((<span onmouseout="hideTip(event, 'fs13', 41)" onmouseover="showTip(event, 'fs13', 41)" class="i">vector2</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs26', 42)" onmouseover="showTip(event, 'fs26', 42)" class="i">AsExpr</span> <span class="o">+</span> <span class="n">3.0</span>) <span class="o">.</span><span class="o">^</span> <span class="n">3</span>) <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs27', 43)" onmouseover="showTip(event, 'fs27', 43)" class="f">eval</span> <span class="c">// avoid creating temporary vectors</span>
+<span onmouseout="hideTip(event, 'fs28', 44)" onmouseover="showTip(event, 'fs28', 44)" class="t">MklControl</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs29', 45)" onmouseover="showTip(event, 'fs29', 45)" class="f">SetMaxThreads</span>(<span class="n">4</span>) <span class="c">// set MKL to use up to 4 threads</span>
 </code></pre></td>
 </tr>
 </table>
@@ -131,6 +133,9 @@ Main features:</p>
 <li><a href="RandomNumberGenerators.html">Random Number Generators</a> introduces random number generators</li>
 <li><a href="BasicStats.html">Basic Stats</a> introduces basic statistical functions</li>
 <li><a href="VectorAndMatrixExpressions.html">Vector and Matrix Expressions</a> introduces vector and matrix expressions</li>
+<li><a href="PiMonteCarlo.html">FCore vs Matlab: Pi Monte Carlo</a> compares Matlab and FCore implementations of Pi MC algorithm</li>
+<li><a href="BinomialOption.html">FCore vs Matlab: American Option Binomial Pricing</a> compares Matlab and FCore implementations of binomial option pricing</li>
+<li><a href="LSMOption.html">FCore vs Matlab: American Option LS MC</a> compares Matlab and FCore implementations of Least Squares MC option pricing</li>
 </ul>
 
 <h2><a name="Contributing-and-copyright" class="anchor" href="#Contributing-and-copyright">Contributing and copyright</a></h2>
@@ -171,6 +176,8 @@ consider adding <a href="https://github.com/Statfactory/FCore/tree/master/docs/c
 <div class="tip" id="fs25">val log : value:&#39;T -&gt; &#39;T (requires member Log)<br /><br />Full name: Microsoft.FSharp.Core.Operators.log</div>
 <div class="tip" id="fs26">property Vector.AsExpr: VectorExpr</div>
 <div class="tip" id="fs27">val eval : expr:&#39;S -&gt; &#39;U (requires member EvalIn)<br /><br />Full name: FCore.Math.eval</div>
+<div class="tip" id="fs28">type MklControl =<br />&#160;&#160;static member DisableFastMM : unit -&gt; unit<br />&#160;&#160;static member FreeBuffers : unit -&gt; unit<br />&#160;&#160;static member MemStat : unit -&gt; int64<br />&#160;&#160;static member SetMaxThreads : n:int -&gt; unit<br />&#160;&#160;static member ThreadFreeBuffers : unit -&gt; unit<br /><br />Full name: FCore.MklControl</div>
+<div class="tip" id="fs29">static member MklControl.SetMaxThreads : n:int -&gt; unit</div>
 
         </div>
         <div class="span3">
@@ -198,7 +205,7 @@ consider adding <a href="https://github.com/Statfactory/FCore/tree/master/docs/c
 
 
 
-          </ul>
+   <li><a href="./PiMonteCarlo.html">FCore vs Matlab: Pi Monte Carlo</a></li>  <li><a href="./BinomialOption.html">FCore vs Matlab: Binomial Option Pricing</a></li>  <li><a href="./LSMOption.html">FCore vs Matlab: Least Squares MC Option Pricing</a></li>       </ul>
         </div>
       </div>
     </div>

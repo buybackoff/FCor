@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Vector and Matrix Expressions
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="F# numerical library"/>
+    <meta name="author" content="StatFactory Ltd"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="./content/style.css" />
+    <script type="text/javascript" src="./content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/Statfactory/FCore">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="./index.html">FCore</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h1><a name="Vector-and-Matrix-Expressions" class="anchor" href="#Vector-and-Matrix-Expressions">Vector and Matrix Expressions</a></h1>
+
+<p>Vector and matrix expressions are expressions which are composed of elementwise functions and operators, e.g.:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+<span class="l">9: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="prep">#r</span> <span class="s">&quot;FCore.dll&quot;</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FCore</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 2)" onmouseover="showTip(event, 'fs1', 2)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs2', 3)" onmouseover="showTip(event, 'fs2', 3)" class="i">Math</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 4)" onmouseover="showTip(event, 'fs1', 4)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs3', 5)" onmouseover="showTip(event, 'fs3', 5)" class="i">ExplicitConversion</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 6)" onmouseover="showTip(event, 'fs4', 6)" class="i">System</span>
+
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs5', 7)" onmouseover="showTip(event, 'fs5', 7)" class="i">x</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs6', 8)" onmouseover="showTip(event, 'fs6', 8)" class="t">Matrix</span>(<span class="n">1000</span>, <span class="n">1000</span>, <span class="n">1.0</span>) 
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs7', 9)" onmouseover="showTip(event, 'fs7', 9)" class="i">y</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs6', 10)" onmouseover="showTip(event, 'fs6', 10)" class="t">Matrix</span>(<span class="n">1000</span>, <span class="n">1000</span>, <span class="n">2.0</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs8', 11)" onmouseover="showTip(event, 'fs8', 11)" class="i">z</span> <span class="o">=</span> <span class="n">2.2</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs5', 12)" onmouseover="showTip(event, 'fs5', 12)" class="i">x</span> <span class="o">+</span> <span class="n">3.3</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs9', 13)" onmouseover="showTip(event, 'fs9', 13)" class="f">sin</span>(<span onmouseout="hideTip(event, 'fs7', 14)" onmouseover="showTip(event, 'fs7', 14)" class="i">y</span>)
+</code></pre></td>
+</tr>
+</table>
+
+<p>When <code>z</code> is evaluated, a few temporary matrices are created in memory, e.g. <code>2.2 * x</code>.
+These temporary matrices will use a lot of memory and will increase .NET Garbage Collection time.
+In order to avoid this negative impact on performance we can use lazy evaluation of expressions:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 15)" onmouseover="showTip(event, 'fs10', 15)" class="i">zExpr</span> <span class="o">=</span> <span class="n">2.2</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs5', 16)" onmouseover="showTip(event, 'fs5', 16)" class="i">x</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 17)" onmouseover="showTip(event, 'fs11', 17)" class="i">AsExpr</span> <span class="o">+</span> <span class="n">3.3</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs9', 18)" onmouseover="showTip(event, 'fs9', 18)" class="f">sin</span>(<span onmouseout="hideTip(event, 'fs7', 19)" onmouseover="showTip(event, 'fs7', 19)" class="i">y</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 20)" onmouseover="showTip(event, 'fs11', 20)" class="i">AsExpr</span>)
+</code></pre></td>
+</tr>
+</table>
+
+<p><code>zExpr</code> is of type <code>MatrixExpr</code>. It means the expression has not been evaluated yet and we need to apply a function <code>eval</code> to get the result:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 21)" onmouseover="showTip(event, 'fs12', 21)" class="i">z2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs10', 22)" onmouseover="showTip(event, 'fs10', 22)" class="i">zExpr</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs13', 23)" onmouseover="showTip(event, 'fs13', 23)" class="f">eval</span>
+</code></pre></td>
+</tr>
+</table>
+
+<p>FCore will evaluate the expression in small slices, by default 100 000 elements at a time, so that only very small memory buffers are allocated.
+The evaluation will not create any additional .NET objects so that Garbage Collection is minimized.
+The eval slice should be small enough to fit into CPU cache for maximum performance. You can change it to any value:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs14', 24)" onmouseover="showTip(event, 'fs14', 24)" class="t">Vector</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs15', 25)" onmouseover="showTip(event, 'fs15', 25)" class="i">EvalSliceLength</span> <span class="o">&lt;-</span> <span class="n">150000</span> <span class="c">// MatrixExpr and VectorExpr evaluation uses Vector slicing</span>
+<span onmouseout="hideTip(event, 'fs16', 26)" onmouseover="showTip(event, 'fs16', 26)" class="t">BoolVector</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs17', 27)" onmouseover="showTip(event, 'fs17', 27)" class="i">EvalSliceLength</span> <span class="o">&lt;</span> <span class="n">75000</span> <span class="c">// BoolMatrixExpr and BoolVectorExpr evaluation uses BoolVector slicing</span>
+</code></pre></td>
+</tr>
+</table>
+
+<p>You can create expressions for each of the numeric types: <code>BoolVectorExpr</code>, <code>VectorExpr</code>, <code>BoolMatrixExpr</code> and <code>MatrixExpr</code>.
+All elementwise functions and operators are overloaded and defined for expressions.
+Expressions can also be evaluated in place:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs18', 28)" onmouseover="showTip(event, 'fs18', 28)" class="f">evalIn</span> (<span class="n">2.2</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs5', 29)" onmouseover="showTip(event, 'fs5', 29)" class="i">x</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 30)" onmouseover="showTip(event, 'fs11', 30)" class="i">AsExpr</span> <span class="o">+</span> <span class="n">3.3</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs9', 31)" onmouseover="showTip(event, 'fs9', 31)" class="f">sin</span>(<span onmouseout="hideTip(event, 'fs7', 32)" onmouseover="showTip(event, 'fs7', 32)" class="i">y</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 33)" onmouseover="showTip(event, 'fs11', 33)" class="i">AsExpr</span>)) <span onmouseout="hideTip(event, 'fs5', 34)" onmouseover="showTip(event, 'fs5', 34)" class="i">x</span> <span class="c">// the result of expression evaluation will be stored in x</span>
+</code></pre></td>
+</tr>
+</table>
+
+<p>You can create more complex expressions with <code>iif</code> function:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 35)" onmouseover="showTip(event, 'fs19', 35)" class="i">z3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs20', 36)" onmouseover="showTip(event, 'fs20', 36)" class="f">iif</span> (<span onmouseout="hideTip(event, 'fs5', 37)" onmouseover="showTip(event, 'fs5', 37)" class="i">x</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 38)" onmouseover="showTip(event, 'fs11', 38)" class="i">AsExpr</span> <span class="o">.</span><span class="o">&lt;</span> <span class="n">2.0</span>) (<span onmouseout="hideTip(event, 'fs5', 39)" onmouseover="showTip(event, 'fs5', 39)" class="i">x</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 40)" onmouseover="showTip(event, 'fs11', 40)" class="i">AsExpr</span> <span class="o">+</span> <span class="n">1.0</span>) (<span onmouseout="hideTip(event, 'fs9', 41)" onmouseover="showTip(event, 'fs9', 41)" class="f">sin</span>(<span onmouseout="hideTip(event, 'fs7', 42)" onmouseover="showTip(event, 'fs7', 42)" class="i">y</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 43)" onmouseover="showTip(event, 'fs11', 43)" class="i">AsExpr</span>)) <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs13', 44)" onmouseover="showTip(event, 'fs13', 44)" class="f">eval</span>
+</code></pre></td>
+</tr>
+</table>
+
+<p><code>iif</code> takes 3 arguments: conditional expression, expression when condition is true and expression when condition is false.
+It has many overloads: the first argument must be <code>BoolVectorExpr</code> or <code>BoolMatrixExpr</code>.
+If condition is <code>BoolVectorExpr</code> then the other 2 args must be both <code>bool</code>, <code>float</code>, <code>BoolVector</code> or <code>Vector</code>.
+If condition is <code>BoolMatrixExpr</code> then the other 2 args must be both <code>bool</code>, <code>float</code>, <code>BoolMatrix</code> or <code>Matrix</code>, e.g.</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 45)" onmouseover="showTip(event, 'fs21', 45)" class="i">z4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs20', 46)" onmouseover="showTip(event, 'fs20', 46)" class="f">iif</span> (<span onmouseout="hideTip(event, 'fs5', 47)" onmouseover="showTip(event, 'fs5', 47)" class="i">x</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 48)" onmouseover="showTip(event, 'fs11', 48)" class="i">AsExpr</span> <span class="o">.</span><span class="o">&lt;=</span> <span class="n">2.0</span>) <span onmouseout="hideTip(event, 'fs5', 49)" onmouseover="showTip(event, 'fs5', 49)" class="i">x</span> <span onmouseout="hideTip(event, 'fs7', 50)" onmouseover="showTip(event, 'fs7', 50)" class="i">y</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs13', 51)" onmouseover="showTip(event, 'fs13', 51)" class="f">eval</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 52)" onmouseover="showTip(event, 'fs22', 52)" class="i">z5</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs20', 53)" onmouseover="showTip(event, 'fs20', 53)" class="f">iif</span> (<span onmouseout="hideTip(event, 'fs5', 54)" onmouseover="showTip(event, 'fs5', 54)" class="i">x</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs11', 55)" onmouseover="showTip(event, 'fs11', 55)" class="i">AsExpr</span> <span class="o">.</span><span class="o">&gt;</span> <span onmouseout="hideTip(event, 'fs7', 56)" onmouseover="showTip(event, 'fs7', 56)" class="i">y</span>) <span class="n">1.0</span> <span class="n">0.0</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs13', 57)" onmouseover="showTip(event, 'fs13', 57)" class="f">eval</span>
+</code></pre></td>
+</tr>
+</table>
+
+<div class="tip" id="fs1">namespace FCore</div>
+<div class="tip" id="fs2">module Math<br /><br />from FCore</div>
+<div class="tip" id="fs3">module ExplicitConversion<br /><br />from FCore</div>
+<div class="tip" id="fs4">namespace System</div>
+<div class="tip" id="fs5">val x : Matrix<br /><br />Full name: VectorAndMatrixExpressions.x</div>
+<div class="tip" id="fs6">Multiple items<br />type Matrix =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;new : data:float [,] -&gt; Matrix<br />&#160;&#160;new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; float) -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;float&gt; -&gt; Matrix<br />&#160;&#160;...<br /><br />Full name: FCore.Matrix<br /><br />--------------------<br />new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float [,] -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="tip" id="fs7">val y : Matrix<br /><br />Full name: VectorAndMatrixExpressions.y</div>
+<div class="tip" id="fs8">val z : Matrix<br /><br />Full name: VectorAndMatrixExpressions.z</div>
+<div class="tip" id="fs9">val sin : value:&#39;T -&gt; &#39;T (requires member Sin)<br /><br />Full name: Microsoft.FSharp.Core.Operators.sin</div>
+<div class="tip" id="fs10">val zExpr : MatrixExpr<br /><br />Full name: VectorAndMatrixExpressions.zExpr</div>
+<div class="tip" id="fs11">property Matrix.AsExpr: MatrixExpr</div>
+<div class="tip" id="fs12">val z2 : Matrix<br /><br />Full name: VectorAndMatrixExpressions.z2</div>
+<div class="tip" id="fs13">val eval : expr:&#39;S -&gt; &#39;U (requires member EvalIn)<br /><br />Full name: FCore.Math.eval</div>
+<div class="tip" id="fs14">Multiple items<br />type Vector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Vector<br />&#160;&#160;new : data:seq&lt;float&gt; -&gt; Vector<br />&#160;&#160;new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />&#160;&#160;new : data:float [] * copyData:bool -&gt; Vector<br />&#160;&#160;new : length:int * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCore.Vector<br /><br />--------------------<br />new : data:seq&lt;float&gt; -&gt; Vector<br />new : data:float -&gt; Vector<br />new : length:int64 * init:float -&gt; Vector<br />new : length:int * init:float -&gt; Vector<br />new : data:float [] * copyData:bool -&gt; Vector<br />new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector</div>
+<div class="tip" id="fs15">property Vector.EvalSliceLength: int</div>
+<div class="tip" id="fs16">Multiple items<br />type BoolVector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:bool -&gt; BoolVector<br />&#160;&#160;new : data:seq&lt;bool&gt; -&gt; BoolVector<br />&#160;&#160;new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />&#160;&#160;new : data:bool [] * copyData:bool -&gt; BoolVector<br />&#160;&#160;new : length:int * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCore.BoolVector<br /><br />--------------------<br />new : data:seq&lt;bool&gt; -&gt; BoolVector<br />new : data:bool -&gt; BoolVector<br />new : length:int64 * init:bool -&gt; BoolVector<br />new : length:int * init:bool -&gt; BoolVector<br />new : data:bool [] * copyData:bool -&gt; BoolVector<br />new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector</div>
+<div class="tip" id="fs17">property BoolVector.EvalSliceLength: int</div>
+<div class="tip" id="fs18">val evalIn : expr:&#39;S -&gt; res:&#39;U -&gt; unit (requires member EvalIn)<br /><br />Full name: FCore.Math.evalIn</div>
+<div class="tip" id="fs19">val z3 : Matrix<br /><br />Full name: VectorAndMatrixExpressions.z3</div>
+<div class="tip" id="fs20">val iif : boolExpr:&#39;S -&gt; trueExpr:&#39;U -&gt; falseExpr:&#39;V -&gt; &#39;Z (requires member IIf)<br /><br />Full name: FCore.Math.iif</div>
+<div class="tip" id="fs21">val z4 : Matrix<br /><br />Full name: VectorAndMatrixExpressions.z4</div>
+<div class="tip" id="fs22">val z5 : Matrix<br /><br />Full name: VectorAndMatrixExpressions.z5</div>
+
+        </div>
+        <div class="span3">
+          <img src="./img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">FCore</li>
+            <li><a href="./index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://nuget.org/packages/FCore">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/Statfactory/FCore">Source Code on GitHub</a></li>
+            <li><a href="./license.html">License</a></li>
+            <li><a href="./release-notes.html">Release Notes</a></li>
+            
+            <li class="nav-header">Library Guide</li>
+
+            <li><a href="./BoolVector.html">BoolVector</a></li>
+            <li><a href="./Vector.html">Vector</a></li>
+            <li><a href="./BoolMatrix.html">BoolMatrix</a></li>
+            <li><a href="./Matrix.html">Matrix</a></li>
+            <li><a href="./LinearAlgebra.html">Linear Algebra</a></li>
+            <li><a href="./VectorAndMatrixFunctions.html">Vector and Matrix Functions</a></li>
+            <li><a href="./RandomNumberGenerators.html">Random Number Generators</a></li>
+            <li><a href="./BasicStats.html">Basic Stats</a></li>
+            <li><a href="./VectorAndMatrixExpressions.html">Vector and Matrix Expressions</a></li>
+
+
+
+   <li><a href="./PiMonteCarlo.html">FCore vs Matlab: Pi Monte Carlo</a></li>  <li><a href="./BinomialOption.html">FCore vs Matlab: Binomial Option Pricing</a></li>  <li><a href="./LSMOption.html">FCore vs Matlab: Least Squares MC Option Pricing</a></li>       </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/Statfactory/FCore"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>

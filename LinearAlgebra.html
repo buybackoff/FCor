@@ -38,11 +38,11 @@
 <p>FCore supports 5 matrix factorizations and related solvers:</p>
 
 <ul>
-<li>Cholesky</li>
-<li>LU</li>
-<li>QR</li>
-<li>Singular Value</li>
-<li>Eigenvalue</li>
+<li><code>Cholesky</code></li>
+<li><code>LU</code></li>
+<li><code>QR</code></li>
+<li><code>Singular Value</code></li>
+<li><code>Eigenvalue</code></li>
 </ul>
 
 <p>You can also calculate matrix-vector products and transpose a matrix in/out of place.</p>
@@ -95,26 +95,26 @@
 <span class="l">2: </span>
 <span class="l">3: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 16)" onmouseover="showTip(event, 'fs11', 16)" class="i">m3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 17)" onmouseover="showTip(event, 'fs6', 17)" class="i">m1</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs8', 18)" onmouseover="showTip(event, 'fs8', 18)" class="i">v1</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 19)" onmouseover="showTip(event, 'fs12', 19)" class="i">m4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 20)" onmouseover="showTip(event, 'fs6', 20)" class="i">m1</span> <span class="o">^*</span> <span onmouseout="hideTip(event, 'fs6', 21)" onmouseover="showTip(event, 'fs6', 21)" class="i">m1</span> <span class="c">// transpose(m1) * m1 without creating the transposed matrix</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 16)" onmouseover="showTip(event, 'fs11', 16)" class="i">v2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 17)" onmouseover="showTip(event, 'fs6', 17)" class="i">m1</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs8', 18)" onmouseover="showTip(event, 'fs8', 18)" class="i">v1</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs12', 19)" onmouseover="showTip(event, 'fs12', 19)" class="i">m3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs6', 20)" onmouseover="showTip(event, 'fs6', 20)" class="i">m1</span> <span class="o">^*</span> <span onmouseout="hideTip(event, 'fs6', 21)" onmouseover="showTip(event, 'fs6', 21)" class="i">m1</span> <span class="c">// transpose(m1) * m1 without creating the transposed matrix</span>
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 22)" onmouseover="showTip(event, 'fs13', 22)" class="i">prod</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs8', 23)" onmouseover="showTip(event, 'fs8', 23)" class="i">v1</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs8', 24)" onmouseover="showTip(event, 'fs8', 24)" class="i">v1</span> 
 </code></pre></td>
 </tr>
 </table>
 
-<p>m3 produces a value of:</p>
-
-<table class="pre"><tr><td><pre><code>Size = [2,1]
-  17
-  39
-
-</code></pre></td></tr></table>
-
-<p>m4 produces a value of:</p>
+<p>v2 produces a value of:</p>
 
 <table class="pre"><tr><td><pre><code>Size = [2,2]
   10  14
   14  20
+
+</code></pre></td></tr></table>
+
+<p>m3 produces a value of:</p>
+
+<table class="pre"><tr><td><pre><code>Size = [2,2]
+ False False
+  True False
 
 </code></pre></td></tr></table>
 
@@ -187,17 +187,16 @@ You can also calculate the inverse matrix and solve <code>A*x=b</code>, where <c
 <span class="l">2: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 37)" onmouseover="showTip(event, 'fs21', 37)" class="i">m8</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs22', 38)" onmouseover="showTip(event, 'fs22', 38)" class="f">cholInv</span> <span onmouseout="hideTip(event, 'fs17', 39)" onmouseover="showTip(event, 'fs17', 39)" class="i">m6</span> <span class="c">// inverse</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 40)" onmouseover="showTip(event, 'fs23', 40)" class="i">v2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs24', 41)" onmouseover="showTip(event, 'fs24', 41)" class="f">cholSolve</span> <span onmouseout="hideTip(event, 'fs17', 42)" onmouseover="showTip(event, 'fs17', 42)" class="i">m6</span> <span onmouseout="hideTip(event, 'fs18', 43)" onmouseover="showTip(event, 'fs18', 43)" class="i">b1</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 40)" onmouseover="showTip(event, 'fs23', 40)" class="i">v3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs24', 41)" onmouseover="showTip(event, 'fs24', 41)" class="f">cholSolve</span> <span onmouseout="hideTip(event, 'fs17', 42)" onmouseover="showTip(event, 'fs17', 42)" class="i">m6</span> <span onmouseout="hideTip(event, 'fs18', 43)" onmouseover="showTip(event, 'fs18', 43)" class="i">b1</span>
 </code></pre></td>
 </tr>
 </table>
 
-<p>v2 produces a value of:</p>
+<p>v3 produces a value of:</p>
 
-<table class="pre"><tr><td><pre><code>Length = 3
- -0.180995475113122
-  0.588235294117647
-   1.35746606334842
+<table class="pre"><tr><td><pre><code>Length = 2
+  17
+  39
 
 </code></pre></td></tr></table>
 
@@ -239,12 +238,12 @@ You can also calculate the inverse matrix and solve <code>A*x=b</code>, where <c
 <span class="l">2: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 49)" onmouseover="showTip(event, 'fs29', 49)" class="i">m10</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs30', 50)" onmouseover="showTip(event, 'fs30', 50)" class="f">luInv</span> <span onmouseout="hideTip(event, 'fs17', 51)" onmouseover="showTip(event, 'fs17', 51)" class="i">m6</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 52)" onmouseover="showTip(event, 'fs31', 52)" class="i">v3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 53)" onmouseover="showTip(event, 'fs32', 53)" class="f">luSolve</span> <span onmouseout="hideTip(event, 'fs17', 54)" onmouseover="showTip(event, 'fs17', 54)" class="i">m6</span> <span onmouseout="hideTip(event, 'fs18', 55)" onmouseover="showTip(event, 'fs18', 55)" class="i">b1</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs31', 52)" onmouseover="showTip(event, 'fs31', 52)" class="i">v4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs32', 53)" onmouseover="showTip(event, 'fs32', 53)" class="f">luSolve</span> <span onmouseout="hideTip(event, 'fs17', 54)" onmouseover="showTip(event, 'fs17', 54)" class="i">m6</span> <span onmouseout="hideTip(event, 'fs18', 55)" onmouseover="showTip(event, 'fs18', 55)" class="i">b1</span>
 </code></pre></td>
 </tr>
 </table>
 
-<p>v3 produces a value of:</p>
+<p>v4 produces a value of:</p>
 
 <table class="pre"><tr><td><pre><code>Length = 3
  -0.180995475113122
@@ -455,7 +454,7 @@ You can use it to solve linear least squares problems as well as compute singula
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs54', 90)" onmouseover="showTip(event, 'fs54', 90)" class="i">m18</span>, <span onmouseout="hideTip(event, 'fs55', 91)" onmouseover="showTip(event, 'fs55', 91)" class="i">v4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs56', 92)" onmouseover="showTip(event, 'fs56', 92)" class="f">eig</span> <span onmouseout="hideTip(event, 'fs53', 93)" onmouseover="showTip(event, 'fs53', 93)" class="i">m17</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs54', 90)" onmouseover="showTip(event, 'fs54', 90)" class="i">m18</span>, <span onmouseout="hideTip(event, 'fs55', 91)" onmouseover="showTip(event, 'fs55', 91)" class="i">v5</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs56', 92)" onmouseover="showTip(event, 'fs56', 92)" class="f">eig</span> <span onmouseout="hideTip(event, 'fs53', 93)" onmouseover="showTip(event, 'fs53', 93)" class="i">m17</span>
 </code></pre></td>
 </tr>
 </table>
@@ -469,12 +468,12 @@ You can use it to solve linear least squares problems as well as compute singula
 
 </code></pre></td></tr></table>
 
-<p>v4 produces a value of:</p>
+<p>v5 produces a value of:</p>
 
 <table class="pre"><tr><td><pre><code>Length = 3
- -4.13451582532096
- -1.21576229523065
-  9.35027812055161
+ -0.180995475113122
+  0.588235294117647
+   1.35746606334842
 
 </code></pre></td></tr></table>
 
@@ -488,8 +487,8 @@ You can use it to solve linear least squares problems as well as compute singula
 <div class="tip" id="fs8">val v1 : Vector<br /><br />Full name: LinearAlgebra.v1</div>
 <div class="tip" id="fs9">Multiple items<br />type Vector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Vector<br />&#160;&#160;new : data:seq&lt;float&gt; -&gt; Vector<br />&#160;&#160;new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />&#160;&#160;new : data:float [] * copyData:bool -&gt; Vector<br />&#160;&#160;new : length:int * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCore.Vector<br /><br />--------------------<br />new : data:seq&lt;float&gt; -&gt; Vector<br />new : data:float -&gt; Vector<br />new : length:int64 * init:float -&gt; Vector<br />new : length:int * init:float -&gt; Vector<br />new : data:float [] * copyData:bool -&gt; Vector<br />new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector</div>
 <div class="tip" id="fs10">val m2 : Matrix<br /><br />Full name: LinearAlgebra.m2</div>
-<div class="tip" id="fs11">val m3 : Matrix<br /><br />Full name: LinearAlgebra.m3</div>
-<div class="tip" id="fs12">val m4 : Matrix<br /><br />Full name: LinearAlgebra.m4</div>
+<div class="tip" id="fs11">val v2 : Vector<br /><br />Full name: LinearAlgebra.v2</div>
+<div class="tip" id="fs12">val m3 : Matrix<br /><br />Full name: LinearAlgebra.m3</div>
 <div class="tip" id="fs13">val prod : float<br /><br />Full name: LinearAlgebra.prod</div>
 <div class="tip" id="fs14">val m5 : Matrix<br /><br />Full name: LinearAlgebra.m5</div>
 <div class="tip" id="fs15">val transpose : x:Matrix -&gt; Matrix<br /><br />Full name: FCore.Math.transpose</div>
@@ -500,7 +499,7 @@ You can use it to solve linear least squares problems as well as compute singula
 <div class="tip" id="fs20">val chol : x:Matrix -&gt; Matrix<br /><br />Full name: FCore.LinearAlgebra.chol</div>
 <div class="tip" id="fs21">val m8 : Matrix<br /><br />Full name: LinearAlgebra.m8</div>
 <div class="tip" id="fs22">val cholInv : x:Matrix -&gt; Matrix<br /><br />Full name: FCore.LinearAlgebra.cholInv</div>
-<div class="tip" id="fs23">val v2 : Vector<br /><br />Full name: LinearAlgebra.v2</div>
+<div class="tip" id="fs23">val v3 : Vector<br /><br />Full name: LinearAlgebra.v3</div>
 <div class="tip" id="fs24">val cholSolve : a:&#39;S -&gt; b:&#39;U -&gt; &#39;U (requires member CholSolve)<br /><br />Full name: FCore.LinearAlgebra.cholSolve</div>
 <div class="tip" id="fs25">val l : Matrix<br /><br />Full name: LinearAlgebra.l</div>
 <div class="tip" id="fs26">val u : Matrix<br /><br />Full name: LinearAlgebra.u</div>
@@ -508,7 +507,7 @@ You can use it to solve linear least squares problems as well as compute singula
 <div class="tip" id="fs28">val lu : x:Matrix -&gt; Matrix * Matrix * int []<br /><br />Full name: FCore.LinearAlgebra.lu</div>
 <div class="tip" id="fs29">val m10 : Matrix<br /><br />Full name: LinearAlgebra.m10</div>
 <div class="tip" id="fs30">val luInv : x:Matrix -&gt; Matrix<br /><br />Full name: FCore.LinearAlgebra.luInv</div>
-<div class="tip" id="fs31">val v3 : Vector<br /><br />Full name: LinearAlgebra.v3</div>
+<div class="tip" id="fs31">val v4 : Vector<br /><br />Full name: LinearAlgebra.v4</div>
 <div class="tip" id="fs32">val luSolve : a:&#39;S -&gt; b:&#39;U -&gt; &#39;U (requires member LuSolve)<br /><br />Full name: FCore.LinearAlgebra.luSolve</div>
 <div class="tip" id="fs33">val m11 : Matrix<br /><br />Full name: LinearAlgebra.m11</div>
 <div class="tip" id="fs34">val q : Matrix<br /><br />Full name: LinearAlgebra.q</div>
@@ -532,7 +531,7 @@ You can use it to solve linear least squares problems as well as compute singula
 <div class="tip" id="fs52">val svdValues : x:&#39;S -&gt; Vector (requires member SvdValues and &#39;S :&gt; Matrix)<br /><br />Full name: FCore.LinearAlgebra.svdValues</div>
 <div class="tip" id="fs53">val m17 : Matrix<br /><br />Full name: LinearAlgebra.m17</div>
 <div class="tip" id="fs54">val m18 : Matrix<br /><br />Full name: LinearAlgebra.m18</div>
-<div class="tip" id="fs55">val v4 : Vector<br /><br />Full name: LinearAlgebra.v4</div>
+<div class="tip" id="fs55">val v5 : Vector<br /><br />Full name: LinearAlgebra.v5</div>
 <div class="tip" id="fs56">val eig : x:Matrix -&gt; Matrix * Vector<br /><br />Full name: FCore.LinearAlgebra.eig</div>
 
         </div>
@@ -561,7 +560,7 @@ You can use it to solve linear least squares problems as well as compute singula
 
 
 
-          </ul>
+   <li><a href="./PiMonteCarlo.html">FCore vs Matlab: Pi Monte Carlo</a></li>  <li><a href="./BinomialOption.html">FCore vs Matlab: Binomial Option Pricing</a></li>  <li><a href="./LSMOption.html">FCore vs Matlab: Least Squares MC Option Pricing</a></li>       </ul>
         </div>
       </div>
     </div>
