@@ -16,6 +16,7 @@ They can be created by defining the number of rows and columns using `int` or `i
 
 open FCore
 open System
+open FCore.Math
 
 let m1 = new BoolMatrix(5, 3, true)
 let m2 = new BoolMatrix(3L, 2L, false) // create large matrices with int64 row and column count
@@ -53,6 +54,13 @@ let m10 : BoolMatrix = !![[true; true]
                           [false; true]]
 let m11 : BoolMatrix = Array2D.create 2 2 true |> (!!)
 (**
+Identity matrix has `true` on diagonal and `false` otherwise and can be created with `I` function: 
+*)
+let eye : BoolMatrix = I 2 3 // I is overloaded and we need to help compiler with type annotation
+let eyeL : BoolMatrix = I 3L 2L // use int64 for large matrices
+(** This gives a value for eye of: *)
+(*** include-value: eye ***)
+(**
 Operators
 ---------
 There are a full range of operators provided for working with the BoolMatrix type. These include:
@@ -70,6 +78,8 @@ There are a full range of operators provided for working with the BoolMatrix typ
 * `.&&` - creates a new matrix, which is the result of applying `&&` elementwise 
 * `.||` - creates a new matrix, which is the result of applying `||` elementwise  
 
+Elementwise operators start with a `.` and 1 of the arguments can be a `bool` value.
+
 Here are some examples:
 *)
 let m12 = new BoolMatrix([[true; true]
@@ -80,6 +90,7 @@ m12 == m13 //false
 m12 != m13 //true
 m12 .&& m13 //false,true,false,false
 m12 .|| m13 //true,true,false,true
+m12 .|| false
 (**
 Accessing elements and slicing/indexing
 ---------------------------------------

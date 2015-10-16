@@ -25,14 +25,14 @@ Overview
 FCore is a high performance .NET numerical library with an F# API. It contains F# types and functions which will allow you to create and manipulate bool and float vectors and 2D dense matrices as well as generate random numbers and calculate basic stats. 
 Main features:
 
-- strong typing: use `BoolVector`, `Vector`, `BoolMatrix` and `Matrix` types in overloaded functions and operators
+- strong and static typing: use `BoolVector`, `Vector`, `BoolMatrix` and `Matrix` types in overloaded functions and operators
 - FCore uses unmanaged memory so you can create vectors and matrices of virtually any size (64 bit memory required)
 - most functions use Math Kernel Library (MKL) or C implementation for maximum performance on Intel
 - elementwise operators: `.*`, `./`, `.<` etc
 - access to all high quality random number generators from MKL
 - access to matrix factorizations and solvers from MKL 
 - overloaded functions, e.g. `rand` can return a vector or a matrix, `mean` can take a vector or matrix and axis etc.
-- evaluate vector and matrix expressions without creating temporary objects, e.g. `(a .* X + b .* Y) |> eval` 
+- evaluate vector and matrix expressions without creating temporary objects, e.g. `(a * X + b * Y) |> eval` 
 - vector and matrix slicing and indexing
 
 
@@ -60,6 +60,7 @@ let l, u, p = lu matrix1 // LU factorization
 let variance1 = var vector1 // calculate variance of a vector
 let variance2 = var matrix1 ColumnAxis // calculate variance of each column of a matrix
 let vector4 = log((vector2.AsExpr + 3.0) .^ 3) |> eval // avoid creating temporary vectors
+MklControl.SetMaxThreads(4) // set MKL to use up to 4 threads
 
 (** And the variable `matrix1` has the following value: *)
 (*** include-value: matrix1 ***)
@@ -80,6 +81,9 @@ The library comes with a comprehensive library guide:
  * [Random Number Generators](RandomNumberGenerators.html) introduces random number generators
  * [Basic Stats](BasicStats.html) introduces basic statistical functions
  * [Vector and Matrix Expressions](VectorAndMatrixExpressions.html) introduces vector and matrix expressions
+ * [FCore vs Matlab: Pi Monte Carlo](PiMonteCarlo.html) compares Matlab and FCore implementations of Pi MC algorithm
+ * [FCore vs Matlab: American Option Binomial Pricing](BinomialOption.html) compares Matlab and FCore implementations of binomial option pricing
+ * [FCore vs Matlab: American Option LS MC](LSMOption.html) compares Matlab and FCore implementations of Least Squares MC option pricing
 
    
 Contributing and copyright

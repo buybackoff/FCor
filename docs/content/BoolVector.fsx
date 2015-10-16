@@ -15,6 +15,7 @@ They can be created by defining the length using an `int` or `int64` and the val
 
 open System
 open FCore
+open FCore.Math
 
 let v1 = new BoolVector(5, true)
 let v2 = new BoolVector(3L, false) // create large vectors with int64 length
@@ -43,6 +44,12 @@ open FCore.ExplicitConversion
 let v8 : BoolVector = !!false
 let v9 : BoolVector = !![false; true]
 (**
+A sequence of vectors can be concatenated:
+*)
+let v4_v5 = concat [v4;v5]
+(** This gives a value for v4_v5 of: *)
+(*** include-value: v4_v5 ***)
+(**
 Operators
 ---------
 There are a full range of operators provided for working with BoolVectors. These include:
@@ -60,6 +67,7 @@ There are a full range of operators provided for working with BoolVectors. These
 * `.&&` - creates a new vector, which is the result of applying `&&` elementwise 
 * `.||` - creates a new vector, which is the result of applying `||` elementwise  
 
+Elementwise operators start with a `.` and 1 of the arguments can be a `bool` value.
 Here are some examples:
 *)
 let v10 = new BoolVector([false; true; false])
@@ -70,6 +78,7 @@ v10 == false // false
 v10 != v11 //true
 v10 .&& v11 //false,true,false
 v10 .|| v11 //false,true,true
+v10 .|| false
 (**
 Accessing elements and slicing/indexing
 ------------------------------
@@ -130,10 +139,6 @@ Use static methods `Min` `Max` and `Not` to manipulate vectors elementwise:
 let v15 = BoolVector.Min(v10, v11)
 let v16 = BoolVector.Max(v10, v11)
 let v17 = BoolVector.Not v10
-(**
-Concatenate a seq of bool vectors:
-*)
-let v18 = BoolVector.Concat([v10;v11;v12])
 (**
 BoolVector disposing
 ------------------------------

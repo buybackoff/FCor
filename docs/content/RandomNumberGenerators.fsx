@@ -75,22 +75,22 @@ let m3 = normRnd rng1 0.0 1.0 300L 400L // normal distribution, mu=0.0, sigma=1.
 (**
 The following distribution functions are available:
 
-- `unifRnd rng a b` uniform distribution [a,b]
-- `normRnd rng mu sigma` normal distribution with given mean mu and standard deviation sigma
-- `exponRnd rng a beta` exponential distribution with given displacement a and scale beta
-- `laplaceRnd rng a beta` Laplace distribution with given mean a and scale beta
-- `weibullRnd rng a alpha beta` Weibull distribution with given displacement a, shape alpha and scale beta
-- `cauchyRnd rng a beta` Cauchy distribution with given displacement a and scale beta
-- `rayleighRnd rng a beta` Rayleigh distribution with given displacement a and scale beta
-- `lognormRnd rng mu sigma a beta` lognormal distribution with given mean mu, sigma standard deviation, displacement a and scale beta
-- `gumbelRnd rng a beta` Gumbel distribution with given displacement a and scale beta
-- `gammaRnd rng a alpha beta` Gamma distribution with given displacement a, shape alpha and scale beta
-- `betaRnd rng p q a beta` Beta distribution with given displacement a, shape parameters: p, q and scale beta
-- `bernRnd rng p` Bernoulli distribution with success probability p
-- `geomRnd rng p` geometric distribution with success probability p
-- `binomRnd rng n p` Binomial distribution with success probability p and number of trials n
-- `hyperGeomRnd rng l s m` hypergeometric distribution with lot size l, sampling size s and number of marked elements in lot m
-- `poissonRnd rng lambda` Poisson distribution with given lambda
-- `negbinomRnd rng a p` negative binomial distribution
+- `unifRnd rng a b` uniform distribution between `a` and `b` 
+- `normRnd rng mu sigma` normal distribution with given mean `mu` and standard deviation `sigma`
+- `exponRnd rng a beta` exponential distribution with given displacement `a` and scale `beta`
+- `laplaceRnd rng a beta` Laplace distribution with given mean `a` and scale `beta`
+- `weibullRnd rng a alpha beta` Weibull distribution with given displacement `a`, shape `alpha` and scale `beta`
+- `cauchyRnd rng a beta` Cauchy distribution with given displacement `a` and scale `beta`
+- `rayleighRnd rng a beta` Rayleigh distribution with given displacement `a` and scale `beta`
+- `lognormRnd rng mu sigma a beta` lognormal distribution with given mean `mu`, `sigma` standard deviation, displacement `a` and scale `beta`
+- `gumbelRnd rng a beta` Gumbel distribution with given displacement `a` and scale `beta`
+- `gammaRnd rng a alpha beta` Gamma distribution with given displacement `a`, shape `alpha` and scale `beta`
+- `betaRnd rng p q a beta` Beta distribution with given displacement `a`, shape parameters: `p`, `q` and scale `beta`
+- `bernRnd rng p` Bernoulli distribution with success probability `p`
+- `geomRnd rng p` geometric distribution with success probability `p`
+- `binomRnd rng n p` Binomial distribution with success probability `p` and number of trials `n`
+- `hyperGeomRnd rng l s m` hypergeometric distribution with lot size `l`, sampling size `s` and number of marked elements in lot `m`
+- `poissonRnd rng lambda` Poisson distribution with given `lambda`
+- `negbinomRnd rng a p` negative binomial distribution with parameters `a` and `p`
 *)
 

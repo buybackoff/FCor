@@ -16,6 +16,7 @@ They can be created by defining the number of rows and columns using `int` or `i
 
 open FCore
 open System
+open FCore.Math
 
 let m1 = new Matrix(5, 3, 0.1)
 let m2 = new Matrix(3L, 2L, 0.3) // create large matrices with int64 row and column count
@@ -52,6 +53,13 @@ let m10 : Matrix = !![[0.1; 0.2]
                       [0.3; 0.4]]
 let m11 : Matrix = Array2D.create 2 2 0.4 |> (!!)
 (**
+Identity matrix has `1` on diagonal and `0` otherwise and can be created with `I` function: 
+*)
+let eye : Matrix = I 2 3 // I is overloaded and we need to help compiler with type annotation
+let eyeL : Matrix = I 3L 2L // use int64 for large matrices
+(** This gives a value for eye of: *)
+(*** include-value: eye ***)
+(**
 Arithmetic Operators
 --------------------
 There are a full range of operators provided for working with Matrices. These include:
@@ -63,6 +71,7 @@ There are a full range of operators provided for working with Matrices. These in
 * `.^` - creates a new matrix, which is the result of applying binary `**` (pow) elementwise  
 * `-` - creates a new matrix, which is the result of applying unary `~-` elementwise  
 
+`*` and `/` can be used as elementwise operators only if 1 of the arguments is `float`.
 Here are some examples:
 *)
 let m12 = new Matrix([[0.1; 0.2]
@@ -72,6 +81,9 @@ let m13 = new Matrix([[0.1; 0.2]
 m12 + m13 //0.2,0.4,0.7,0.9
 m12 - m13 //0,0,-0.1,-0.1
 m12 .* m13 //0.01,0.04,0.12,0.2
+m9 .* m10 // note `*` would try to calculate matrix product here and raise exception because m9 is a scalar
+0.1 * m10 // `.` is not required for float values
+m10 / 0.1
 m12 ./ m13 //1,1,0.75,0.8
 m12 .^ m13 //0.794,0.725,0.618,0.632
 -m13 //-0.1,-0.2,-0.4,-0.5

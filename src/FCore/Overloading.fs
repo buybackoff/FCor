@@ -9,67 +9,111 @@ module Overloading =
 
     type DummyType = DummyType with
 
-        static member ASinh (DummyType, x : float) = Vector.ASinh(new Vector(x)).[0]
+        static member ASinh (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_ASinh_Array(1L, &&res, &&res)
+            res
+
         static member ASinh (DummyType, x) = Vector.ASinh(x)
         static member ASinh (DummyType, x) = Matrix.ASinh(x)
         static member ASinh (DummyType, x) = VectorExpr.ASinh(x)
         static member ASinh (DummyType, x) = MatrixExpr.ASinh(x)
 
-        static member ACosh (DummyType, x : float) = Vector.ACosh(new Vector(x)).[0]
+        static member ACosh (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_ACosh_Array(1L, &&res, &&res)
+            res
+
         static member ACosh (DummyType, x) = Vector.ACosh(x)
         static member ACosh (DummyType, x) = Matrix.ACosh(x)
         static member ACosh (DummyType, x) = VectorExpr.ACosh(x)
         static member ACosh (DummyType, x) = MatrixExpr.ACosh(x)
 
-        static member ATanh (DummyType, x : float) = Vector.ATanh(new Vector(x)).[0]
+        static member ATanh (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_ATanh_Array(1L, &&res, &&res)
+            res
+
         static member ATanh (DummyType, x) = Vector.ATanh(x)
         static member ATanh (DummyType, x) = Matrix.ATanh(x)
         static member ATanh (DummyType, x) = VectorExpr.ATanh(x)
         static member ATanh (DummyType, x) = MatrixExpr.ATanh(x)
 
-        static member Expm1 (DummyType, x : float) = Vector.Expm1(new Vector(x)).[0]
+        static member Expm1 (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_Expm1_Array(1L, &&res, &&res)
+            res
+
         static member Expm1 (DummyType, x) = Vector.Expm1(x)
         static member Expm1 (DummyType, x) = Matrix.Expm1(x)
         static member Expm1 (DummyType, x) = VectorExpr.Expm1(x)
         static member Expm1 (DummyType, x) = MatrixExpr.Expm1(x)
 
-        static member Log1p (DummyType, x : float) = Vector.Log1p(new Vector(x)).[0]
+        static member Log1p (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_Log1p_Array(1L, &&res, &&res)
+            res
+
         static member Log1p (DummyType, x) = Vector.Log1p(x)
         static member Log1p (DummyType, x) = Matrix.Log1p(x)
         static member Log1p (DummyType, x) = VectorExpr.Log1p(x)
         static member Log1p (DummyType, x) = MatrixExpr.Log1p(x)
 
-        static member Erf (DummyType, x : float) = Vector.Erf(new Vector(x)).[0]
+        static member Erf (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_Erf_Array(1L, &&res, &&res)
+            res
+
         static member Erf (DummyType, x) = Vector.Erf(x)
         static member Erf (DummyType, x) = Matrix.Erf(x)
         static member Erf (DummyType, x) = VectorExpr.Erf(x)
         static member Erf (DummyType, x) = MatrixExpr.Erf(x)
 
-        static member Erfc (DummyType, x : float) = Vector.Erfc(new Vector(x)).[0]
+        static member Erfc (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_Erfc_Array(1L, &&res, &&res)
+            res
+
         static member Erfc (DummyType, x) = Vector.Erfc(x)
         static member Erfc (DummyType, x) = Matrix.Erfc(x)
         static member Erfc (DummyType, x) = VectorExpr.Erfc(x)
         static member Erfc (DummyType, x) = MatrixExpr.Erfc(x)
 
-        static member Erfinv (DummyType, x : float) = Vector.Erfinv(new Vector(x)).[0]
+        static member Erfinv (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_Erfinv_Array(1L, &&res, &&res)
+            res
+
         static member Erfinv (DummyType, x) = Vector.Erfinv(x)
         static member Erfinv (DummyType, x) = Matrix.Erfinv(x)
         static member Erfinv (DummyType, x) = VectorExpr.Erfinv(x)
         static member Erfinv (DummyType, x) = MatrixExpr.Erfinv(x)
 
-        static member Erfcinv (DummyType, x : float) = Vector.Erfcinv(new Vector(x)).[0]
+        static member Erfcinv (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_Erfcinv_Array(1L, &&res, &&res)
+            res
+
         static member Erfcinv (DummyType, x) = Vector.Erfcinv(x)
         static member Erfcinv (DummyType, x) = Matrix.Erfcinv(x)
         static member Erfcinv (DummyType, x) = VectorExpr.Erfcinv(x)
         static member Erfcinv (DummyType, x) = MatrixExpr.Erfcinv(x)
 
-        static member Normcdf (DummyType, x : float) = Vector.Normcdf(new Vector(x)).[0]
+        static member Normcdf (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_CdfNorm_Array(1L, &&res, &&res)
+            res
+
         static member Normcdf (DummyType, x) = Vector.Normcdf(x)
         static member Normcdf (DummyType, x) = Matrix.Normcdf(x)
         static member Normcdf (DummyType, x) = VectorExpr.Normcdf(x)
         static member Normcdf (DummyType, x) = MatrixExpr.Normcdf(x)
 
-        static member Norminv (DummyType, x : float) = Vector.Norminv(new Vector(x)).[0]
+        static member Norminv (DummyType, x : float) = 
+            let mutable res = x
+            MklFunctions.D_CdfNormInv_Array(1L, &&res, &&res)
+            res
+
         static member Norminv (DummyType, x) = Vector.Norminv(x)
         static member Norminv (DummyType, x) = Matrix.Norminv(x)
         static member Norminv (DummyType, x) = VectorExpr.Norminv(x)

@@ -33,15 +33,15 @@ let v1 : Vector = !![5.0; 6.0]
 let m2 = m1 * m1
 (** This gives a value for m2 of: *)
 (*** include-value: m2 ***)
-let m3 = m1 * v1
-let m4 = m1 ^* m1 // transpose(m1) * m1 without creating the transposed matrix
+let v2 = m1 * v1
+let m3 = m1 ^* m1 // transpose(m1) * m1 without creating the transposed matrix
 let prod = v1 * v1 
 (**
-m3 produces a value of:
+v2 produces a value of:
 *)
 (*** include-value: m3 ***)
 (**
-m4 produces a value of:
+m3 produces a value of:
 *)
 (*** include-value: m4 ***)
 (**
@@ -78,9 +78,9 @@ m7 produces a value of:
 *)
 (*** include-value: m7 ***)
 let m8 = cholInv m6 // inverse
-let v2 = cholSolve m6 b1
+let v3 = cholSolve m6 b1
 (**
-v2 produces a value of:
+v3 produces a value of:
 *)
 (*** include-value: v2 ***)
 (**
@@ -103,9 +103,9 @@ p produces a value of:
 *)
 (*** include-value: p ***)
 let m10 = luInv m6
-let v3 = luSolve m6 b1
+let v4 = luSolve m6 b1
 (**
-v3 produces a value of:
+v4 produces a value of:
 *)
 (*** include-value: v3 ***)
 (**
@@ -189,12 +189,12 @@ let m17 : Matrix = !![[1.0;3.0;5.0]
 m17 produces a value of:
 *)
 (*** include-value: m17 ***)
-let m18, v4 = eig m17
+let m18, v5 = eig m17
 (**
 m18 produces a value of:
 *)
 (*** include-value: m18 ***)
 (**
-v4 produces a value of:
+v5 produces a value of:
 *)
 (*** include-value: v4 ***)

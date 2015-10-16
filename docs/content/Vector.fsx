@@ -16,6 +16,7 @@ They can be created by defining then length using an `int` or `int64` and the va
 
 open FCore
 open System
+open FCore.Math
 
 let v1 = new Vector(5, 0.1)
 let v2 = new Vector(3L, 0.2) // create large vectors with int64 length
@@ -47,25 +48,35 @@ open FCore.ExplicitConversion
 let v8 : Vector = !!0.1
 let v9 : Vector = !![0.1; 0.2]
 (**
+A sequence of vectors can be concatenated:
+*)
+let v4_v5 = concat [v4;v5]
+(** This gives a value for v4_v5 of: *)
+(*** include-value: v4_v5 ***)
+(**
 Arithmetic Operators
 --------------------
 There are a full range of operators provided for working with Vectors. These include:
 
-* `+` - creates a new vector, which is the result of applying binary `+` elementwise 
+* `+` - creates a new vector, which is the result of applying binary `+` elementwise
 * `-` - creates a new vector, which is the result of applying binary `-` elementwise  
 * `.*` - creates a new vector, which is the result of applying binary `*` elementwise  
 * `./` - creates a new vector, which is the result of applying binary `/` elementwise  
 * `.^` - creates a new vector, which is the result of applying binary `**` (pow) elementwise  
 * `-` - creates a new vector, which is the result of applying unary `~-` elementwise  
 
+`*` and `/` can be used as elementwise operators only if 1 of the arguments is `float`.
 Here are some examples:
 *)
 let v10 = new Vector([0.1; 0.2; 0.3])
 let v11 = new Vector([0.1; 0.2; 0.4])
 v10 + v11 //0.2,0.4,0.7
+v10 + v8 // v8 is a scalar
 v10 - v11 //0,0,-0.1
 v10 .* v11 //0.01,0.04,0.12
-2.2 .* v10
+v8 .* v10 // note `*` would try to calculate inner product here and raise exception because v8 is a scalar
+0.1 * v10 // `.` is not required for float values
+v10 / 0.1
 v10 ./ v11 //1,1,0.75
 v10 .^ v11 //0.794,0.725,0.618
 v10 .^ 3
@@ -156,10 +167,6 @@ Use static methods `Min` and `Max` to manipulate vectors elementwise:
 *)
 let v15 = Vector.Min(v10, v11)
 let v16 = Vector.Max(v10, v11)
-(**
-Concatenate a seq of vectors:
-*)
-let v17 = Vector.Concat([v10;v11;v12])
 (**
 See [Linear Algebra](LinearAlgebra.html) and [Vector and Matrix Functions](VectorAndMatrixFunctions.html) for more Vector functions
 *)
