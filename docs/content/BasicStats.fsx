@@ -20,6 +20,8 @@ The following functions calculate basic sample statistics of vectors and matrice
 - `var` calculates unbiased variance of vector elements or matrix rows/columns
 - `skewness` calculates not corrected for bias skewness of vector elements or matrix rows/columns
 - `kurtosis` calculates not corrected for bias kurtosis of vector elements or matrix rows/columns
+- `any` calculates logical `or` of bool vector elements or bool matrix rows/columns
+- `all` calculates logical `and` of bool vector elements or bool matrix rows/columns
 
 When applied to a vector, those functions return a scalar value, e.g.:
 *)
@@ -31,7 +33,10 @@ open FCore.Random
 open System
 
 let v1 : Vector= !![1.0;2.0;3.0]
+let b1 : BoolVector= !![true;false;true]
 let mu = mean v1
+let allTrue = all b1 // false
+let anyTrue = any b1 // true
 (** This gives a value for mu of: *)
 (*** include-value: mu ***)
 (**
@@ -39,12 +44,17 @@ When applied to a matrix, they return a vector, e.g.:
 *)
 let m1 : Matrix = !![[1.0;2.0]
                      [3.0;4.0]]
+let b2 : BoolMatrix = !![[true;false]
+                         [true;true]]
 let rowSum = sum m1 RowAxis
 let colProd = prod m1 ColumnAxis
+let colAllTrue = all b2 ColumnAxis
 (** This gives a value for rowSum of: *)
 (*** include-value: rowSum ***)
 (** This gives a value for colProd of: *)
 (*** include-value: colProd ***)
+(** This gives a value for colAllTrue of: *)
+(*** include-value: colAllTrue ***)
 (**
 Cumulative sum and product
 ---------------------------
