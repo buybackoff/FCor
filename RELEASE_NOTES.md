@@ -1,4 +1,4 @@
-### 1.0 - Unreleased
+### 1.0 - Released
 * boolean and double precision dense vector and 2D matrix types (BoolVector, Vector, BoolMatrix, Matrix)
 * dense matrix factorizations and solvers, MKL accelerated
 * MKL random number generators

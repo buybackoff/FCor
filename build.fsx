@@ -29,7 +29,7 @@ open SourceLink
 
 // The name of the project
 // (used by attributes in AssemblyInfo, name of a NuGet package and directory in 'src')
-let project = "FCore"
+let project = "FCor"
 
 // Short summary of the project
 // (used as description in AssemblyInfo and as a short summary for NuGet package)
@@ -37,16 +37,16 @@ let summary = "F# numerical library"
 
 // Longer description of the project
 // (used as a description for NuGet package; line breaks are automatically cleaned up)
-let description = "High performance F# numerical and machine learning library"
+let description = "High performance open source F# numerical library"
 
 // List of author names (for NuGet package)
 let authors = [ "StatFactory Ltd" ]
 
 // Tags for your project (for NuGet package)
-let tags = "fsharp math stat machine learning"
+let tags = "fsharp math stat"
 
 // File system information 
-let solutionFile  = "FCore.sln"
+let solutionFile  = "FCor.sln"
 
 // Pattern specifying assemblies to be tested using NUnit
 let testAssemblies = "tests/**/bin/Release/*.Tests*.dll"
@@ -59,7 +59,7 @@ let gitOwner = "Statfactory"
 let gitHome = "https://github.com/" + gitOwner
 
 // The name of the project on GitHub
-let gitName = "FCore"
+let gitName = "FCor"
 
 // The url for the raw files hosted
 let gitRaw = environVarOrDefault "gitRaw" "https://raw.github.com/Statfactory"
@@ -117,7 +117,7 @@ Target "CopyBinaries" (fun _ ->
 // Clean build results
 
 Target "Clean" (fun _ ->
-    CleanDirs ["bin/FCore"]
+    CleanDirs ["bin/FCor"]
 )
 
 Target "CleanDocs" (fun _ ->
@@ -126,8 +126,8 @@ Target "CleanDocs" (fun _ ->
 
 //Zip MKL dlls
 Target "ZipMKL" (fun _ ->
-    compressFile "./bin/FCore.MKL/FCore.MKL.x86.dll"
-    compressFile "./bin/FCore.MKL/FCore.MKL.x64.dll"
+    compressFile "./bin/FCor.MKL/FCor.MKL.x86.dll"
+    compressFile "./bin/FCor.MKL/FCor.MKL.x64.dll"
 )
 
 // --------------------------------------------------------------------------------------
@@ -217,7 +217,7 @@ Target "SourceLink" (fun _ ->
 Target "NuGet" (fun _ ->
     Paket.Pack(fun p -> 
         { p with
-            OutputPath = "bin/FCore"
+            OutputPath = "bin/FCor"
             Version = release.NugetVersion
             ReleaseNotes = toLines release.Notes})
 )
@@ -225,7 +225,7 @@ Target "NuGet" (fun _ ->
 Target "PublishNuget" (fun _ ->
     Paket.Push(fun p -> 
         { p with
-            WorkingDir = "bin/FCore" })
+            WorkingDir = "bin/FCor" })
 )
 
 

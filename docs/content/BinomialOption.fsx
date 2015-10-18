@@ -1,19 +1,19 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
-FCore vs Matlab: American Option Binomial Pricing
+FCor vs Matlab: American Option Binomial Pricing
 =================================================
-We will compare here Matlab and FCore implementations of binomial pricing of American Put option.
+We will compare here Matlab and FCor implementations of binomial pricing of American Put option.
 Both implementations will run on a system with Windows 7, 8GB RAM and Intel Core i7 2720QM CPU. 
 *)
-#r "FCore.dll"
-open FCore
-open FCore.Random
-open FCore.BasicStats
-open FCore.ExplicitConversion
-open FCore.Math   
+#r "FCor.dll"
+open FCor
+open FCor.Random
+open FCor.BasicStats
+open FCor.ExplicitConversion
+open FCor.Math   
 open System
 (**
 Here is Matlab implementation:
@@ -50,7 +50,7 @@ Here is Matlab implementation:
 *)
 (**
 The loop takes ca. 1.8 sec to run.
-This is FCore implementation:
+This is FCor implementation:
 *)
 let binomAmerican (S0 : float) (K : float) (r : float) (vol : float) (T : float) n =
     let dt = T / float(n)

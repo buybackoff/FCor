@@ -1,22 +1,22 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 Vector
 ============
-FCore provides vectors that hold floating point values. The primary use of these is for linear algebra. 
+FCor provides vectors that hold floating point values. The primary use of these is for linear algebra. 
 Creating Vectors
 --------------------
 There are a number of options provided to create these vectors.
 
 They can be created by defining then length using an `int` or `int64` and the value to be used for each element, or if you just provide a value you will get a vector of length 1: 
 *)
-#r "FCore.dll"
+#r "FCor.dll"
 
-open FCore
+open FCor
 open System
-open FCore.Math
+open FCor.Math
 
 let v1 = new Vector(5, 0.1)
 let v2 = new Vector(3L, 0.2) // create large vectors with int64 length
@@ -44,7 +44,7 @@ let v7 = new Vector([| 0.1; 0.2 |], copyData = false)
 (**
 You can also create a vector by converting a single float or a seq of floats using `!!` operator from the ExplicitConversion module.
 *)
-open FCore.ExplicitConversion
+open FCor.ExplicitConversion
 let v8 : Vector = !!0.1
 let v9 : Vector = !![0.1; 0.2]
 (**

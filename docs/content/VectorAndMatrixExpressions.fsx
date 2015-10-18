@@ -1,16 +1,16 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 Vector and Matrix Expressions
 =============================
 Vector and matrix expressions are expressions which are composed of elementwise functions and operators, e.g.:
 *)
-#r "FCore.dll"
-open FCore
-open FCore.Math
-open FCore.ExplicitConversion
+#r "FCor.dll"
+open FCor
+open FCor.Math
+open FCor.ExplicitConversion
 open System
 
 let x = new Matrix(1000, 1000, 1.0) 
@@ -27,7 +27,7 @@ let zExpr = 2.2 * x.AsExpr + 3.3 * sin(y.AsExpr)
 *)
 let z2 = zExpr |> eval
 (** 
-FCore will evaluate the expression in small slices, by default 100 000 elements at a time, so that only very small memory buffers are allocated.
+FCor will evaluate the expression in small slices, by default 100 000 elements at a time, so that only very small memory buffers are allocated.
 The evaluation will not create any additional .NET objects so that Garbage Collection is minimized.
 The eval slice should be small enough to fit into CPU cache for maximum performance. You can change it to any value:
 *)

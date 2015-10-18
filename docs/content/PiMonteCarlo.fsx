@@ -1,17 +1,17 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
-FCore vs Matlab: Pi Monte Carlo
+FCor vs Matlab: Pi Monte Carlo
 ===============================
-We will compare here Matlab and FCore implementations of a simple algorithm to calculate Pi by Monte Carlo simulation.
+We will compare here Matlab and FCor implementations of a simple algorithm to calculate Pi by Monte Carlo simulation.
 Both implementations will run on a system with Windows 7, 8GB RAM and Intel Core i7 2720QM CPU. 
 *)
-#r "FCore.dll"
-open FCore
-open FCore.Random
-open FCore.Math   
+#r "FCor.dll"
+open FCor
+open FCor.Random
+open FCor.Math   
 open System
 (**
 Here is Matlab implementation:
@@ -26,7 +26,7 @@ Here is Matlab implementation:
 *)
 (**
 It takes ca. 2.8 sec to run it for n = 100 000 000.
-This is FCore implementation:
+This is FCor implementation:
 *)
 let piMC(n : int) =
     MklControl.SetMaxThreads(4)
@@ -37,7 +37,7 @@ let piMC(n : int) =
     (inCircle.[inCircle].LongLength |> float) / float(n) * 4.0
 (**
 It takes ca. 2.1 sec to run it for n = 100 000 000, which is 25% less than Matlab.
-We could also use a faster Random Number Generator in FCore:
+We could also use a faster Random Number Generator in FCor:
 *)
 let piMC2(n : int) =
     MklControl.SetMaxThreads(4)

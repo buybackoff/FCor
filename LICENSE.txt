@@ -1,4 +1,4 @@
-FCore License (MIT/X11)
+FCor License (MIT/X11)
 ===================================
 
 Copyright (c) 2007-2015 STATFACTORY LIMITED

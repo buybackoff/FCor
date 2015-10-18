@@ -1,11 +1,11 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 Basic Stats
 ============
-FCore provides functions for calculating basic sample statistics, e.g. `mean`, `var` or `corr`, as well as cumulative sum and product.
+FCor provides functions for calculating basic sample statistics, e.g. `mean`, `var` or `corr`, as well as cumulative sum and product.
 You can apply these functions to vectors or matrices.
   
 Basic statistics
@@ -25,11 +25,11 @@ The following functions calculate basic sample statistics of vectors and matrice
 
 When applied to a vector, those functions return a scalar value, e.g.:
 *)
-#r "FCore.dll"
-open FCore
-open FCore.BasicStats
-open FCore.ExplicitConversion
-open FCore.Random   
+#r "FCor.dll"
+open FCor
+open FCor.BasicStats
+open FCor.ExplicitConversion
+open FCor.Random   
 open System
 
 let v1 : Vector= !![1.0;2.0;3.0]

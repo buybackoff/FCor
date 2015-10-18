@@ -11,17 +11,17 @@
 // (This is the original behaviour of ProjectScaffold prior to multi project support)
 let referenceBinaries = []
 // Web site location for the generated documentation
-let website = "."//"/FCore"
+let website = "."//"/FCor"
 
-let githubLink = "http://github.com/Statfactory/FCore"
+let githubLink = "http://github.com/Statfactory/FCor"
 
 // Specify more information about your project
 let info =
-  [ "project-name", "FCore"
+  [ "project-name", "FCor"
     "project-author", "StatFactory Ltd"
     "project-summary", "F# numerical library"
     "project-github", githubLink
-    "project-nuget", "http://nuget.org/packages/FCore" ]
+    "project-nuget", "http://nuget.org/packages/FCor" ]
 
 // --------------------------------------------------------------------------------------
 // For typical project, no changes are needed below

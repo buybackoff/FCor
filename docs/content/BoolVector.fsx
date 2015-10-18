@@ -1,21 +1,21 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 BoolVector
 ============
-FCore provides specialised vectors that hold boolean values. Boolean vectors are usually created as a result of comparing elementwise float vectors but you can also create them directly. 
+FCor provides specialised vectors that hold boolean values. Boolean vectors are usually created as a result of comparing elementwise float vectors but you can also create them directly. 
 Creating BoolVectors
 --------------------
 
 They can be created by defining the length using an `int` or `int64` and the value to be used for each element, or if you just provide a value you will get a vector of length 1: 
 *)
-#r "FCore.dll"
+#r "FCor.dll"
 
 open System
-open FCore
-open FCore.Math
+open FCor
+open FCor.Math
 
 let v1 = new BoolVector(5, true)
 let v2 = new BoolVector(3L, false) // create large vectors with int64 length
@@ -40,7 +40,7 @@ let v7 = new BoolVector([|false; true|], copyData = false)
 (**
 You can also create a vector by converting a single bool or a seq of bools using `!!` operator from the ExplicitConversion module.
 *)
-open FCore.ExplicitConversion
+open FCor.ExplicitConversion
 let v8 : BoolVector = !!false
 let v9 : BoolVector = !![false; true]
 (**

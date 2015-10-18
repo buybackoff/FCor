@@ -1,11 +1,11 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 Linear Algebra
 ==============
-FCore supports 5 matrix factorizations and related solvers:
+FCor supports 5 matrix factorizations and related solvers:
 
 - `Cholesky`
 - `LU`
@@ -15,13 +15,13 @@ FCore supports 5 matrix factorizations and related solvers:
 
 You can also calculate matrix-vector products and transpose a matrix in/out of place.
 *)
-#r "FCore.dll"
+#r "FCor.dll"
 
-open FCore
+open FCor
 open System
-open FCore.ExplicitConversion
-open FCore.Math
-open FCore.LinearAlgebra
+open FCor.ExplicitConversion
+open FCor.Math
+open FCor.LinearAlgebra
 (**
 Matrix products and transposition
 --------------------------------

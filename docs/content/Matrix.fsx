@@ -1,22 +1,22 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 Matrix
 ============
-FCore provides matrices that hold floating point values. The primary use of these is for linear algebra. 
+FCor provides matrices that hold floating point values. The primary use of these is for linear algebra. 
 Creating Matrices
 --------------------
 There are a number of options provided to create these matrices.
 
 They can be created by defining the number of rows and columns using `int` or `int64` and the value to be used for each element, or if you just provide a value you will get a matrix containing one cell: 
 *)
-#r "FCore.dll"
+#r "FCor.dll"
 
-open FCore
+open FCor
 open System
-open FCore.Math
+open FCor.Math
 
 let m1 = new Matrix(5, 3, 0.1)
 let m2 = new Matrix(3L, 2L, 0.3) // create large matrices with int64 row and column count
@@ -47,7 +47,7 @@ let m8 = new Matrix(v1) // 2x1, no data is copied so v1 and m8 share memory
 (**
 You can also create a matrix by converting a single float, a sequence of sequences of floats or a 2D array of floats, using `!!` operator from the ExplicitConversion module.
 *)
-open FCore.ExplicitConversion
+open FCor.ExplicitConversion
 let m9 : Matrix = !!0.1
 let m10 : Matrix = !![[0.1; 0.2]
                       [0.3; 0.4]]

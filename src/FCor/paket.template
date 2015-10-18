@@ -1,0 +1,23 @@
+type project
+owners
+    StatFactory Ltd
+authors 
+    StatFactory Ltd
+projectUrl
+    http://github.com/Statfactory/FCor
+iconUrl
+    https://raw.githubusercontent.com/Statfactory/FCor/master/docs/files/img/logo.png
+licenseUrl
+    http://github.com/Statfactory/FCor/blob/master/LICENSE.txt
+requireLicenseAcceptance
+    false
+copyright
+    Copyright 2015
+tags
+    fsharp math stat machine learning
+summary
+    F# numerical library
+description
+    High performance F# numerical and machine learning library
+
+

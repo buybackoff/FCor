@@ -1,22 +1,22 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 BoolMatrix
 ============
-FCore provides specialised matrices that hold boolean values. Boolean matrices are usually created as a result of comparing elementwise float matrices but you can also create them directly. 
+FCor provides specialised matrices that hold boolean values. Boolean matrices are usually created as a result of comparing elementwise float matrices but you can also create them directly. 
 Creating BoolMatrices
 ----------------------
 There are a number of options provided to create these matrices.
 
 They can be created by defining the number of rows and columns using `int` or `int64` and the value to be used for each element, or if you just provide a value you will get a matrix containing one cell: 
 *)
-#r "FCore.dll"
+#r "FCor.dll"
 
-open FCore
+open FCor
 open System
-open FCore.Math
+open FCor.Math
 
 let m1 = new BoolMatrix(5, 3, true)
 let m2 = new BoolMatrix(3L, 2L, false) // create large matrices with int64 row and column count
@@ -48,7 +48,7 @@ let m8 = new BoolMatrix(b1) // 2x1, no data is copied so b1 and m8 share memory
 (**
 You can also create a matrix by converting a single bool, a sequence of sequences of bool values or a 2D array of bool values, using `!!` operator from the ExplicitConversion module.
 *)
-open FCore.ExplicitConversion
+open FCor.ExplicitConversion
 let m9 : BoolMatrix = !!false
 let m10 : BoolMatrix = !![[true; true]
                           [false; true]]

@@ -1,11 +1,11 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 Random Number Generators
 ========================
-FCore supports all Basic Random Number Generators from MKL:
+FCor supports all Basic Random Number Generators from MKL:
 
 - `MCG31` 31-bit multiplicative congruential pseudorandom generator
 - `R250` generalized feedback shift register pseudorandom generator
@@ -22,13 +22,13 @@ You can also generate random vectors and matrices from a range of continuous and
 
 See [VSL Notes](https://software.intel.com/sites/default/files/managed/78/55/vslnotes.pdf) for technical details about random number generators in MKL.
 *)
-#r "FCore.dll"
+#r "FCor.dll"
 
-open FCore
+open FCor
 open System
-open FCore.ExplicitConversion
-open FCore.Math
-open FCore.Random
+open FCor.ExplicitConversion
+open FCor.Math
+open FCor.Random
 (**
 Basic Random Number Generators
 --------------------------------
@@ -64,7 +64,7 @@ let m2 = randM 300 400
 (**
 Distribution Generators
 -----------------------
-Each FCore distribution generation function is overloaded: it can return a vector or a matrix.
+Each FCor distribution generation function is overloaded: it can return a vector or a matrix.
 
 For vectors, you need to pass as arguments: basic rng, distribution paramaters and vector length as `int` or `int64`.
 

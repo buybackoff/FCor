@@ -1,11 +1,11 @@
 ﻿(*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I "../../bin/FCore"
+#I "../../bin/FCor"
 (**
 Vector and Matrix Functions
 ============
-FCore provides math functions which can be applied elementwise to vectors and matrices, e.g. `sin`.
+FCor provides math functions which can be applied elementwise to vectors and matrices, e.g. `sin`.
 In addition, there are function for manipulating vectors and matrices, e.g. `diag` and `triL`. 
   
 Elementwise math functions
@@ -43,10 +43,10 @@ The following math functions can be applied to scalars, vectors and matrices:
 - `trunc` truncates fractional part
 
 *)
-#r "FCore.dll"
-open FCore
-open FCore.Math
-open FCore.ExplicitConversion
+#r "FCor.dll"
+open FCor
+open FCor.Math
+open FCor.ExplicitConversion
 open System
 
 let v1 : Vector= !![1.0;2.0;3.0]
