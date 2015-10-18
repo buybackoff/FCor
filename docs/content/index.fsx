@@ -5,7 +5,7 @@
 
 
 (**
-FCor Numerical Library
+FCor F# Numerical Library
 ======================
 
 <div class="row">
