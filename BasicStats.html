@@ -25,9 +25,9 @@
       <div class="masthead">
         <ul class="nav nav-pills pull-right">
           <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/Statfactory/FCore">github page</a></li>
+          <li><a href="http://github.com/Statfactory/FCor">github page</a></li>
         </ul>
-        <h3 class="muted"><a href="./index.html">FCore</a></h3>
+        <h3 class="muted"><a href="./index.html">FCor</a></h3>
       </div>
       <hr />
       <div class="row">
@@ -35,7 +35,7 @@
           
 <h1><a name="Basic-Stats" class="anchor" href="#Basic-Stats">Basic Stats</a></h1>
 
-<p>FCore provides functions for calculating basic sample statistics, e.g. <code>mean</code>, <code>var</code> or <code>corr</code>, as well as cumulative sum and product.
+<p>FCor provides functions for calculating basic sample statistics, e.g. <code>mean</code>, <code>var</code> or <code>corr</code>, as well as cumulative sum and product.
 You can apply these functions to vectors or matrices.</p>
 
 <h2><a name="Basic-statistics" class="anchor" href="#Basic-statistics">Basic statistics</a></h2>
@@ -70,11 +70,11 @@ You can apply these functions to vectors or matrices.</p>
 <span class="l">11: </span>
 <span class="l">12: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="prep">#r</span> <span class="s">&quot;FCore.dll&quot;</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FCore</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 2)" onmouseover="showTip(event, 'fs1', 2)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs2', 3)" onmouseover="showTip(event, 'fs2', 3)" class="i">BasicStats</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 4)" onmouseover="showTip(event, 'fs1', 4)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs3', 5)" onmouseover="showTip(event, 'fs3', 5)" class="i">ExplicitConversion</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 6)" onmouseover="showTip(event, 'fs1', 6)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs4', 7)" onmouseover="showTip(event, 'fs4', 7)" class="i">Random</span>   
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="prep">#r</span> <span class="s">&quot;FCor.dll&quot;</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FCor</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 2)" onmouseover="showTip(event, 'fs1', 2)" class="i">FCor</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs2', 3)" onmouseover="showTip(event, 'fs2', 3)" class="i">BasicStats</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 4)" onmouseover="showTip(event, 'fs1', 4)" class="i">FCor</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs3', 5)" onmouseover="showTip(event, 'fs3', 5)" class="i">ExplicitConversion</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 6)" onmouseover="showTip(event, 'fs1', 6)" class="i">FCor</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs4', 7)" onmouseover="showTip(event, 'fs4', 7)" class="i">Random</span>   
 <span class="k">open</span> <span onmouseout="hideTip(event, 'fs5', 8)" onmouseover="showTip(event, 'fs5', 8)" class="i">System</span>
 
 <span class="k">let</span> <span onmouseout="hideTip(event, 'fs6', 9)" onmouseover="showTip(event, 'fs6', 9)" class="i">v1</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs7', 10)" onmouseover="showTip(event, 'fs7', 10)" class="t">Vector</span><span class="o">=</span> <span class="o">!!</span>[<span class="n">1.0</span>;<span class="n">2.0</span>;<span class="n">3.0</span>]
@@ -248,60 +248,60 @@ The functions return a matrix [pxp]:</p>
 
 </code></pre></td></tr></table>
 
-<div class="tip" id="fs1">namespace FCore</div>
-<div class="tip" id="fs2">module BasicStats<br /><br />from FCore</div>
-<div class="tip" id="fs3">module ExplicitConversion<br /><br />from FCore</div>
-<div class="tip" id="fs4">module Random<br /><br />from FCore</div>
+<div class="tip" id="fs1">namespace FCor</div>
+<div class="tip" id="fs2">module BasicStats<br /><br />from FCor</div>
+<div class="tip" id="fs3">module ExplicitConversion<br /><br />from FCor</div>
+<div class="tip" id="fs4">module Random<br /><br />from FCor</div>
 <div class="tip" id="fs5">namespace System</div>
 <div class="tip" id="fs6">val v1 : Vector<br /><br />Full name: BasicStats.v1</div>
-<div class="tip" id="fs7">Multiple items<br />type Vector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Vector<br />&#160;&#160;new : data:seq&lt;float&gt; -&gt; Vector<br />&#160;&#160;new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />&#160;&#160;new : data:float [] * copyData:bool -&gt; Vector<br />&#160;&#160;new : length:int * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCore.Vector<br /><br />--------------------<br />new : data:seq&lt;float&gt; -&gt; Vector<br />new : data:float -&gt; Vector<br />new : length:int64 * init:float -&gt; Vector<br />new : length:int * init:float -&gt; Vector<br />new : data:float [] * copyData:bool -&gt; Vector<br />new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector</div>
+<div class="tip" id="fs7">Multiple items<br />type Vector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Vector<br />&#160;&#160;new : data:seq&lt;float&gt; -&gt; Vector<br />&#160;&#160;new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />&#160;&#160;new : data:float [] * copyData:bool -&gt; Vector<br />&#160;&#160;new : length:int * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCor.Vector<br /><br />--------------------<br />new : data:seq&lt;float&gt; -&gt; Vector<br />new : data:float -&gt; Vector<br />new : length:int64 * init:float -&gt; Vector<br />new : length:int * init:float -&gt; Vector<br />new : data:float [] * copyData:bool -&gt; Vector<br />new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector</div>
 <div class="tip" id="fs8">val b1 : BoolVector<br /><br />Full name: BasicStats.b1</div>
-<div class="tip" id="fs9">Multiple items<br />type BoolVector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:bool -&gt; BoolVector<br />&#160;&#160;new : data:seq&lt;bool&gt; -&gt; BoolVector<br />&#160;&#160;new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />&#160;&#160;new : data:bool [] * copyData:bool -&gt; BoolVector<br />&#160;&#160;new : length:int * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCore.BoolVector<br /><br />--------------------<br />new : data:seq&lt;bool&gt; -&gt; BoolVector<br />new : data:bool -&gt; BoolVector<br />new : length:int64 * init:bool -&gt; BoolVector<br />new : length:int * init:bool -&gt; BoolVector<br />new : data:bool [] * copyData:bool -&gt; BoolVector<br />new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector</div>
+<div class="tip" id="fs9">Multiple items<br />type BoolVector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:bool -&gt; BoolVector<br />&#160;&#160;new : data:seq&lt;bool&gt; -&gt; BoolVector<br />&#160;&#160;new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />&#160;&#160;new : data:bool [] * copyData:bool -&gt; BoolVector<br />&#160;&#160;new : length:int * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCor.BoolVector<br /><br />--------------------<br />new : data:seq&lt;bool&gt; -&gt; BoolVector<br />new : data:bool -&gt; BoolVector<br />new : length:int64 * init:bool -&gt; BoolVector<br />new : length:int * init:bool -&gt; BoolVector<br />new : data:bool [] * copyData:bool -&gt; BoolVector<br />new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector</div>
 <div class="tip" id="fs10">val mu : float<br /><br />Full name: BasicStats.mu</div>
-<div class="tip" id="fs11">val mean : x:&#39;S -&gt; &#39;U (requires member Mean)<br /><br />Full name: FCore.BasicStats.mean</div>
+<div class="tip" id="fs11">val mean : x:&#39;S -&gt; &#39;U (requires member Mean)<br /><br />Full name: FCor.BasicStats.mean</div>
 <div class="tip" id="fs12">val allTrue : bool<br /><br />Full name: BasicStats.allTrue</div>
-<div class="tip" id="fs13">val all : x:&#39;S -&gt; &#39;U (requires member All)<br /><br />Full name: FCore.BasicStats.all</div>
+<div class="tip" id="fs13">val all : x:&#39;S -&gt; &#39;U (requires member All)<br /><br />Full name: FCor.BasicStats.all</div>
 <div class="tip" id="fs14">val anyTrue : bool<br /><br />Full name: BasicStats.anyTrue</div>
-<div class="tip" id="fs15">val any : x:&#39;S -&gt; &#39;U (requires member Any)<br /><br />Full name: FCore.BasicStats.any</div>
+<div class="tip" id="fs15">val any : x:&#39;S -&gt; &#39;U (requires member Any)<br /><br />Full name: FCor.BasicStats.any</div>
 <div class="tip" id="fs16">val m1 : Matrix<br /><br />Full name: BasicStats.m1</div>
-<div class="tip" id="fs17">Multiple items<br />type Matrix =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;new : data:float [,] -&gt; Matrix<br />&#160;&#160;new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; float) -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;float&gt; -&gt; Matrix<br />&#160;&#160;...<br /><br />Full name: FCore.Matrix<br /><br />--------------------<br />new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float [,] -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="tip" id="fs17">Multiple items<br />type Matrix =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;new : data:float [,] -&gt; Matrix<br />&#160;&#160;new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; float) -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;float&gt; -&gt; Matrix<br />&#160;&#160;...<br /><br />Full name: FCor.Matrix<br /><br />--------------------<br />new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float [,] -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="tip" id="fs18">val b2 : BoolMatrix<br /><br />Full name: BasicStats.b2</div>
-<div class="tip" id="fs19">Multiple items<br />type BoolMatrix =<br />&#160;&#160;interface IFormattable<br />&#160;&#160;interface IDisposable<br />&#160;&#160;new : data:bool -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; bool) -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;bool&gt; -&gt; BoolMatrix<br />&#160;&#160;...<br /><br />Full name: FCore.BoolMatrix<br /><br />--------------------<br />new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="tip" id="fs19">Multiple items<br />type BoolMatrix =<br />&#160;&#160;interface IFormattable<br />&#160;&#160;interface IDisposable<br />&#160;&#160;new : data:bool -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; bool) -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;bool&gt; -&gt; BoolMatrix<br />&#160;&#160;...<br /><br />Full name: FCor.BoolMatrix<br /><br />--------------------<br />new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
 <div class="tip" id="fs20">val rowSum : Vector<br /><br />Full name: BasicStats.rowSum</div>
-<div class="tip" id="fs21">val sum : x:&#39;S -&gt; &#39;U (requires member Sum)<br /><br />Full name: FCore.BasicStats.sum</div>
+<div class="tip" id="fs21">val sum : x:&#39;S -&gt; &#39;U (requires member Sum)<br /><br />Full name: FCor.BasicStats.sum</div>
 <div class="tip" id="fs22">union case MatrixAxis.RowAxis: MatrixAxis</div>
 <div class="tip" id="fs23">val colProd : Vector<br /><br />Full name: BasicStats.colProd</div>
-<div class="tip" id="fs24">val prod : x:&#39;S -&gt; &#39;U (requires member Prod)<br /><br />Full name: FCore.BasicStats.prod</div>
+<div class="tip" id="fs24">val prod : x:&#39;S -&gt; &#39;U (requires member Prod)<br /><br />Full name: FCor.BasicStats.prod</div>
 <div class="tip" id="fs25">union case MatrixAxis.ColumnAxis: MatrixAxis</div>
 <div class="tip" id="fs26">val colAllTrue : BoolVector<br /><br />Full name: BasicStats.colAllTrue</div>
 <div class="tip" id="fs27">val v2 : Vector<br /><br />Full name: BasicStats.v2</div>
-<div class="tip" id="fs28">val cumsum : x:&#39;S -&gt; &#39;U (requires member CumSum)<br /><br />Full name: FCore.BasicStats.cumsum</div>
+<div class="tip" id="fs28">val cumsum : x:&#39;S -&gt; &#39;U (requires member CumSum)<br /><br />Full name: FCor.BasicStats.cumsum</div>
 <div class="tip" id="fs29">val m2 : Matrix<br /><br />Full name: BasicStats.m2</div>
-<div class="tip" id="fs30">val cumprod : x:&#39;S -&gt; &#39;U (requires member CumProd)<br /><br />Full name: FCore.BasicStats.cumprod</div>
+<div class="tip" id="fs30">val cumprod : x:&#39;S -&gt; &#39;U (requires member CumProd)<br /><br />Full name: FCor.BasicStats.cumprod</div>
 <div class="tip" id="fs31">val rng : MT19937Rng<br /><br />Full name: BasicStats.rng</div>
-<div class="tip" id="fs32">Multiple items<br />type MT19937Rng =<br />&#160;&#160;inherit MklRng<br />&#160;&#160;new : unit -&gt; MT19937Rng<br />&#160;&#160;new : streamPtr:IntPtr -&gt; MT19937Rng<br />&#160;&#160;new : seed:uint32 -&gt; MT19937Rng<br />&#160;&#160;new : seeds:uint32 [] -&gt; MT19937Rng<br />&#160;&#160;member Copy : unit -&gt; MT19937Rng<br />&#160;&#160;member SkipAhead : nSkip:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int64 -&gt; unit<br /><br />Full name: FCore.MT19937Rng<br /><br />--------------------<br />new : unit -&gt; MT19937Rng<br />new : seeds:uint32 [] -&gt; MT19937Rng<br />new : seed:uint32 -&gt; MT19937Rng<br />new : streamPtr:IntPtr -&gt; MT19937Rng</div>
+<div class="tip" id="fs32">Multiple items<br />type MT19937Rng =<br />&#160;&#160;inherit MklRng<br />&#160;&#160;new : unit -&gt; MT19937Rng<br />&#160;&#160;new : streamPtr:IntPtr -&gt; MT19937Rng<br />&#160;&#160;new : seed:uint32 -&gt; MT19937Rng<br />&#160;&#160;new : seeds:uint32 [] -&gt; MT19937Rng<br />&#160;&#160;member Copy : unit -&gt; MT19937Rng<br />&#160;&#160;member SkipAhead : nSkip:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int64 -&gt; unit<br /><br />Full name: FCor.MT19937Rng<br /><br />--------------------<br />new : unit -&gt; MT19937Rng<br />new : seeds:uint32 [] -&gt; MT19937Rng<br />new : seed:uint32 -&gt; MT19937Rng<br />new : streamPtr:IntPtr -&gt; MT19937Rng</div>
 <div class="tip" id="fs33">val p : Vector<br /><br />Full name: BasicStats.p</div>
 <div class="tip" id="fs34">val v3 : Vector<br /><br />Full name: BasicStats.v3</div>
-<div class="tip" id="fs35">val rand : rng:&#39;T -&gt; &#39;S (requires member op_Explicit)<br /><br />Full name: FCore.Random.rand</div>
+<div class="tip" id="fs35">val rand : rng:&#39;T -&gt; &#39;S (requires member op_Explicit)<br /><br />Full name: FCor.Random.rand</div>
 <div class="tip" id="fs36">val q1 : Vector<br /><br />Full name: BasicStats.q1</div>
-<div class="tip" id="fs37">val quantile : x:&#39;S -&gt; &#39;U (requires member Quantile)<br /><br />Full name: FCore.BasicStats.quantile</div>
+<div class="tip" id="fs37">val quantile : x:&#39;S -&gt; &#39;U (requires member Quantile)<br /><br />Full name: FCor.BasicStats.quantile</div>
 <div class="tip" id="fs38">val m3 : Matrix<br /><br />Full name: BasicStats.m3</div>
 <div class="tip" id="fs39">val q2 : Matrix<br /><br />Full name: BasicStats.q2</div>
 <div class="tip" id="fs40">val m4 : Matrix<br /><br />Full name: BasicStats.m4</div>
 <div class="tip" id="fs41">val corr&#39; : Matrix<br /><br />Full name: BasicStats.corr&#39;</div>
-<div class="tip" id="fs42">val corr : x:Matrix -&gt; Matrix<br /><br />Full name: FCore.BasicStats.corr</div>
+<div class="tip" id="fs42">val corr : x:Matrix -&gt; Matrix<br /><br />Full name: FCor.BasicStats.corr</div>
 <div class="tip" id="fs43">val cov&#39; : Matrix<br /><br />Full name: BasicStats.cov&#39;</div>
-<div class="tip" id="fs44">val cov : x:Matrix -&gt; Matrix<br /><br />Full name: FCore.BasicStats.cov</div>
+<div class="tip" id="fs44">val cov : x:Matrix -&gt; Matrix<br /><br />Full name: FCor.BasicStats.cov</div>
 
         </div>
         <div class="span3">
           <img src="./img/logo.png" alt="F# Project" style="width:300px;margin:10px" />  
           <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
-            <li class="nav-header">FCore</li>
+            <li class="nav-header">FCor</li>
             <li><a href="./index.html">Home page</a></li>
             <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/FCore">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/Statfactory/FCore">Source Code on GitHub</a></li>
+            <li><a href="http://nuget.org/packages/FCor">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/Statfactory/FCor">Source Code on GitHub</a></li>
             <li><a href="./license.html">License</a></li>
             <li><a href="./release-notes.html">Release Notes</a></li>
             
@@ -319,10 +319,10 @@ The functions return a matrix [pxp]:</p>
 
 
 
-   <li><a href="./PiMonteCarlo.html">FCore vs Matlab: Pi Monte Carlo</a></li>  <li><a href="./BinomialOption.html">FCore vs Matlab: Binomial Option Pricing</a></li>  <li><a href="./LSMOption.html">FCore vs Matlab: Least Squares MC Option Pricing</a></li>       </ul>
+   <li><a href="./PiMonteCarlo.html">FCor vs Matlab: Pi Monte Carlo</a></li>  <li><a href="./BinomialOption.html">FCor vs Matlab: Binomial Option Pricing</a></li>  <li><a href="./LSMOption.html">FCor vs Matlab: Least Squares MC Option Pricing</a></li>       </ul>
         </div>
       </div>
     </div>
-    <a href="http://github.com/Statfactory/FCore"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+    <a href="http://github.com/Statfactory/FCor"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
   </body>
   </html>

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>FCore vs Matlab: Pi Monte Carlo
+    <title>FCor vs Matlab: Pi Monte Carlo
 </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content="F# numerical library"/>
@@ -25,17 +25,17 @@
       <div class="masthead">
         <ul class="nav nav-pills pull-right">
           <li><a href="http://fsharp.org">fsharp.org</a></li>
-          <li><a href="http://github.com/Statfactory/FCore">github page</a></li>
+          <li><a href="http://github.com/Statfactory/FCor">github page</a></li>
         </ul>
-        <h3 class="muted"><a href="./index.html">FCore</a></h3>
+        <h3 class="muted"><a href="./index.html">FCor</a></h3>
       </div>
       <hr />
       <div class="row">
         <div class="span9" id="main">
           
-<h1><a name="FCore-vs-Matlab-Pi-Monte-Carlo" class="anchor" href="#FCore-vs-Matlab-Pi-Monte-Carlo">FCore vs Matlab: Pi Monte Carlo</a></h1>
+<h1><a name="FCor-vs-Matlab-Pi-Monte-Carlo" class="anchor" href="#FCor-vs-Matlab-Pi-Monte-Carlo">FCor vs Matlab: Pi Monte Carlo</a></h1>
 
-<p>We will compare here Matlab and FCore implementations of a simple algorithm to calculate Pi by Monte Carlo simulation.
+<p>We will compare here Matlab and FCor implementations of a simple algorithm to calculate Pi by Monte Carlo simulation.
 Both implementations will run on a system with Windows 7, 8GB RAM and Intel Core i7 2720QM CPU.</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
@@ -44,10 +44,10 @@ Both implementations will run on a system with Windows 7, 8GB RAM and Intel Core
 <span class="l">4: </span>
 <span class="l">5: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="prep">#r</span> <span class="s">&quot;FCore.dll&quot;</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FCore</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 2)" onmouseover="showTip(event, 'fs1', 2)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs2', 3)" onmouseover="showTip(event, 'fs2', 3)" class="i">Random</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 4)" onmouseover="showTip(event, 'fs1', 4)" class="i">FCore</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs3', 5)" onmouseover="showTip(event, 'fs3', 5)" class="i">Math</span>   
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="prep">#r</span> <span class="s">&quot;FCor.dll&quot;</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">FCor</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 2)" onmouseover="showTip(event, 'fs1', 2)" class="i">FCor</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs2', 3)" onmouseover="showTip(event, 'fs2', 3)" class="i">Random</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 4)" onmouseover="showTip(event, 'fs1', 4)" class="i">FCor</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs3', 5)" onmouseover="showTip(event, 'fs3', 5)" class="i">Math</span>   
 <span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 6)" onmouseover="showTip(event, 'fs4', 6)" class="i">System</span>
 </code></pre></td>
 </tr>
@@ -68,7 +68,7 @@ Both implementations will run on a system with Windows 7, 8GB RAM and Intel Core
 end</code></pre></td></tr></table>
 
 <p>It takes ca. 2.8 sec to run it for n = 100 000 000.
-This is FCore implementation:</p>
+This is FCor implementation:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
@@ -90,7 +90,7 @@ This is FCore implementation:</p>
 </table>
 
 <p>It takes ca. 2.1 sec to run it for n = 100 000 000, which is 25% less than Matlab.
-We could also use a faster Random Number Generator in FCore:</p>
+We could also use a faster Random Number Generator in FCor:</p>
 
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
 <span class="l"> 2: </span>
@@ -119,28 +119,28 @@ We could also use a faster Random Number Generator in FCore:</p>
 
 <p>Now it takes ca. 1.85 sec to run for n = 100 000 000.</p>
 
-<div class="tip" id="fs1">namespace FCore</div>
-<div class="tip" id="fs2">module Random<br /><br />from FCore</div>
-<div class="tip" id="fs3">module Math<br /><br />from FCore</div>
+<div class="tip" id="fs1">namespace FCor</div>
+<div class="tip" id="fs2">module Random<br /><br />from FCor</div>
+<div class="tip" id="fs3">module Math<br /><br />from FCor</div>
 <div class="tip" id="fs4">namespace System</div>
 <div class="tip" id="fs5">val piMC : n:int -&gt; float<br /><br />Full name: PiMonteCarlo.piMC</div>
 <div class="tip" id="fs6">val n : int</div>
 <div class="tip" id="fs7">Multiple items<br />val int : value:&#39;T -&gt; int (requires member op_Explicit)<br /><br />Full name: Microsoft.FSharp.Core.Operators.int<br /><br />--------------------<br />type int = int32<br /><br />Full name: Microsoft.FSharp.Core.int<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; = int<br /><br />Full name: Microsoft.FSharp.Core.int&lt;_&gt;</div>
-<div class="tip" id="fs8">type MklControl =<br />&#160;&#160;static member DisableFastMM : unit -&gt; unit<br />&#160;&#160;static member FreeBuffers : unit -&gt; unit<br />&#160;&#160;static member MemStat : unit -&gt; int64<br />&#160;&#160;static member SetMaxThreads : n:int -&gt; unit<br />&#160;&#160;static member ThreadFreeBuffers : unit -&gt; unit<br /><br />Full name: FCore.MklControl</div>
+<div class="tip" id="fs8">type MklControl =<br />&#160;&#160;static member DisableFastMM : unit -&gt; unit<br />&#160;&#160;static member FreeBuffers : unit -&gt; unit<br />&#160;&#160;static member MemStat : unit -&gt; int64<br />&#160;&#160;static member SetMaxThreads : n:int -&gt; unit<br />&#160;&#160;static member ThreadFreeBuffers : unit -&gt; unit<br /><br />Full name: FCor.MklControl</div>
 <div class="tip" id="fs9">static member MklControl.SetMaxThreads : n:int -&gt; unit</div>
 <div class="tip" id="fs10">val rng : MT19937Rng</div>
-<div class="tip" id="fs11">Multiple items<br />type MT19937Rng =<br />&#160;&#160;inherit MklRng<br />&#160;&#160;new : unit -&gt; MT19937Rng<br />&#160;&#160;new : streamPtr:IntPtr -&gt; MT19937Rng<br />&#160;&#160;new : seed:uint32 -&gt; MT19937Rng<br />&#160;&#160;new : seeds:uint32 [] -&gt; MT19937Rng<br />&#160;&#160;member Copy : unit -&gt; MT19937Rng<br />&#160;&#160;member SkipAhead : nSkip:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int64 -&gt; unit<br /><br />Full name: FCore.MT19937Rng<br /><br />--------------------<br />new : unit -&gt; MT19937Rng<br />new : seeds:uint32 [] -&gt; MT19937Rng<br />new : seed:uint32 -&gt; MT19937Rng<br />new : streamPtr:IntPtr -&gt; MT19937Rng</div>
+<div class="tip" id="fs11">Multiple items<br />type MT19937Rng =<br />&#160;&#160;inherit MklRng<br />&#160;&#160;new : unit -&gt; MT19937Rng<br />&#160;&#160;new : streamPtr:IntPtr -&gt; MT19937Rng<br />&#160;&#160;new : seed:uint32 -&gt; MT19937Rng<br />&#160;&#160;new : seeds:uint32 [] -&gt; MT19937Rng<br />&#160;&#160;member Copy : unit -&gt; MT19937Rng<br />&#160;&#160;member SkipAhead : nSkip:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int64 -&gt; unit<br /><br />Full name: FCor.MT19937Rng<br /><br />--------------------<br />new : unit -&gt; MT19937Rng<br />new : seeds:uint32 [] -&gt; MT19937Rng<br />new : seed:uint32 -&gt; MT19937Rng<br />new : streamPtr:IntPtr -&gt; MT19937Rng</div>
 <div class="tip" id="fs12">val x1 : Vector</div>
-<div class="tip" id="fs13">val rand : rng:&#39;T -&gt; &#39;S (requires member op_Explicit)<br /><br />Full name: FCore.Random.rand</div>
-<div class="tip" id="fs14">Multiple items<br />type Vector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Vector<br />&#160;&#160;new : data:seq&lt;float&gt; -&gt; Vector<br />&#160;&#160;new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />&#160;&#160;new : data:float [] * copyData:bool -&gt; Vector<br />&#160;&#160;new : length:int * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCore.Vector<br /><br />--------------------<br />new : data:seq&lt;float&gt; -&gt; Vector<br />new : data:float -&gt; Vector<br />new : length:int64 * init:float -&gt; Vector<br />new : length:int * init:float -&gt; Vector<br />new : data:float [] * copyData:bool -&gt; Vector<br />new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector</div>
+<div class="tip" id="fs13">val rand : rng:&#39;T -&gt; &#39;S (requires member op_Explicit)<br /><br />Full name: FCor.Random.rand</div>
+<div class="tip" id="fs14">Multiple items<br />type Vector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Vector<br />&#160;&#160;new : data:seq&lt;float&gt; -&gt; Vector<br />&#160;&#160;new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />&#160;&#160;new : data:float [] * copyData:bool -&gt; Vector<br />&#160;&#160;new : length:int * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCor.Vector<br /><br />--------------------<br />new : data:seq&lt;float&gt; -&gt; Vector<br />new : data:float -&gt; Vector<br />new : length:int64 * init:float -&gt; Vector<br />new : length:int * init:float -&gt; Vector<br />new : data:float [] * copyData:bool -&gt; Vector<br />new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector</div>
 <div class="tip" id="fs15">val x2 : Vector</div>
 <div class="tip" id="fs16">val inCircle : BoolVector</div>
 <div class="tip" id="fs17">property Vector.AsExpr: VectorExpr</div>
-<div class="tip" id="fs18">val eval : expr:&#39;S -&gt; &#39;U (requires member EvalIn)<br /><br />Full name: FCore.Math.eval</div>
+<div class="tip" id="fs18">val eval : expr:&#39;S -&gt; &#39;U (requires member EvalIn)<br /><br />Full name: FCor.Math.eval</div>
 <div class="tip" id="fs19">Multiple items<br />val float : value:&#39;T -&gt; float (requires member op_Explicit)<br /><br />Full name: Microsoft.FSharp.Core.Operators.float<br /><br />--------------------<br />type float = Double<br /><br />Full name: Microsoft.FSharp.Core.float<br /><br />--------------------<br />type float&lt;&#39;Measure&gt; = float<br /><br />Full name: Microsoft.FSharp.Core.float&lt;_&gt;</div>
 <div class="tip" id="fs20">val piMC2 : n:int -&gt; float<br /><br />Full name: PiMonteCarlo.piMC2</div>
 <div class="tip" id="fs21">val rng1 : SOBOLRng</div>
-<div class="tip" id="fs22">Multiple items<br />type SOBOLRng =<br />&#160;&#160;inherit MklRng<br />&#160;&#160;new : unit -&gt; SOBOLRng<br />&#160;&#160;new : streamPtr:IntPtr -&gt; SOBOLRng<br />&#160;&#160;new : dimension:int -&gt; SOBOLRng<br />&#160;&#160;member Copy : unit -&gt; SOBOLRng<br />&#160;&#160;member LeapFrog : k:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int64 -&gt; unit<br /><br />Full name: FCore.SOBOLRng<br /><br />--------------------<br />new : unit -&gt; SOBOLRng<br />new : dimension:int -&gt; SOBOLRng<br />new : streamPtr:IntPtr -&gt; SOBOLRng</div>
+<div class="tip" id="fs22">Multiple items<br />type SOBOLRng =<br />&#160;&#160;inherit MklRng<br />&#160;&#160;new : unit -&gt; SOBOLRng<br />&#160;&#160;new : streamPtr:IntPtr -&gt; SOBOLRng<br />&#160;&#160;new : dimension:int -&gt; SOBOLRng<br />&#160;&#160;member Copy : unit -&gt; SOBOLRng<br />&#160;&#160;member LeapFrog : k:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int64 -&gt; unit<br /><br />Full name: FCor.SOBOLRng<br /><br />--------------------<br />new : unit -&gt; SOBOLRng<br />new : dimension:int -&gt; SOBOLRng<br />new : streamPtr:IntPtr -&gt; SOBOLRng</div>
 <div class="tip" id="fs23">val rng2 : SOBOLRng</div>
 <div class="tip" id="fs24">member SOBOLRng.Copy : unit -&gt; SOBOLRng</div>
 <div class="tip" id="fs25">member SOBOLRng.LeapFrog : k:int -&gt; unit</div>
@@ -149,11 +149,11 @@ We could also use a faster Random Number Generator in FCore:</p>
         <div class="span3">
           <img src="./img/logo.png" alt="F# Project" style="width:300px;margin:10px" />  
           <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
-            <li class="nav-header">FCore</li>
+            <li class="nav-header">FCor</li>
             <li><a href="./index.html">Home page</a></li>
             <li class="divider"></li>
-            <li><a href="http://nuget.org/packages/FCore">Get Library via NuGet</a></li>
-            <li><a href="http://github.com/Statfactory/FCore">Source Code on GitHub</a></li>
+            <li><a href="http://nuget.org/packages/FCor">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/Statfactory/FCor">Source Code on GitHub</a></li>
             <li><a href="./license.html">License</a></li>
             <li><a href="./release-notes.html">Release Notes</a></li>
             
@@ -171,10 +171,10 @@ We could also use a faster Random Number Generator in FCore:</p>
 
 
 
-   <li><a href="./PiMonteCarlo.html">FCore vs Matlab: Pi Monte Carlo</a></li>  <li><a href="./BinomialOption.html">FCore vs Matlab: Binomial Option Pricing</a></li>  <li><a href="./LSMOption.html">FCore vs Matlab: Least Squares MC Option Pricing</a></li>       </ul>
+   <li><a href="./PiMonteCarlo.html">FCor vs Matlab: Pi Monte Carlo</a></li>  <li><a href="./BinomialOption.html">FCor vs Matlab: Binomial Option Pricing</a></li>  <li><a href="./LSMOption.html">FCor vs Matlab: Least Squares MC Option Pricing</a></li>       </ul>
         </div>
       </div>
     </div>
-    <a href="http://github.com/Statfactory/FCore"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+    <a href="http://github.com/Statfactory/FCor"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
   </body>
   </html>
