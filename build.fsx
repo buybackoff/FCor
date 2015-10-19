@@ -43,7 +43,7 @@ let description = "High performance open source F# numerical library"
 let authors = [ "StatFactory Ltd" ]
 
 // Tags for your project (for NuGet package)
-let tags = "fsharp math stat"
+let tags = "fsharp numerics math stat"
 
 // File system information 
 let solutionFile  = "FCor.sln"
@@ -331,18 +331,21 @@ Target "BuildPackage" DoNothing
 Target "All" DoNothing
 
 "Clean"
-  ==> "CleanDocs"
-  ==> "ZipMKL"
-  ==> "Build"
-  ==> "CopyBinaries"
+//  ==> "CleanDocs"
+//  ==> "ZipMKL"
+//  ==> "Build"
+//  ==> "CopyBinaries"
 //  ==> "BuildTests"
 //  ==> "BuildMatlabTests"
 //  ==> "RunTests_x86"
 //  ==> "RunTests_x64"
 //  ==> "RunMatlabTests_x86"
 //  ==> "RunMatlabTests_x64"
-  ==> "GenerateHelp"
-  ==> "ReleaseDocs"
+//  ==> "GenerateHelp"
+//  ==> "ReleaseDocs"
+//  ==> "NuGet"
+//  ==> "PublishNuget"
+  ==> "Release"
 
 
 //"Clean"
