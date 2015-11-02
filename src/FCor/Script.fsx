@@ -12,14 +12,18 @@ open FCor.Random
 open Overloading
 open BasicStats
 
-let m = 10
-let n = 5
 let rng = new MT19937Rng()
-let A = rand rng m n
-let eye : Matrix = I m m
-let l,u,p = lu A
-let v = eye.[p, {0..m-1}]
-let res = (v * l) * u
+MklControl.SetMaxThreads 4
+
+let X = rand rng 1000000 : Vector
+let e = normRnd rng 0.0 1.0 1000000 : Vector
+let Y = 2.2 + 3.3 * X + e
+let XVar = new Covariate("X", new CovariateStorage(X))
+let YVar = new Covariate("Y", new CovariateStorage(Y))
+#time
+let glm = Glm.fitModel YVar.AsExpr [NumericalPredictor XVar.AsExpr] true Gaussian Id 1000000 50 1e-10
+
+
 
 
 

@@ -55,8 +55,13 @@
     <Compile Include="MklFunctions.fs" />
     <Compile Include="MklControl.fs" />
     <Compile Include="ArgumentChecks.fs" />
+    <Compile Include="IntVector.fs" />
     <Compile Include="Vector.fs" />
     <Compile Include="Matrix.fs" />
+    <Compile Include="IFactorStorage.fs" />
+    <Compile Include="ICovariateStorage.fs" />
+    <Compile Include="Predictor.fs" />
+    <Compile Include="Glm.fs" />
     <Compile Include="Overloading.fs" />
     <Compile Include="MklRng.fs" />
     <Compile Include="Math.fs" />

@@ -217,6 +217,13 @@ int lu_solve(MKL_INT n, MKL_INT nrhs, T* A, T* B, GESV gesv)
 	return 0;
 }
 
+//template<typename T, typename GEQRF>
+//int qtau(MKL_INT m, MKL_INT n, T* Q, T* tau, GEQRF geqrf)
+//{
+//	int info = geqrf(LAPACK_COL_MAJOR, m, n, Q, m, tau);
+//	return info;
+//}
+
 template<typename T, typename GEQRF, typename ORGQR>
 int qr_factor(MKL_INT m, MKL_INT n, T* x, T* Q, T* R, GEQRF geqrf, ORGQR orgqr)
 {
@@ -298,12 +305,12 @@ int qr_factor(MKL_INT m, MKL_INT n, T* x, T* Q, T* R, GEQRF geqrf, ORGQR orgqr)
 template<typename T, typename GELSY>
 int qr_solve(MKL_INT m, MKL_INT n, MKL_INT nrhs, T* A, T* B, T* x, int* rank, T cond, GELSY gelsy)
 {
-    T* xTemp = (T*)mkl_malloc(m > n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T),64);
+    T* xTemp = (T*)mkl_malloc(m >= n ? m*nrhs*sizeof(T) : n*nrhs*sizeof(T),64);
 	if (xTemp == nullptr)
 	{
 		return OUTOFMEMORY;
 	}
-	if (m > n)
+	if (m >= n)
 	{
         memcpy(xTemp, B, m*nrhs*sizeof(T));
 	}
@@ -646,6 +653,16 @@ extern "C" __declspec(dllexport) int s_lu_solve(MKL_INT n, MKL_INT nrhs, float* 
 {
 	return lu_solve(n, nrhs, A, B, LAPACKE_sgesv);
 }
+
+//extern "C" __declspec(dllexport) int d_qtau(MKL_INT m, MKL_INT n, double* Q, double* tau)
+//{
+//	return qtau(m, n, Q, tau, LAPACKE_dgeqrf);
+//}
+//
+//extern "C" __declspec(dllexport) int s_qtau(MKL_INT m, MKL_INT n, float* Q, float* tau)
+//{
+//	return qtau(m, n, Q, tau, LAPACKE_sgeqrf);
+//}
 
 extern "C" __declspec(dllexport) int d_qr_factor(MKL_INT m, MKL_INT n, double* x, double* Q, double* R)
 {

@@ -173,6 +173,17 @@ module LinearAlgebra =
         ((epsEqual 1e-8 (q.ToArray2D()) y) && (epsEqual 1e-8 (r.ToArray2D()) z)) |> should be True
 
     [<Fact>]
+    let ``QR square`` () =
+        use rng = new MT19937Rng(1u)
+        let a = rand rng 1000 1000
+        setMatrix app "a" (a.ToArray2D())
+        let r = app.Execute("[q, r] = qr(a, 0);")
+        let y = getMatrix app  "q"
+        let z = getMatrix app  "r"
+        let (q, r) = qr a
+        ((epsEqual 1e-8 (q.ToArray2D()) y) && (epsEqual 1e-8 (r.ToArray2D()) z)) |> should be True
+
+    [<Fact>]
     let ``QR solveFull matrix`` () =
         use rng = new MT19937Rng(1u)
         let a = rand rng 500 100

@@ -64,6 +64,8 @@ extern "C" __declspec(dllexport) int d_create_zero_array(const MKL_INT length, d
 	return create_zero_array(length, x);
 }
 
+
+
 extern "C" __declspec(dllexport) int b_create_array(const MKL_INT length, bool*& x)
 {
 	return create_array(length, x); 
@@ -73,6 +75,20 @@ extern "C" __declspec(dllexport) int b_create_zero_array(const MKL_INT length, b
 {
 	return create_zero_array(length, x);
 }
+
+
+
+extern "C" __declspec(dllexport) int i32_create_zero_array(const MKL_INT length, int*& x)
+{
+	return create_zero_array(length, x);
+}
+
+extern "C" __declspec(dllexport) int i32_create_array(const MKL_INT length, int*& x)
+{
+	return create_array(length, x);
+}
+
+
 
 extern "C" __declspec(dllexport) void d_copy_array(const MKL_INT length, const double* x, double* y)
 {
@@ -84,6 +100,14 @@ extern "C" __declspec(dllexport) void b_copy_array(const MKL_INT length, const b
 	copy_array(length, x, y); 
 }
 
+extern "C" __declspec(dllexport) void i32_copy_array(const MKL_INT length, const int* x, int* y)
+{
+	copy_array(length, x, y);
+}
+
+
+
+
 extern "C" __declspec(dllexport) void d_fill_array(const double a, const MKL_INT length, double* x)
 {
 	fill_array(a, length, x); 
@@ -93,6 +117,14 @@ extern "C" __declspec(dllexport) void b_fill_array(const bool a, const MKL_INT l
 {
 	fill_array(a, length, x); 
 }
+
+extern "C" __declspec(dllexport) void i32_fill_array(const int a, const MKL_INT length, int* x)
+{
+	fill_array(a, length, x);
+}
+
+
+
 
 extern "C" __declspec(dllexport) void set_max_threads(const MKL_INT num_threads)
 {

@@ -23,6 +23,8 @@ type FloatPtr = nativeptr<float>
 
 type BoolPtr = nativeptr<bool>
 
+type Int32Ptr = nativeptr<int>
+
 type internal MklFunctions() =
 
     [<Literal>]
@@ -112,10 +114,19 @@ type internal MklFunctions() =
     static extern int b_create_zero_array(IntPtr length, BoolPtr* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int i32_create_array(IntPtr length, Int32Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int i32_create_zero_array(IntPtr length, Int32Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_fill_array(float a, IntPtr length, float* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void b_fill_array(bool a, IntPtr length, bool* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void i32_fill_array(int a, IntPtr length, int* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_copy_array(IntPtr length, float* fromArray, float* toArray)
@@ -124,7 +135,17 @@ type internal MklFunctions() =
     static extern void b_copy_array(IntPtr length, bool* fromArray, bool* toArray)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void i32_copy_array(IntPtr length, int* fromArray, int* toArray)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void free_array(IntPtr array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern float d_get_item(IntPtr i, float* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void d_set_item(IntPtr i, float a, float* array)
+
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void set_max_threads(IntPtr num_threads)
@@ -534,6 +555,18 @@ type internal MklFunctions() =
     static extern void s_round_array(IntPtr n, float32* x, float32* y)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void d_lngam_array(IntPtr n, float* x, float* y)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void d_digam_array(IntPtr n, float* x, float* y)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void d_cdfchi_array(IntPtr n, float* x, float* y)
+
+
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern int d_min_matrix(bool byRows, IntPtr varCount, IntPtr obsCount, float* x, float* res)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
@@ -883,17 +916,36 @@ type internal MklFunctions() =
     static member B_Create_Zero_Array(length : int64, array) =
         b_create_zero_array(new IntPtr(length), array) |> validateRetCode
 
+    static member I32_Create_Array(length : int64, array) =
+        i32_create_array(new IntPtr(length), array) |> validateRetCode
+
+    static member I32_Create_Zero_Array(length : int64, array) =
+        i32_create_zero_array(new IntPtr(length), array) |> validateRetCode
+
     static member D_Fill_Array(a, length : int64, array : nativeptr<float>) =
        d_fill_array(a, new IntPtr(length), array) 
 
     static member B_Fill_Array(a, length : int64, array) =
        b_fill_array(a, new IntPtr(length), array)
 
+    static member I32_Fill_Array(a, length : int64, array) =
+       i32_fill_array(a, new IntPtr(length), array)
+
     static member D_Copy_Array(length : int64, fromArray, toArray) =
        d_copy_array(new IntPtr(length), fromArray, toArray)
 
     static member B_Copy_Array(length : int64, fromArray, toArray) =
        b_copy_array(new IntPtr(length), fromArray, toArray)
+
+    static member I32_Copy_Array(length : int64, fromArray, toArray) =
+       i32_copy_array(new IntPtr(length), fromArray, toArray)
+
+    static member D_Get_Item(index : int64, arr) =
+        d_get_item(new IntPtr(index), arr)
+
+    static member D_Set_Item(index : int64, a, arr) =
+        d_set_item(new IntPtr(index), a, arr)
+
 
     static member Free_Array(x : IntPtr) = free_array(x)
 
@@ -1318,6 +1370,15 @@ type internal MklFunctions() =
 
     static member S_Round_Array(n : int64, x, y) =
         s_round_array(new IntPtr(n), x, y)
+
+    static member D_Lngam_Array(n : int64, x, y) =
+        d_lngam_array(new IntPtr(n), x, y)
+
+    static member D_Digam_Array(n : int64, x, y) =
+        d_digam_array(new IntPtr(n), x, y)
+
+    static member D_Cdfchi_Array(n : int64, x, y) =
+        d_cdfchi_array(new IntPtr(n), x, y)
 
 
 

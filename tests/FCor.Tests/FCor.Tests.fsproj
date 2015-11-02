@@ -95,6 +95,7 @@
     <Compile Include="BoolMatrixConstruction.fs" />
     <Compile Include="BoolMatrixOperators.fs" />
     <Compile Include="BoolMatrixSlicing.fs" />
+    <Compile Include="Glm.fs" />
     <None Include="Script1.fsx" />
     <Compile Include="MatrixConstruction.fs" />
   </ItemGroup>

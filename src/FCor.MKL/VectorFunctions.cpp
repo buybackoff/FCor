@@ -11,6 +11,8 @@
 //#include <math.h>
 #include <cmath>
 #include <mkl_service.h>
+#include "dcdflib.c"
+#include "ipmpar.c"
 
 
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
@@ -993,6 +995,31 @@ extern "C" __declspec(dllexport) void d_round_array(MKL_INT length, double* x, d
 extern "C" __declspec(dllexport) void s_round_array(MKL_INT length, float* x, float* y)
 {
 	vsRound(length, x, y); 
+}
+
+extern "C" __declspec(dllexport) void d_cdfchi_array(MKL_INT length, double df, double* x, double* y)
+{
+	double ccum = 0;
+	for (MKL_INT i = 0; i < length; i++)
+	{
+		cumchi(&x[i], &df, &y[i], &ccum);
+	}
+}
+
+extern "C" __declspec(dllexport) void d_lngam_array(MKL_INT length, double* x, double* y)
+{
+	for (MKL_INT i = 0; i < length; i++)
+	{
+		y[i] = alngam(&x[i]);
+	}
+}
+
+extern "C" __declspec(dllexport) void d_digam_array(MKL_INT length, double* x, double* y)
+{
+	for (MKL_INT i = 0; i < length; i++)
+	{
+		y[i] = psi(&x[i]);
+	}
 }
 
 

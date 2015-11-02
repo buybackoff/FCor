@@ -1136,7 +1136,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             NativePtr.write offsetArray value
 
     member this.Item
-        with get(i : int) = this.[i |> int64]
+        with get(i : int) = 
+            this.[i |> int64]
         and set (i : int) value =
             this.[i |> int64] <- value
 

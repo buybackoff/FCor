@@ -2252,12 +2252,12 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             let m = matrix.LongRowCount
             let n = matrix.LongColCount
             let Q =
-                if m > n then
+                if m >= n then
                     Matrix.Copy(matrix)
                 else
                     new Matrix(m, m, 0.0)
             let R = 
-                if m > n then
+                if m >= n then
                     new Matrix(n, n, 0.0)
                 else
                     Matrix.Copy(matrix)
