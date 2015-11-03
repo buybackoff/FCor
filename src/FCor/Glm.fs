@@ -70,8 +70,8 @@ module Glm =
     let rec cartesian xss =
         match xss with
         | [] -> []
-        | head::tail ->
-            head |> List.map (fun x -> tail |> cartesian |> List.map (fun y -> x::y)) |> List.concat
+        | head::[] -> head |> List.map (fun x -> [x])
+        | head::tail -> head |> List.map (fun x -> tail |> cartesian |> List.map (fun y -> x::y)) |> List.concat
 
     let getDimProd (size : int list) =
         (size |> List.scan (*) 1 |> List.rev).Tail |> List.rev
@@ -92,11 +92,12 @@ module Glm =
 
     let getDisabledSubscripts (maskedFactors : (Factor * FactorMask) list) =
         maskedFactors |> List.map (fun (factor, mask) -> 
-                                       match mask with
-                                           | EnableAllLevels -> []
-                                           | DisableOneLevel -> [getIndexOfMaxLevel factor]
-                                           | DisableAllLevels -> [0..factor.LevelCount - 1]
-                                  ) |> cartesian
+                                        match mask with
+                                            | EnableAllLevels -> []
+                                            | DisableOneLevel -> [getIndexOfMaxLevel factor]
+                                            | DisableAllLevels -> [0..factor.LevelCount - 1]
+                                    )
+                      |> cartesian
 
     let getDisabled (maskedFactors : (Factor * FactorMask) list) =
         let factors = maskedFactors |> List.map fst |> List.toArray
@@ -120,22 +121,40 @@ module Glm =
                 let cumDisabledCount = Array.sub (isDisabled |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isDisabled.Length
                 let estimateMap = Array.init isDisabled.Length (fun i -> if isDisabled.[i] then -1 else i - cumDisabledCount.[i])
                 let subscripts = Array.create factors.Length -1 // cache
-                let cachedRes : (int64 * int64 * IntVector) option ref = ref None 
+                let cachedFromObs : int64 option ref = ref None
+                let cachedToObs : int64 option ref = ref None
+                let cachedSlice : IntVector option ref = ref None 
                 let slicerFun =
                     fun (fromObs : int64, toObs : int64) ->
-                        match !cachedRes with
-                            | Some(a, b, v) when a = fromObs && b = toObs -> v
+                        match !cachedFromObs, !cachedToObs, !cachedSlice with
+                            | Some(a), Some(b), Some(v) when a = fromObs && b = toObs -> v
                             | _ ->
-                                let slices = factors |> Array.map (fun f -> f.GetSlice(fromObs, toObs))
-                                let sliceLen = toObs - fromObs + 1L
-                                let res = new IntVector(sliceLen, 0)
-                                for i in 0L..sliceLen - 1L do
-                                    for j in 0..factors.Length - 1 do
-                                        subscripts.[j] <- slices.[j].[i] 
-                                    let ind = sub2ind dimProd subscripts
-                                    res.[i] <- estimateMap.[ind]
-                                cachedRes := Some(fromObs, toObs, res)
-                                res
+                                match !cachedSlice with
+                                    | Some(v) -> v.Dispose()
+                                    | _ -> ()
+                                if factors.Length = 1 then
+                                    let sliceLen = toObs - fromObs + 1L
+                                    let slice = factors.[0].GetSlice(fromObs, toObs)
+                                    let res = new IntVector(sliceLen, 0)
+                                    for i in 0L..sliceLen - 1L do
+                                        res.[i] <- estimateMap.[slice.[i]]
+                                    cachedFromObs := Some fromObs
+                                    cachedToObs := Some toObs
+                                    cachedSlice := Some res
+                                    res
+                                else
+                                    let slices = factors |> Array.map (fun f -> f.GetSlice(fromObs, toObs))
+                                    let sliceLen = toObs - fromObs + 1L
+                                    let res = new IntVector(sliceLen, 0)
+                                    for i in 0L..sliceLen - 1L do
+                                        for j in 0..factors.Length - 1 do
+                                            subscripts.[j] <- slices.[j].[i] 
+                                        let ind = sub2ind dimProd subscripts
+                                        res.[i] <- estimateMap.[ind]
+                                    cachedFromObs := Some fromObs
+                                    cachedToObs := Some toObs
+                                    cachedSlice := Some res
+                                    res
                 (slicerFun, allLevelsCount) |> Some
             | [] -> None
 
@@ -202,8 +221,8 @@ module Glm =
                 ((!!Factor.Intercept:Predictor) + predictors) |> List.map (fun p -> p.AsList)
             else
                 predictors |> List.map (fun p -> p.AsList)
-        let maskedPredictors = getMaskedPredictors predictors
-        maskedPredictors
+        let maskedPredictors = getMaskedPredictors (predictors |> List.rev)
+        maskedPredictors |> List.rev
 
     let getPred (xbeta : Vector) (glmLink : GlmLink) =
         match glmLink with
@@ -279,25 +298,19 @@ module Glm =
                                             VectorExpr.EvalIn(xbeta.AsExpr + beta.[offset], Some xbeta) |> ignore
                                         else
                                             let slice = slicer(fromObs, toObs)
-                                            for obs in 0L..sliceLen - 1L do
-                                                let k = slice.[obs]
-                                                if k >= 0 then
-                                                    xbeta.[obs] <- xbeta.[obs] + beta.[offset + k]    
+                                            MklFunctions.Glm_Update_XBeta(sliceLen, xbeta.NativeArray, slice.NativeArray, beta.NativeArray, Vector.Empty.NativeArray, offset)
                                     | None, Some(covariate) -> 
-                                        let slice = covariate.GetSlice(fromObs, toObs)
+                                        use slice = covariate.GetSlice(fromObs, toObs)
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1] 
                                         VectorExpr.EvalIn(xbeta.AsExpr + beta.[offset] * slice.AsExpr, Some xbeta) |> ignore
                                     | Some(slicer, allLevelCount), Some(covariate) -> 
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1] 
-                                        let sliceCov = covariate.GetSlice(fromObs, toObs)
+                                        use sliceCov = covariate.GetSlice(fromObs, toObs)
                                         if allLevelCount = 1 then
                                             VectorExpr.EvalIn(xbeta.AsExpr + beta.[offset] * sliceCov.AsExpr, Some xbeta) |> ignore
                                         else
                                             let slice = slicer(fromObs, toObs)
-                                            for obs in 0L..sliceLen - 1L do
-                                                let k = slice.[obs]
-                                                if k >= 0 then
-                                                    xbeta.[obs] <- xbeta.[obs] + beta.[offset + k] * sliceCov.[obs]
+                                            MklFunctions.Glm_Update_XBeta(sliceLen, xbeta.NativeArray, slice.NativeArray, beta.NativeArray, sliceCov.NativeArray, offset)
                                     | _ -> ()
                                 )
         xbeta
@@ -315,34 +328,27 @@ module Glm =
                                             U.[offset] <- U.[offset] + Vector.Sum(u)
                                         else
                                             let slice = slicer(fromObs, toObs)
-                                            for obs in 0L..sliceLen - 1L do
-                                                let k = slice.[obs]
-                                                if k >= 0 then
-                                                    U.[offset + k] <- U.[offset + k] + u.[obs]
+                                            MklFunctions.Glm_Update_U(sliceLen, U.NativeArray, u.NativeArray, slice.NativeArray, Vector.Empty.NativeArray, offset)
                                     | None, Some(covariate) -> 
-                                        let slice = covariate.GetSlice(fromObs, toObs)
+                                        use slice = covariate.GetSlice(fromObs, toObs)
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1] 
                                         U.[offset] <- U.[offset] + u * slice
-//                                        for obs in 0L..sliceLen - 1L do
-//                                            U.[offset] <- U.[offset] + u.[obs] * slice.[obs]
                                     | Some(slicer, allLevelCount), Some(covariate) ->
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1]  
-                                        let sliceCov = covariate.GetSlice(fromObs, toObs)
+                                        use sliceCov = covariate.GetSlice(fromObs, toObs)
                                         if allLevelCount = 1 then
                                             U.[offset] <- U.[offset] + u * sliceCov
                                         else
                                             let slice = slicer(fromObs, toObs)
-                                            for obs in 0L..sliceLen - 1L do
-                                                let k = slice.[obs]
-                                                if k >= 0 then
-                                                    U.[offset + k] <- U.[offset + k] + u.[obs] * sliceCov.[obs]
+                                            MklFunctions.Glm_Update_U(sliceLen, U.NativeArray, u.NativeArray, slice.NativeArray, sliceCov.NativeArray, offset)
                                     | _ -> ()
                                 )
         U
 
     let getH (design : (((int64 * int64 -> IntVector) * int) option * Covariate option) array) (weight : Vector) (slice : (int64*int64))
              (cumEstimateCounts: int[]) =
-        let H = new Matrix(cumEstimateCounts.[cumEstimateCounts.Length - 1], cumEstimateCounts.[cumEstimateCounts.Length - 1], 0.0)
+        let p = cumEstimateCounts.[cumEstimateCounts.Length - 1]
+        let H = new Matrix(p, p, 0.0)
         let fromObs, toObs = slice
         let sliceLen = toObs - fromObs + 1L
         for pRow in 0..design.Length-1 do
@@ -356,66 +362,55 @@ module Glm =
                         else                       
                             let rowSlice = rowSlicer(fromObs, toObs)
                             let colSlice = colSlicer(fromObs, toObs)
-
-                            for obs in 0L..sliceLen - 1L do
-                                let rowK = rowSlice.[obs]
-                                let colK = colSlice.[obs]
-                                if rowK >= 0 && colK >= 0 then
-                                    H.[rowOffset + rowK, colOffset + colK] <- H.[rowOffset + rowK, colOffset + colK] + weight.[obs]
+                            MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray, Vector.Empty.NativeArray,
+                                                      Vector.Empty.NativeArray, rowSlice.NativeArray, colSlice.NativeArray, rowOffset, colOffset)
 
                     | (Some(rowSlicer, rowAllLevelCount), None), (None, Some(colCovariate)) ->
                         let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1] 
                         let colOffset = if pCol = 0 then 0 else cumEstimateCounts.[pCol-1] 
-                        let colSlice = colCovariate.GetSlice(fromObs, toObs)
+                        use colSlice = colCovariate.GetSlice(fromObs, toObs)
                         if rowAllLevelCount = 1 then
                             H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * colSlice
                         else
                             let rowSlice = rowSlicer(fromObs, toObs)
-                            for obs in 0L..sliceLen - 1L do
-                                let rowK = rowSlice.[obs]
-                                if rowK >= 0 then
-                                    H.[rowOffset + rowK, colOffset] <- H.[rowOffset + rowK, colOffset] + weight.[obs] * colSlice.[obs]
+                            MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray, Vector.Empty.NativeArray,
+                                                      colSlice.NativeArray, rowSlice.NativeArray, IntVector.Empty.NativeArray, rowOffset, colOffset)
 
                     | (Some(rowSlicer, rowAllLevelCount), None), (Some(colSlicer, colAllLevelCount), Some(colCovariate)) ->
                         let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1] 
                         let colOffset = if pCol = 0 then 0 else cumEstimateCounts.[pCol-1] 
-                        let colCovSlice = colCovariate.GetSlice(fromObs, toObs)
+                        use colCovSlice = colCovariate.GetSlice(fromObs, toObs)
                         if rowAllLevelCount = 1 && colAllLevelCount = 1 then
                             H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * colCovSlice
                         else
                             let rowSlice = rowSlicer(fromObs, toObs)
                             let colSlice = colSlicer(fromObs, toObs)
-                            for obs in 0L..sliceLen - 1L do
-                                let rowK = rowSlice.[obs]
-                                let colK = colSlice.[obs]
-                                if rowK >= 0 && colK >= 0 then
-                                    H.[rowOffset + rowK, colOffset + colK] <- H.[rowOffset + rowK, colOffset + colK] + weight.[obs] * colCovSlice.[obs]
+                            MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray, Vector.Empty.NativeArray,
+                                                      colCovSlice.NativeArray, rowSlice.NativeArray, colSlice.NativeArray, rowOffset, colOffset)
 
 
                     | (None, Some(rowCovariate)), (None, Some(colCovariate)) -> 
-                        let rowSlice = rowCovariate.GetSlice(fromObs, toObs)
-                        let colSlice = colCovariate.GetSlice(fromObs, toObs)
+                        use rowSlice = rowCovariate.GetSlice(fromObs, toObs)
+                        use colSlice = colCovariate.GetSlice(fromObs, toObs)
                         let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1]  
                         let colOffset = if pCol = 0 then 0 else cumEstimateCounts.[pCol-1]
                         use prod = VectorExpr.EvalIn((weight.AsExpr .* rowSlice) .* colSlice, None)
                         H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
 
                     | (None, Some(rowCovariate)), (Some(colSlicer, colAllLevelCount), None) -> 
-                        let rowSlice = rowCovariate.GetSlice(fromObs, toObs)
+                        use rowSlice = rowCovariate.GetSlice(fromObs, toObs)
                         let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1]  
                         let colOffset = if pCol = 0 then 0 else cumEstimateCounts.[pCol-1]
                         if colAllLevelCount = 1 then
                             H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * rowSlice
                         else
                             let colSlice = colSlicer(fromObs, toObs)
-                            for obs in 0L..sliceLen - 1L do
-                                let colK = colSlice.[obs]
-                                if colK >= 0 then
-                                    H.[rowOffset, colOffset + colK] <- H.[rowOffset, colOffset + colK] + weight.[obs] * rowSlice.[obs] 
+                            MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray, rowSlice.NativeArray,
+                                                      Vector.Empty.NativeArray, IntVector.Empty.NativeArray, colSlice.NativeArray, rowOffset, colOffset)
 
                     | (None, Some(rowCovariate)), (Some(colSlicer, colAllLevelCount), Some(colCovariate)) -> 
-                        let rowSlice = rowCovariate.GetSlice(fromObs, toObs)
-                        let colCovSlice = colCovariate.GetSlice(fromObs, toObs)
+                        use rowSlice = rowCovariate.GetSlice(fromObs, toObs)
+                        use colCovSlice = colCovariate.GetSlice(fromObs, toObs)
                         let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1]  
                         let colOffset = if pCol = 0 then 0 else cumEstimateCounts.[pCol-1]
                         use prod = VectorExpr.EvalIn(weight.AsExpr .* rowSlice .* colCovSlice, None)
@@ -423,31 +418,26 @@ module Glm =
                             H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
                         else
                             let colSlice = colSlicer(fromObs, toObs)
-                            for obs in 0L..sliceLen - 1L do
-                                let colK = colSlice.[obs]
-                                if colK >= 0 then
-                                    H.[rowOffset, colOffset + colK] <- H.[rowOffset, colOffset + colK] + weight.[obs] * rowSlice.[obs] * colCovSlice.[obs]
+                            MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray, rowSlice.NativeArray,
+                                                      colCovSlice.NativeArray, IntVector.Empty.NativeArray, colSlice.NativeArray, rowOffset, colOffset)
 
                     | (Some(rowSlicer, rowAllLevelCount), Some(rowCovariate)), (Some(colSlicer, colAllLevelCount), Some(colCovariate)) -> 
                         let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1]  
                         let colOffset = if pCol = 0 then 0 else cumEstimateCounts.[pCol-1]
-                        let rowSliceCov = rowCovariate.GetSlice(fromObs, toObs)
-                        let colSliceCov = colCovariate.GetSlice(fromObs, toObs)
+                        use rowSliceCov = rowCovariate.GetSlice(fromObs, toObs)
+                        use colSliceCov = colCovariate.GetSlice(fromObs, toObs)
                         if rowAllLevelCount = 1 && colAllLevelCount = 1 then
                             use prod = weight .* rowSliceCov .* colSliceCov
                             H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
                         else
                             let rowSlice = rowSlicer(fromObs, toObs)
                             let colSlice = colSlicer(fromObs, toObs)
-                            for obs in 0L..sliceLen - 1L do
-                                let rowK = rowSlice.[obs]
-                                let colK = colSlice.[obs]
-                                if rowK >= 0 && colK >= 0 then
-                                    H.[rowOffset + rowK, colOffset + colK] <- H.[rowOffset + rowK, colOffset + colK] + weight.[obs] * rowSliceCov.[obs] * colSliceCov.[obs] 
+                            MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray, rowSliceCov.NativeArray,
+                                                      colSliceCov.NativeArray, rowSlice.NativeArray, colSlice.NativeArray, rowOffset, colOffset)
 
                     | (Some(rowSlicer, rowAllLevelCount), Some(rowCovariate)), (None, Some(colCovariate)) -> 
-                        let rowSliceCov = rowCovariate.GetSlice(fromObs, toObs)
-                        let colSliceCov = colCovariate.GetSlice(fromObs, toObs)
+                        use rowSliceCov = rowCovariate.GetSlice(fromObs, toObs)
+                        use colSliceCov = colCovariate.GetSlice(fromObs, toObs)
                         let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1]  
                         let colOffset = if pCol = 0 then 0 else cumEstimateCounts.[pCol-1]
                         use prod = VectorExpr.EvalIn(weight.AsExpr .* rowSliceCov .* colSliceCov , None)
@@ -455,25 +445,21 @@ module Glm =
                             H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod) 
                         else
                             let rowSlice = rowSlicer(fromObs, toObs)
-                            for obs in 0L..sliceLen - 1L do
-                                let rowK = rowSlice.[obs]
-                                if rowK >= 0 then
-                                    H.[rowOffset + rowK, colOffset] <- H.[rowOffset + rowK, colOffset] + weight.[obs] * rowSliceCov.[obs] * colSliceCov.[obs] 
+                            MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray, rowSliceCov.NativeArray,
+                                                      colSliceCov.NativeArray, rowSlice.NativeArray, IntVector.Empty.NativeArray, rowOffset, colOffset)
 
                     | (Some(rowSlicer, rowAllLevelCount), Some(rowCovariate)), (Some(colSlicer, colAllLevelCount), None) -> 
                         let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1]  
                         let colOffset = if pCol = 0 then 0 else cumEstimateCounts.[pCol-1]
-                        let rowSliceCov = rowCovariate.GetSlice(fromObs, toObs)
+                        use rowSliceCov = rowCovariate.GetSlice(fromObs, toObs)
                         if rowAllLevelCount = 1 && colAllLevelCount = 1 then
                             H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * rowSliceCov
                         else
                             let rowSlice = rowSlicer(fromObs, toObs)
                             let colSlice = colSlicer(fromObs, toObs)
-                            for obs in 0L..sliceLen - 1L do
-                                let rowK = rowSlice.[obs]
-                                let colK = colSlice.[obs]
-                                if rowK >= 0 && colK >= 0 then
-                                    H.[rowOffset + rowK, colOffset + colK] <- H.[rowOffset + rowK, colOffset + colK] + weight.[obs] * rowSliceCov.[obs]  
+                            MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray, rowSliceCov.NativeArray,
+                                                      Vector.Empty.NativeArray, rowSlice.NativeArray, colSlice.NativeArray, rowOffset, colOffset)
+
                     | _ -> ()
         H
 
@@ -492,15 +478,17 @@ module Glm =
                use pred = getPred xbeta glmLink
                use u = get_u resp pred glmLink glmDistribution
                use weight = getWeight resp glmLink glmDistribution
-               VectorExpr.EvalIn(U.AsExpr + (getU design u (fromObs,toObs) cumEstimateCounts), Some U) |> ignore
-               MatrixExpr.EvalIn(H.AsExpr + (getH design weight (fromObs,toObs) cumEstimateCounts), Some H) |> ignore
+               use updateU = getU design u (fromObs,toObs) cumEstimateCounts
+               use updateH = getH design weight (fromObs,toObs) cumEstimateCounts
+               VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
+               MatrixExpr.EvalIn(H.AsExpr + updateH, Some H) |> ignore
 
             //calc next beta from U and H
-            MatrixExpr.EvalIn(H.AsExpr + (Matrix.Transpose(Matrix.UpperTri(H, 1))), Some H) |> ignore
-            let delta = Matrix.LuSolve(H, U)
+            //MatrixExpr.EvalIn(H.AsExpr + (Matrix.Transpose(Matrix.UpperTri(H, 1))), Some H) |> ignore
+            use delta = Matrix.CholSolve(H, U)
             let nextBeta = beta + delta
             if (glmDistribution = Gaussian && glmLink = Id) || epsEqualVector beta nextBeta eps then
-                let invHDiag = Matrix.LuInv(H).Diag(0)
+                let invHDiag = Matrix.CholInv(H).Diag(0)
                 nextBeta, invHDiag,  iter, true
             else
                 iwls response design glmDistribution glmLink nextBeta maxIter (iter + 1) slices cumEstimateCounts eps
@@ -641,6 +629,19 @@ module Glm =
          Scale = phi
         }
 
+    let getInitBeta (estimateCount : int) (link : GlmLink) (meanResponseEstimate : float) =
+        let beta = new Vector(estimateCount, 0.0)
+        match link with
+            | Id ->
+                beta.[0] <- meanResponseEstimate
+            | Ln ->
+                beta.[0] <- Math.Log(meanResponseEstimate)
+            | Log(d) ->
+                beta.[0] <- Math.Log(meanResponseEstimate) / Math.Log(d)
+            | Power(d) ->
+                beta.[0] <- Math.Pow(meanResponseEstimate, 1.0 / d)
+        beta
+
     let fitModel (response : CovariateExpr) (predictors : Predictor list) (includeIntercept : bool)
                  (glmDistribution : GlmDistribution) (glmLink : GlmLink) (sliceLength : int) (maxIter : int) (eps : float) =
         let minLen = min (predictors |> List.map (fun p -> p.MinLength) |> List.min) response.MinLength
@@ -654,11 +655,11 @@ module Glm =
         let estimableDesign = getEstimableDesign predictors includeIntercept
         let estimateCounts = estimableDesign |> List.map getEstimateCount |> List.toArray
         let cumEstimateCounts = Array.sub (estimateCounts |> Array.scan (+) 0) 1 estimateCounts.Length
-        let initBeta = new Vector(cumEstimateCounts.[cumEstimateCounts.Length - 1], 0.0)
-        initBeta.[0] <- meanReponseSlice
+        let initBeta = getInitBeta cumEstimateCounts.[cumEstimateCounts.Length - 1] glmLink meanReponseSlice
         let design = estimableDesign |> List.map (fun (factors, cov) -> (getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) |> List.toArray
-        let beta, invHDiag, _, converged = iwls response design glmDistribution glmLink initBeta maxIter 0 slices cumEstimateCounts eps
+        let beta, invHDiag, iter, converged = iwls response design glmDistribution glmLink initBeta maxIter 0 slices cumEstimateCounts eps
         if converged then
+            printfn "converged in %d iter" iter
             let parameters = getParameterEstimates estimableDesign beta invHDiag cumEstimateCounts
             let goodnessOfFit = getGoodnessOfFit response design glmDistribution glmLink beta slices cumEstimateCounts
             (parameters, goodnessOfFit) |> Some

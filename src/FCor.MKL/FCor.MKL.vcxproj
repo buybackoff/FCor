@@ -183,6 +183,7 @@
   <ItemGroup>
     <ClCompile Include="Comparison.cpp" />
     <ClCompile Include="dcdflib.c" />
+    <ClCompile Include="Glm.cpp" />
     <ClCompile Include="ipmpar.c" />
     <ClCompile Include="LinearAlgebra.cpp" />
     <ClCompile Include="MatrixManipulation.cpp" />

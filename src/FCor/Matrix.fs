@@ -294,9 +294,10 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
             colMajorDataVector.[i] <- value
 
     member this.Item
-        with get(i : int) = this.[i |> int64]
+        with get(i : int) = 
+            colMajorDataVector.[i]
         and set (i : int) value =
-            this.[i |> int64] <- value
+            colMajorDataVector.[i] <- value
 
     member this.Item
         with get(indices : int64 seq) = 
@@ -1210,9 +1211,10 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             colMajorDataVector.[i] <- value
 
     member this.Item
-        with get(i : int) = this.[i |> int64]
+        with get(i : int) = 
+            colMajorDataVector.[i]
         and set (i : int) value =
-            this.[i |> int64] <- value
+            colMajorDataVector.[i] <- value
 
     member this.Item
         with get(indices : int64 seq) = 

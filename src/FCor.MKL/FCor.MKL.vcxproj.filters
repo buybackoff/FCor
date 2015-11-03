@@ -51,6 +51,9 @@
     <ClCompile Include="ipmpar.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Glm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ErrorCodes.h">

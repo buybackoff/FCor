@@ -140,12 +140,6 @@ type internal MklFunctions() =
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void free_array(IntPtr array)
 
-    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern float d_get_item(IntPtr i, float* array)
-
-    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern void d_set_item(IntPtr i, float a, float* array)
-
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void set_max_threads(IntPtr num_threads)
@@ -900,6 +894,15 @@ type internal MklFunctions() =
 
 
 
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void update_xbeta(IntPtr n, double* xbeta, int* indices, double* beta, double* covariate, int offset)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void update_U(IntPtr n, double* U, double* u, int* indices, double* covariate, int offset)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void update_H(IntPtr n, int p, double* H, double* weight, double* rowCovariate, double* colCovariate,
+                                int* rowIndices, int* colIndices, int rowOffset, int colOffset)
 
 
     static member LoadLibrary_(dllPath) = LoadLibrary(dllPath)
@@ -939,12 +942,6 @@ type internal MklFunctions() =
 
     static member I32_Copy_Array(length : int64, fromArray, toArray) =
        i32_copy_array(new IntPtr(length), fromArray, toArray)
-
-    static member D_Get_Item(index : int64, arr) =
-        d_get_item(new IntPtr(index), arr)
-
-    static member D_Set_Item(index : int64, a, arr) =
-        d_set_item(new IntPtr(index), a, arr)
 
 
     static member Free_Array(x : IntPtr) = free_array(x)
@@ -1720,5 +1717,15 @@ type internal MklFunctions() =
 
     static member S_Multiply_Matrices(x, y, z, n : int64, m : int64, k :  int64, trans) =
         s_multiply_matrices(x, y, z, new IntPtr(n), new IntPtr(m), new IntPtr(k), trans)
+
+    static member Glm_Update_XBeta(n : int64, xbeta, indices, beta, covariate, offset) =
+        update_xbeta(new IntPtr(n), xbeta, indices, beta, covariate, offset)
+
+    static member Glm_Update_U(n : int64, U, u, indices, covariate, offset) =
+        update_U(new IntPtr(n), U, u, indices, covariate, offset)
+
+    static member Glm_Update_H(n : int64, p, H, weight, rowCovariate, colCovariate, rowIndices, colIndices, rowOffset, colOffset) =
+        update_H(new IntPtr(n), p, H, weight, rowCovariate, colCovariate, rowIndices, colIndices, rowOffset, colOffset)
+
 
 

@@ -13,18 +13,6 @@
 #include "ErrorCodes.h"
 
 template<typename T>
-T get_item(MKL_INT i, T* x)
-{
-	return x[i];
-}
-
-template<typename T>
-void set_item(MKL_INT i, T a, T* x)
-{
-	x[i] = a;
-}
-
-template<typename T>
 int get_bool_slice(MKL_INT n, T* x, bool* b, T*& y, __int64& ny)
 {
 	MKL_INT trueCount = 0;
@@ -96,16 +84,6 @@ int set_bool_slice(MKL_INT n, T* x, bool* b, T* y, MKL_INT ny)
 		}
 	}
 	return 0;
-}
-
-extern "C" __declspec(dllexport) double d_get_item(MKL_INT i, double* x)
-{
-	return get_item(i, x);
-}
-
-extern "C" __declspec(dllexport) void d_set_item(MKL_INT i, double a, double* x)
-{
-	set_item(i, a, x);
 }
 
 extern "C" __declspec(dllexport) int b_get_bool_slice(MKL_INT n, bool* x, bool* b, bool*& y, __int64& ny)

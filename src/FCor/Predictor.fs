@@ -43,6 +43,12 @@ type Factor(name : string, factorStorage : IFactorStorage) =
     static member (+) (catPredictor : CategoricalPredictor, factor : Factor) : Predictor list = 
         !!catPredictor + CategoricalPredictor(!!factor)
 
+    static member (+) (predictors : Predictor list, factor : Factor) =
+        predictors @ [!!factor]   
+
+    static member (+) (factor : Factor, predictors : Predictor list) =
+        !!factor :: predictors
+
 
 and Covariate(name : string, covariateStorage : ICovariateStorage) =
 
@@ -79,6 +85,12 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
 
     static member (+) (covariate : Covariate, catPredictor : CategoricalPredictor) : Predictor list =
         !!covariate + CategoricalPredictor(catPredictor) 
+
+    static member (+) (predictors : Predictor list, covariate : Covariate) =
+         predictors @ [!!covariate] 
+
+    static member (+) (covariate : Covariate, predictors : Predictor list) =
+        !!covariate :: predictors
 
     static member (*) (covariate1 : Covariate, covariate2 : Covariate) = covariate1.AsExpr * covariate2.AsExpr
                 
@@ -251,10 +263,14 @@ and Predictor =
         [predictor1; predictor2]
 
     static member (+) (predictors : Predictor list, predictor : Predictor) =
-        predictor :: predictors 
+         predictors @ [predictor]
 
     static member (+) (predictor : Predictor, predictors : Predictor list) =
-        [predictor] @ predictors
+        predictor :: predictors
+
+
+
+
 
 
      
