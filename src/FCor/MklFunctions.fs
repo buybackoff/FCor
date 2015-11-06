@@ -1719,13 +1719,13 @@ type internal MklFunctions() =
     static member S_Multiply_Matrices(x, y, z, n : int64, m : int64, k :  int64, trans) =
         s_multiply_matrices(x, y, z, new IntPtr(n), new IntPtr(m), new IntPtr(k), trans)
 
-    static member Glm_Update_XBeta(n : int64, xbeta, k, slices, estimateMap, dimProd, beta, covariate, offset) =
+    static member Glm_Update_XBeta(n : int, xbeta, k, slices, estimateMap, dimProd, beta, covariate, offset) =
         update_xbeta(new IntPtr(n), xbeta, k, slices, estimateMap, dimProd, beta, covariate, offset)
 
-    static member Glm_Update_U(n : int64, U, u, k, slices, estimateMap, dimProd, covariate, offset) =
+    static member Glm_Update_U(n : int, U, u, k, slices, estimateMap, dimProd, covariate, offset) =
         update_U(new IntPtr(n), U, u, k, slices, estimateMap, dimProd, covariate, offset)
 
-    static member Glm_Update_H(n : int64, p, H, weight, rowCovariate, colCovariate,
+    static member Glm_Update_H(n : int, p, H, weight, rowCovariate, colCovariate,
                                rowK, rowSlices, rowEstimateMap, rowDimProd,
                                colK, colSlices, colEstimateMap, colDimProd, rowOffset, colOffset) =
         update_H(new IntPtr(n), p, H, weight, rowCovariate, colCovariate, rowK, rowSlices, rowEstimateMap, rowDimProd,

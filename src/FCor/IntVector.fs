@@ -98,7 +98,7 @@ type IntVector(length : int64, nativeArray : nativeptr<int>, gcHandlePtr : IntPt
 
     member this.View
         with get(fromIndex, toIndex) =
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if isDisposed then raise (new ObjectDisposedException(""))
             if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
             if toIndex < 0L || toIndex >= length then raise (new IndexOutOfRangeException())
             if fromIndex > toIndex then IntVector.Empty

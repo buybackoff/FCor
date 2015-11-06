@@ -22,7 +22,7 @@ module Glm =
 //        let YVar = new Covariate("Y", new CovariateStorage(Y))
 //        let glm = Glm.fitModel YVar.AsExpr [NumericalPredictor XVar.AsExpr] true Gaussian Id 1000000 50 1e-10
 //        ()
-        let N = 5000000
+        let N = 1000000
         let rng = new MT19937Rng()
         let rnd = new Random()
         MklControl.SetMaxThreads 1
@@ -43,6 +43,6 @@ module Glm =
         BStorage.SetSlice(0, BCol)
         let BVar = new Factor("B", BStorage)
         let YVar = new Covariate("Y", new CovariateStorage(Y))
-        let glm = Glm.fitModel YVar.AsExpr (AVar + BVar + XVar) true Gamma Ln 20000 50 1e-10
+        let glm = Glm.fitModel YVar.AsExpr (AVar + BVar + XVar) true Gamma Ln 100000 50 1e-10
         ()
 

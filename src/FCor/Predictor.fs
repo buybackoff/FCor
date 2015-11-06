@@ -16,8 +16,19 @@ type Factor(name : string, factorStorage : IFactorStorage) =
                   member __.GetLevel(index) = "<Intercept>"
                   member __.Length = 1L
                   member __.LevelCount = 1
-                  member __.GetSlice(fromObs : int64, toObs : int64) =
-                      new IntVector(toObs - fromObs + 1L, 0)
+                  member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
+                    seq
+                      {
+                        let length = toObs - fromObs + 1L
+                        let sliceLength = int64 sliceLength
+                        let m = length / sliceLength |> int
+                        let k = length % sliceLength 
+                        use buffer = new IntVector(sliceLength, 0)
+                        for i in 0..m-1 do
+                            yield buffer
+                        if k > 0L then
+                            yield buffer.View(0L, k-1L)
+                      }
              }
         new Factor("<INTERCEPT>", factorStorage)
 
@@ -25,7 +36,7 @@ type Factor(name : string, factorStorage : IFactorStorage) =
     member this.Length = factorStorage.Length
     member this.LevelCount = factorStorage.LevelCount
 
-    member this.GetSlice(fromObs : int64, toObs : int64) = factorStorage.GetSlice(fromObs, toObs)
+    member this.GetSlices(fromObs : int64, toObs : int64, sliceLen : int) = factorStorage.GetSlices(fromObs, toObs, sliceLen)
 
     member this.GetLevel(levelIndex) = factorStorage.GetLevel(levelIndex)
 
@@ -57,7 +68,7 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
 
     member this.AsExpr = CovariateExpr.Var(this)
 
-    member this.GetSlice(fromObs : int64, toObs : int64) = covariateStorage.GetSlice(fromObs, toObs)
+    member this.GetSlices(fromObs : int64, toObs : int64, sliceLen) = covariateStorage.GetSlices(fromObs, toObs, sliceLen)
 
     static member (*) (factor : Factor, covariate : Covariate) : Predictor =
         factor * covariate.AsExpr
@@ -123,13 +134,15 @@ and CovariateExpr =
             | BinaryFunction(expr1, expr2, _, _) ->  
                 max expr1.MaxLength expr2.MaxLength
 
-    member this.GetSliceExpr(fromObs : int64, toObs : int64) =
+    member this.GetSlicesExpr(fromObs : int64, toObs : int64, sliceLen : int) =
         match this with
-            | Var(c) -> c.GetSlice(fromObs, toObs).AsExpr
+            | Var(c) ->
+                c.GetSlices(fromObs, toObs, sliceLen) |> Seq.map (fun x -> x.AsExpr)
             | UnaryFunction(expr, f, _) -> 
-                expr.GetSliceExpr(fromObs, toObs) |> f
+                expr.GetSlicesExpr(fromObs, toObs, sliceLen) |> Seq.map f
             | BinaryFunction(expr1, expr2, f, _) -> 
-                (expr1.GetSliceExpr(fromObs, toObs), expr2.GetSliceExpr(fromObs, toObs)) |> f
+                expr2.GetSlicesExpr(fromObs, toObs, sliceLen) |> Seq.zip (expr1.GetSlicesExpr(fromObs, toObs, sliceLen))
+                                                              |> Seq.map f
 
     member this.Name =
         match this with
@@ -145,8 +158,13 @@ and CovariateExpr =
              {
               new ICovariateStorage with
                   member __.Length = this.MinLength
-                  member __.GetSlice(fromObs : int64, toObs : int64) =
-                    VectorExpr.EvalIn(this.GetSliceExpr(fromObs, toObs), None)
+                  member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
+                    seq
+                      {
+                        let buffer = new Vector(sliceLength, 0.0)
+                        for sliceExpr in this.GetSlicesExpr(fromObs, toObs, sliceLength) do
+                            yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
+                      }
              }
         let name = this.Name
         new Covariate(name, covariateStorage)
