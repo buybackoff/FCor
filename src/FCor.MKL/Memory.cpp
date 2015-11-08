@@ -89,6 +89,17 @@ extern "C" __declspec(dllexport) int i32_create_array(const MKL_INT length, int*
 }
 
 
+extern "C" __declspec(dllexport) int ui16_create_zero_array(const MKL_INT length, unsigned short*& x)
+{
+	return create_zero_array(length, x);
+}
+
+extern "C" __declspec(dllexport) int ui16_create_array(const MKL_INT length, unsigned short*& x)
+{
+	return create_array(length, x);
+}
+
+
 
 extern "C" __declspec(dllexport) void d_copy_array(const MKL_INT length, const double* x, double* y)
 {
@@ -101,6 +112,11 @@ extern "C" __declspec(dllexport) void b_copy_array(const MKL_INT length, const b
 }
 
 extern "C" __declspec(dllexport) void i32_copy_array(const MKL_INT length, const int* x, int* y)
+{
+	copy_array(length, x, y);
+}
+
+extern "C" __declspec(dllexport) void ui16_copy_array(const MKL_INT length, const unsigned short* x, unsigned short* y)
 {
 	copy_array(length, x, y);
 }
@@ -119,6 +135,11 @@ extern "C" __declspec(dllexport) void b_fill_array(const bool a, const MKL_INT l
 }
 
 extern "C" __declspec(dllexport) void i32_fill_array(const int a, const MKL_INT length, int* x)
+{
+	fill_array(a, length, x);
+}
+
+extern "C" __declspec(dllexport) void ui16_fill_array(const unsigned short a, const MKL_INT length, unsigned short* x)
 {
 	fill_array(a, length, x);
 }

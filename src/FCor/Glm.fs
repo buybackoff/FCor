@@ -252,7 +252,7 @@ module Glm =
     let getWeight (pred : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
         match glmDistribution, glmLink with
             | Gaussian, Id -> 
-                new Vector(pred.Length, 1.0)
+                Vector.Empty
             | Gaussian, Ln ->
                 pred .* pred
             | Gaussian, Log(d) -> 
@@ -262,7 +262,7 @@ module Glm =
             | Gamma, Id -> 
                 1.0 ./ (pred .*pred)
             | Gamma, Ln ->
-                new Vector(pred.Length, 1.0) 
+                Vector.Empty
             | Gamma, Log(d) -> 
                 new Vector(pred.Length, Math.Log(d) * Math.Log(d))
             | Gamma, Power(d) ->
@@ -276,7 +276,7 @@ module Glm =
             | Poisson, Power(d) ->
                 d * d * (pred .^ (1.0 - 2.0 / d))
 
-    let getXBeta (design : ((IntVector list * int[] * int[]) option * Vector option) list) (beta : Vector) (sliceLen : int)
+    let getXBeta (design : ((UInt16Vector list * int[] * int[]) option * Vector option) list) (beta : Vector) (sliceLen : int)
                  (cumEstimateCounts: int[]) =
         let xbeta = new Vector(sliceLen, 0.0)
         design |> List.iteri (fun pInd p ->
@@ -304,7 +304,7 @@ module Glm =
                                 )
         xbeta
 
-    let getU (design : ((IntVector list * int[] * int[]) option * Vector option) list) (u : Vector) (sliceLen : int)
+    let getU (design : ((UInt16Vector list * int[] * int[]) option * Vector option) list) (u : Vector) (sliceLen : int)
              (cumEstimateCounts: int[]) =
         let U = new Vector(cumEstimateCounts.[cumEstimateCounts.Length - 1], 0.0)
         design |> List.iteri (fun pInd p ->
@@ -333,12 +333,13 @@ module Glm =
         U
 
     let zeroIntArr = Array.create 0 0
-    let zeroIntPtrArr = Array.create 0 (IntVector.Empty.NativeArray)
+    let zeroIntPtrArr = Array.create 0 (UInt16Vector.Empty.NativeArray)
 
-    let getH (design : ((IntVector list * int[] * int[]) option * Vector option) list) (weight : Vector) (sliceLen : int)
+    let getH (design : ((UInt16Vector list * int[] * int[]) option * Vector option) list) (weight : Vector) (sliceLen : int)
              (cumEstimateCounts: int[]) =
         let p = cumEstimateCounts.[cumEstimateCounts.Length - 1]
         let H = new Matrix(p, p, 0.0)
+        let weightIsOne = weight == Vector.Empty
         for pCol in 0..design.Length-1 do
             for pRow in 0..pCol do
                 let rowOffset = if pRow = 0 then 0 else cumEstimateCounts.[pRow-1]
@@ -348,7 +349,10 @@ module Glm =
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         let colSlice, colEstimateMap, colDimProd = colFactors
                         if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 && colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(weight)
+                            if weightIsOne then
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + float(sliceLen)
+                            else
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(weight)
                         else   
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -361,7 +365,10 @@ module Glm =
                     | (Some(rowFactors), None), (None, Some(colCovariate)) ->
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 then
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * colCovariate
+                            if weightIsOne then
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(colCovariate)
+                            else
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * colCovariate
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray,
@@ -374,7 +381,10 @@ module Glm =
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         let colSlice, colEstimateMap, colDimProd = colFactors
                         if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 && colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * colCovariate
+                            if weightIsOne then
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(colCovariate)
+                            else
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * colCovariate
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -385,13 +395,19 @@ module Glm =
                                                       colSlice.Length, colSlice, colEstimateMap, colDimProd, rowOffset, colOffset)
 
                     | (None, Some(rowCovariate)), (None, Some(colCovariate)) -> 
-                        use prod = VectorExpr.EvalIn((weight.AsExpr .* rowCovariate) .* colCovariate, None)
-                        H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
+                        if weightIsOne then
+                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + rowCovariate * colCovariate
+                        else
+                            use prod = VectorExpr.EvalIn((weight.AsExpr .* rowCovariate) .* colCovariate, None)
+                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
 
                     | (None, Some(rowCovariate)), (Some(colFactors), None) -> 
                         let colSlice, colEstimateMap, colDimProd = colFactors
                         if colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * rowCovariate
+                            if weightIsOne then
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(rowCovariate)
+                            else
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * rowCovariate
                         else
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray,
@@ -401,10 +417,13 @@ module Glm =
                                                       colSlice.Length, colSlice, colEstimateMap, colDimProd, rowOffset, colOffset)
 
                     | (None, Some(rowCovariate)), (Some(colFactors), Some(colCovariate)) -> 
-                        use prod = VectorExpr.EvalIn(weight.AsExpr .* rowCovariate .* colCovariate, None)
                         let colSlice, colEstimateMap, colDimProd = colFactors
                         if colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
+                            if weightIsOne then
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + rowCovariate * colCovariate
+                            else
+                                use prod = VectorExpr.EvalIn(weight.AsExpr .* rowCovariate .* colCovariate, None)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
                         else
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray,
@@ -417,8 +436,11 @@ module Glm =
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         let colSlice, colEstimateMap, colDimProd = colFactors
                         if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 && colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
-                            use prod = weight .* rowCovariate .* colCovariate
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
+                            if weightIsOne then
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + rowCovariate * colCovariate
+                            else
+                                use prod = VectorExpr.EvalIn(weight.AsExpr .* rowCovariate .* colCovariate, None)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -429,10 +451,13 @@ module Glm =
                                                       colSlice.Length, colSlice, colEstimateMap, colDimProd, rowOffset, colOffset)
 
                     | (Some(rowFactors), Some(rowCovariate)), (None, Some(colCovariate)) -> 
-                        use prod = VectorExpr.EvalIn(weight.AsExpr .* rowCovariate .* colCovariate , None)
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 then
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod) 
+                            if weightIsOne then
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + rowCovariate * colCovariate
+                            else
+                                use prod = VectorExpr.EvalIn(weight.AsExpr .* rowCovariate .* colCovariate , None)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod) 
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray,
@@ -445,7 +470,10 @@ module Glm =
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         let colSlice, colEstimateMap, colDimProd = colFactors
                         if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 then
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * rowCovariate
+                            if weightIsOne then
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(rowCovariate)
+                            else
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * rowCovariate
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -458,29 +486,39 @@ module Glm =
                     | _ -> ()
         H
 
-    let rec iwls (response : Covariate) (design : ((int64 * int64 * int -> seq<IntVector list> * int[] * int[]) option * Covariate option) list)
+    let rec iwls (response : Covariate) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[] * int[]) option * Covariate option) list)
                  (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector)
                  (maxIter : int) (iter : int) (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) eps =
         if iter > maxIter then 
             beta, Vector.Empty, iter, false
         else
-            let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
-            use U = new Vector(totalEstimateCount, 0.0)
-            use H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
-            let respSlices = response.GetSlices(0L, obsCount - 1L, sliceLength) 
-            let design' =
-                design |> List.map (fun (factorsOpt, covOpt) -> factorsOpt |> Option.map (fun f -> f(0L, obsCount - 1L, sliceLength)), covOpt |> Option.map (fun c -> c.GetSlices(0L, obsCount - 1L, sliceLength)))
-                       |> zipDesign |> Seq.zip respSlices
-            for resp, slice in design' do
-               let sliceLength = resp.Length
-               use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
-               use pred = getPred xbeta glmLink
-               use u = get_u resp pred glmLink glmDistribution
-               use weight = getWeight resp glmLink glmDistribution
-               use updateU = getU slice u sliceLength cumEstimateCounts
-               use updateH = getH slice weight sliceLength cumEstimateCounts
-               VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
-               MatrixExpr.EvalIn(H.AsExpr + updateH, Some H) |> ignore
+            let processorCount = Environment.ProcessorCount
+            let processorChunk = obsCount / int64(processorCount)
+            let U, H =
+                seq{0..processorCount - 1} 
+                   |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
+                   |> Seq.toArray 
+                   |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                                            let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
+                                            let U = new Vector(totalEstimateCount, 0.0)
+                                            let H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
+                                            let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                            let design' =
+                                                design |> List.map (fun (factorsOpt, covOpt) -> factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength)))
+                                                       |> zipDesign |> Seq.zip respSlices
+                                            for resp, slice in design' do
+                                               let sliceLength = resp.Length
+                                               use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
+                                               use pred = getPred xbeta glmLink
+                                               use u = get_u resp pred glmLink glmDistribution
+                                               use weight = getWeight resp glmLink glmDistribution
+                                               use updateU = getU slice u sliceLength cumEstimateCounts
+                                               use updateH = getH slice weight sliceLength cumEstimateCounts
+                                               VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
+                                               MatrixExpr.EvalIn(H.AsExpr + updateH, Some H) |> ignore  
+                                            U, H    
+                                          )
+                |> Array.reduce (fun (u1, h1) (u2, h2) -> (u1 + u2), (h1 + h2))
 
             //calc next beta from U and H
             //MatrixExpr.EvalIn(H.AsExpr + (Matrix.Transpose(Matrix.UpperTri(H, 1))), Some H) |> ignore
@@ -603,7 +641,7 @@ module Glm =
             | Gamma ->
                 phi * logLikelihoodPart + (phi * Math.Log(phi) - lnGamma(phi)) * float(N)
 
-    let getGoodnessOfFit (response : Covariate) (design : ((int64 * int64 * int -> seq<IntVector list> * int[] * int[]) option * Covariate option) list)
+    let getGoodnessOfFit (response : Covariate) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[] * int[]) option * Covariate option) list)
                          (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector)
                          (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) =
  

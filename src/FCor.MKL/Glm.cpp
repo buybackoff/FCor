@@ -11,7 +11,7 @@
 #include <cmath>
 #include <mkl_service.h>
 
-int sub2ind(int n, int* dimProd, int* subscripts)
+int sub2ind(int n, int* dimProd, unsigned short* subscripts)
 {
 	int index = subscripts[0];
 	for (int i = 1; i < n; i++)
@@ -21,16 +21,16 @@ int sub2ind(int n, int* dimProd, int* subscripts)
 	return index;
 }
 
-extern "C" __declspec(dllexport) void update_xbeta(MKL_INT n, double* xbeta, int k, int** slices, int* estimateMap, int* dimProd,
+extern "C" __declspec(dllexport) void update_xbeta(int n, double* xbeta, int k, unsigned short** slices, int* estimateMap, int* dimProd,
 	                                               double* beta, double* covariate, int offset)
 {
 	double* offsetBeta = beta + offset;
-	int* subscripts = (int*)mkl_malloc(k*sizeof(int), 64);
+	unsigned short* subscripts = (unsigned short*)mkl_malloc(k*sizeof(unsigned short), 64);
 	if (covariate == nullptr)
 	{
 		if (k = 1)
 		{
-			for (MKL_INT i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				int index = estimateMap[slices[0][i]];
 				if (index >= 0)
@@ -41,7 +41,7 @@ extern "C" __declspec(dllexport) void update_xbeta(MKL_INT n, double* xbeta, int
 		}
 		else
 		{
-			for (MKL_INT i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				for (int j = 0; j < k; j++)
 				{
@@ -59,7 +59,7 @@ extern "C" __declspec(dllexport) void update_xbeta(MKL_INT n, double* xbeta, int
 	{
 		if (k = 1)
 		{
-			for (MKL_INT i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				int index = estimateMap[slices[0][i]];
 				if (index >= 0)
@@ -70,7 +70,7 @@ extern "C" __declspec(dllexport) void update_xbeta(MKL_INT n, double* xbeta, int
 		}
 		else
 		{
-			for (MKL_INT i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				for (int j = 0; j < k; j++)
 				{
@@ -88,16 +88,16 @@ extern "C" __declspec(dllexport) void update_xbeta(MKL_INT n, double* xbeta, int
 	mkl_free(subscripts);
 }
 
-extern "C" __declspec(dllexport) void update_U(MKL_INT n, double* U, double* u, int k, int** slices, int* estimateMap, int* dimProd,
+extern "C" __declspec(dllexport) void update_U(int n, double* U, double* u, int k, unsigned short** slices, int* estimateMap, int* dimProd,
 	                                           double* covariate, int offset)
 {
 	double* offsetU = U + offset;
-	int* subscripts = (int*)mkl_malloc(k*sizeof(int), 64);
+	unsigned short* subscripts = (unsigned short*)mkl_malloc(k*sizeof(unsigned short), 64);
 	if (covariate == nullptr)
 	{
 		if (k = 1)
 		{
-			for (MKL_INT i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				int index = estimateMap[slices[0][i]];
 				if (index >= 0)
@@ -108,7 +108,7 @@ extern "C" __declspec(dllexport) void update_U(MKL_INT n, double* U, double* u, 
 		}
 		else
 		{
-			for (MKL_INT i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				for (int j = 0; j < k; j++)
 				{
@@ -126,7 +126,7 @@ extern "C" __declspec(dllexport) void update_U(MKL_INT n, double* U, double* u, 
 	{
 		if (k = 1)
 		{
-			for (MKL_INT i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				int index = estimateMap[slices[0][i]];
 				if (index >= 0)
@@ -137,7 +137,7 @@ extern "C" __declspec(dllexport) void update_U(MKL_INT n, double* U, double* u, 
 		}
 		else
 		{
-			for (MKL_INT i = 0; i < n; i++)
+			for (int i = 0; i < n; i++)
 			{
 				for (int j = 0; j < k; j++)
 				{
@@ -154,20 +154,20 @@ extern "C" __declspec(dllexport) void update_U(MKL_INT n, double* U, double* u, 
 	mkl_free(subscripts);
 }
 
-extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, double* weight, double* rowCovariate, double* colCovariate,
-	                                           int rowK, int** rowSlices, int* rowEstimateMap, int* rowDimProd,
-											   int colK, int** colSlices, int* colEstimateMap, int* colDimProd, int rowOffset, int colOffset)
+extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* weight, double* rowCovariate, double* colCovariate,
+	                                           int rowK, unsigned short** rowSlices, int* rowEstimateMap, int* rowDimProd,
+											   int colK, unsigned short** colSlices, int* colEstimateMap, int* colDimProd, int rowOffset, int colOffset)
 {
 	double* offsetH = H + colOffset * p + rowOffset;
-	int* rowSubscripts = (int*)mkl_malloc(rowK*sizeof(int), 64);
-	int* colSubscripts = (int*)mkl_malloc(colK*sizeof(int), 64);
+	unsigned short* rowSubscripts = (unsigned short*)mkl_malloc(rowK*sizeof(unsigned short), 64);
+	unsigned short* colSubscripts = (unsigned short*)mkl_malloc(colK*sizeof(unsigned short), 64);
 	int rowIndex;
 	int colIndex;
-	if (rowK == 0 && rowCovariate != nullptr && colK != 0 && colCovariate != nullptr)
+	if (rowK == 0 && rowCovariate != nullptr && colK != 0 && colCovariate != nullptr && weight != nullptr)
 	{
-		for (MKL_INT i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			if (colK = 1)
+			if (colK == 1)
 			{
 				colIndex = colEstimateMap[colSlices[0][i]];
 			}
@@ -181,15 +181,37 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 			}
 			if (colIndex >= 0)
 			{
-				offsetH[colIndex * p] += weight[i] * rowCovariate[i] * colCovariate[i];
+		        offsetH[colIndex * p] += weight[i] * rowCovariate[i] * colCovariate[i];
 			}
 		}
 	}
-	else if (rowK == 0 && rowCovariate != nullptr && colK != 0 && colCovariate == nullptr)
+	else if (rowK == 0 && rowCovariate != nullptr && colK != 0 && colCovariate != nullptr && weight == nullptr)
 	{
-		for (MKL_INT i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			if (colK = 1)
+			if (colK == 1)
+			{
+				colIndex = colEstimateMap[colSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < colK; j++)
+				{
+					colSubscripts[j] = colSlices[j][i];
+				}
+				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+			}
+			if (colIndex >= 0)
+			{
+				offsetH[colIndex * p] += rowCovariate[i] * colCovariate[i];
+			}
+		}
+	}
+	else if (rowK == 0 && rowCovariate != nullptr && colK != 0 && colCovariate == nullptr && weight != nullptr)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (colK == 1)
 			{
 				colIndex = colEstimateMap[colSlices[0][i]];
 			}
@@ -207,11 +229,33 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 			}
 		}
 	}
-	else if (rowK != 0 && rowCovariate != nullptr && colK == 0 && colCovariate != nullptr)
+	else if (rowK == 0 && rowCovariate != nullptr && colK != 0 && colCovariate == nullptr && weight == nullptr)
 	{
-		for (MKL_INT i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			if (rowK = 1)
+			if (colK == 1)
+			{
+				colIndex = colEstimateMap[colSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < colK; j++)
+				{
+					colSubscripts[j] = colSlices[j][i];
+				}
+				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+			}
+			if (colIndex >= 0)
+			{
+				offsetH[colIndex * p] += rowCovariate[i];
+			}
+		}
+	}
+	else if (rowK != 0 && rowCovariate != nullptr && colK == 0 && colCovariate != nullptr && weight != nullptr)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (rowK == 1)
 			{
 				rowIndex = rowEstimateMap[rowSlices[0][i]];
 			}
@@ -229,11 +273,11 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 			}
 		}
 	}
-	else if (rowK != 0 && rowCovariate != nullptr && colK != 0 && colCovariate != nullptr)
+	else if (rowK != 0 && rowCovariate != nullptr && colK == 0 && colCovariate != nullptr && weight == nullptr)
 	{
-		for (MKL_INT i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			if (rowK = 1)
+			if (rowK == 1)
 			{
 				rowIndex = rowEstimateMap[rowSlices[0][i]];
 			}
@@ -245,7 +289,29 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 				}
 				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 			}
-			if (colK = 1)
+			if (rowIndex >= 0)
+			{
+				offsetH[rowIndex] += rowCovariate[i] * colCovariate[i];
+			}
+		}
+	}
+	else if (rowK != 0 && rowCovariate != nullptr && colK != 0 && colCovariate != nullptr && weight != nullptr)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (rowK == 1)
+			{
+				rowIndex = rowEstimateMap[rowSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < rowK; j++)
+				{
+					rowSubscripts[j] = rowSlices[j][i];
+				}
+				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+			}
+			if (colK == 1)
 			{
 				colIndex = colEstimateMap[colSlices[0][i]];
 			}
@@ -263,11 +329,11 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 			}
 		}
 	}
-	else if (rowK != 0 && rowCovariate != nullptr && colK != 0 && colCovariate == nullptr)
+	else if (rowK != 0 && rowCovariate != nullptr && colK != 0 && colCovariate != nullptr && weight == nullptr)
 	{
-		for (MKL_INT i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			if (rowK = 1)
+			if (rowK == 1)
 			{
 				rowIndex = rowEstimateMap[rowSlices[0][i]];
 			}
@@ -279,7 +345,41 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 				}
 				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 			}
-			if (colK = 1)
+			if (colK == 1)
+			{
+				colIndex = colEstimateMap[colSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < colK; j++)
+				{
+					colSubscripts[j] = colSlices[j][i];
+				}
+				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+			}
+			if (rowIndex >= 0 && colIndex >= 0)
+			{
+				offsetH[colIndex  * p + rowIndex] += rowCovariate[i] * colCovariate[i];
+			}
+		}
+	}
+	else if (rowK != 0 && rowCovariate != nullptr && colK != 0 && colCovariate == nullptr && weight != nullptr)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (rowK == 1)
+			{
+				rowIndex = rowEstimateMap[rowSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < rowK; j++)
+				{
+					rowSubscripts[j] = rowSlices[j][i];
+				}
+				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+			}
+			if (colK == 1)
 			{
 				colIndex = colEstimateMap[colSlices[0][i]];
 			}
@@ -297,11 +397,45 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 			}
 		}
 	}
-	else if (rowK != 0 && rowCovariate == nullptr && colK == 0 && colCovariate != nullptr)
+	else if (rowK != 0 && rowCovariate != nullptr && colK != 0 && colCovariate == nullptr && weight == nullptr)
 	{
-		for (MKL_INT i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			if (rowK = 1)
+			if (rowK == 1)
+			{
+				rowIndex = rowEstimateMap[rowSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < rowK; j++)
+				{
+					rowSubscripts[j] = rowSlices[j][i];
+				}
+				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+			}
+			if (colK == 1)
+			{
+				colIndex = colEstimateMap[colSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < colK; j++)
+				{
+					colSubscripts[j] = colSlices[j][i];
+				}
+				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+			}
+			if (rowIndex >= 0 && colIndex >= 0)
+			{
+				offsetH[colIndex  * p + rowIndex] += rowCovariate[i];
+			}
+		}
+	}
+	else if (rowK != 0 && rowCovariate == nullptr && colK == 0 && colCovariate != nullptr && weight != nullptr)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (rowK == 1)
 			{
 				rowIndex = rowEstimateMap[rowSlices[0][i]];
 			}
@@ -319,11 +453,11 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 			}
 		}
 	}
-	else if (rowK != 0 && rowCovariate == nullptr && colK != 0 && colCovariate != nullptr)
+	else if (rowK != 0 && rowCovariate == nullptr && colK == 0 && colCovariate != nullptr && weight == nullptr)
 	{
-		for (MKL_INT i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			if (rowK = 1)
+			if (rowK == 1)
 			{
 				rowIndex = rowEstimateMap[rowSlices[0][i]];
 			}
@@ -335,7 +469,29 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 				}
 				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 			}
-			if (colK = 1)
+			if (rowIndex >= 0)
+			{
+				offsetH[rowIndex] += colCovariate[i];
+			}
+		}
+	}
+	else if (rowK != 0 && rowCovariate == nullptr && colK != 0 && colCovariate != nullptr && weight != nullptr)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (rowK == 1)
+			{
+				rowIndex = rowEstimateMap[rowSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < rowK; j++)
+				{
+					rowSubscripts[j] = rowSlices[j][i];
+				}
+				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+			}
+			if (colK == 1)
 			{
 				colIndex = colEstimateMap[colSlices[0][i]];
 			}
@@ -353,11 +509,11 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 			}
 		}
 	}
-	else if (rowK != 0 && rowCovariate == nullptr && colK != 0 && colCovariate == nullptr)
+	else if (rowK != 0 && rowCovariate == nullptr && colK != 0 && colCovariate != nullptr && weight == nullptr)
 	{
-		for (MKL_INT i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			if (rowK = 1)
+			if (rowK == 1)
 			{
 				rowIndex = rowEstimateMap[rowSlices[0][i]];
 			}
@@ -369,7 +525,41 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 				}
 				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 			}
-			if (colK = 1)
+			if (colK == 1)
+			{
+				colIndex = colEstimateMap[colSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < colK; j++)
+				{
+					colSubscripts[j] = colSlices[j][i];
+				}
+				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+			}
+			if (rowIndex >= 0 && colIndex >= 0)
+			{
+				offsetH[colIndex  * p + rowIndex] += colCovariate[i];
+			}
+		}
+	}
+	else if (rowK != 0 && rowCovariate == nullptr && colK != 0 && colCovariate == nullptr && weight != nullptr)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (rowK == 1)
+			{
+				rowIndex = rowEstimateMap[rowSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < rowK; j++)
+				{
+					rowSubscripts[j] = rowSlices[j][i];
+				}
+				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+			}
+			if (colK == 1)
 			{
 				colIndex = colEstimateMap[colSlices[0][i]];
 			}
@@ -384,6 +574,40 @@ extern "C" __declspec(dllexport) void update_H(MKL_INT n, int p, double* H, doub
 			if (rowIndex >= 0 && colIndex >= 0)
 			{
 				offsetH[colIndex * p + rowIndex] += weight[i];
+			}
+		}
+	}
+	else if (rowK != 0 && rowCovariate == nullptr && colK != 0 && colCovariate == nullptr && weight == nullptr)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (rowK == 1)
+			{
+				rowIndex = rowEstimateMap[rowSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < rowK; j++)
+				{
+					rowSubscripts[j] = rowSlices[j][i];
+				}
+				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+			}
+			if (colK == 1)
+			{
+				colIndex = colEstimateMap[colSlices[0][i]];
+			}
+			else
+			{
+				for (int j = 0; j < colK; j++)
+				{
+					colSubscripts[j] = colSlices[j][i];
+				}
+				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+			}
+			if (rowIndex >= 0 && colIndex >= 0)
+			{
+				offsetH[colIndex * p + rowIndex] += 1.0;
 			}
 		}
 	}

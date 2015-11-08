@@ -34,7 +34,7 @@ BStorage.SetSlice(0, BCol)
 let BVar = new Factor("B", BStorage)
 let YVar = new Covariate("Y", new CovariateStorage(Y))
 #time
-let glm = Glm.fitModel YVar.AsExpr (AVar + BVar + XVar) true Gamma Ln N 50 1e-10
+let glm = Glm.fitModel YVar.AsExpr (AVar + BVar + XVar) true Gamma Ln 15000 50 1e-10
 let pp = glm |> Option.map fst |> Option.map (fun prms -> prms |> List.filter (fun p -> p.Predictor = "X"))
 
 //let X = rand rng 1000000 : Vector

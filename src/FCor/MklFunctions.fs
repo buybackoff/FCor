@@ -25,6 +25,8 @@ type BoolPtr = nativeptr<bool>
 
 type Int32Ptr = nativeptr<int>
 
+type UInt16Ptr = nativeptr<uint16>
+
 type internal MklFunctions() =
 
     [<Literal>]
@@ -120,6 +122,12 @@ type internal MklFunctions() =
     static extern int i32_create_zero_array(IntPtr length, Int32Ptr* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int ui16_create_array(IntPtr length, UInt16Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int ui16_create_zero_array(IntPtr length, UInt16Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_fill_array(float a, IntPtr length, float* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
@@ -129,6 +137,9 @@ type internal MklFunctions() =
     static extern void i32_fill_array(int a, IntPtr length, int* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void ui16_fill_array(uint16 a, IntPtr length, uint16* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_copy_array(IntPtr length, float* fromArray, float* toArray)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
@@ -136,6 +147,9 @@ type internal MklFunctions() =
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void i32_copy_array(IntPtr length, int* fromArray, int* toArray)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void ui16_copy_array(IntPtr length, uint16* fromArray, uint16* toArray)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void free_array(IntPtr array)
@@ -895,15 +909,15 @@ type internal MklFunctions() =
 
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern void update_xbeta(IntPtr n, double* xbeta, int k, Int32Ptr[] slices, int[] estimateMap, int[] dimProd, double* beta, double* covariate, int offset)
+    static extern void update_xbeta(int n, double* xbeta, int k, UInt16Ptr[] slices, int[] estimateMap, int[] dimProd, double* beta, double* covariate, int offset)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern void update_U(IntPtr n, double* U, double* u, int k, Int32Ptr[] slices, int[] estimateMap, int[] dimProd, double* covariate, int offset)
+    static extern void update_U(int n, double* U, double* u, int k, UInt16Ptr[] slices, int[] estimateMap, int[] dimProd, double* covariate, int offset)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern void update_H(IntPtr n, int p, double* H, double* weight, double* rowCovariate, double* colCovariate,
-                                int rowK, Int32Ptr[] rowSlices, int[] rowEstimateMap, int[] rowDimProd,
-                                int colK, Int32Ptr[] colSlices, int[] colEstimateMap, int[] colDimProd, int rowOffset, int colOffset)
+    static extern void update_H(int n, int p, double* H, double* weight, double* rowCovariate, double* colCovariate,
+                                int rowK, UInt16Ptr[] rowSlices, int[] rowEstimateMap, int[] rowDimProd,
+                                int colK, UInt16Ptr[] colSlices, int[] colEstimateMap, int[] colDimProd, int rowOffset, int colOffset)
 
 
     static member LoadLibrary_(dllPath) = LoadLibrary(dllPath)
@@ -926,6 +940,12 @@ type internal MklFunctions() =
     static member I32_Create_Zero_Array(length : int64, array) =
         i32_create_zero_array(new IntPtr(length), array) |> validateRetCode
 
+    static member UI16_Create_Array(length : int64, array) =
+        ui16_create_array(new IntPtr(length), array) |> validateRetCode
+
+    static member UI16_Create_Zero_Array(length : int64, array) =
+        ui16_create_zero_array(new IntPtr(length), array) |> validateRetCode
+
     static member D_Fill_Array(a, length : int64, array : nativeptr<float>) =
        d_fill_array(a, new IntPtr(length), array) 
 
@@ -935,6 +955,9 @@ type internal MklFunctions() =
     static member I32_Fill_Array(a, length : int64, array) =
        i32_fill_array(a, new IntPtr(length), array)
 
+    static member UI16_Fill_Array(a, length : int64, array) =
+       ui16_fill_array(a, new IntPtr(length), array)
+
     static member D_Copy_Array(length : int64, fromArray, toArray) =
        d_copy_array(new IntPtr(length), fromArray, toArray)
 
@@ -943,6 +966,9 @@ type internal MklFunctions() =
 
     static member I32_Copy_Array(length : int64, fromArray, toArray) =
        i32_copy_array(new IntPtr(length), fromArray, toArray)
+
+    static member UI16_Copy_Array(length : int64, fromArray, toArray) =
+       ui16_copy_array(new IntPtr(length), fromArray, toArray)
 
 
     static member Free_Array(x : IntPtr) = free_array(x)
@@ -1720,15 +1746,15 @@ type internal MklFunctions() =
         s_multiply_matrices(x, y, z, new IntPtr(n), new IntPtr(m), new IntPtr(k), trans)
 
     static member Glm_Update_XBeta(n : int, xbeta, k, slices, estimateMap, dimProd, beta, covariate, offset) =
-        update_xbeta(new IntPtr(n), xbeta, k, slices, estimateMap, dimProd, beta, covariate, offset)
+        update_xbeta(n, xbeta, k, slices, estimateMap, dimProd, beta, covariate, offset)
 
     static member Glm_Update_U(n : int, U, u, k, slices, estimateMap, dimProd, covariate, offset) =
-        update_U(new IntPtr(n), U, u, k, slices, estimateMap, dimProd, covariate, offset)
+        update_U(n, U, u, k, slices, estimateMap, dimProd, covariate, offset)
 
     static member Glm_Update_H(n : int, p, H, weight, rowCovariate, colCovariate,
                                rowK, rowSlices, rowEstimateMap, rowDimProd,
                                colK, colSlices, colEstimateMap, colDimProd, rowOffset, colOffset) =
-        update_H(new IntPtr(n), p, H, weight, rowCovariate, colCovariate, rowK, rowSlices, rowEstimateMap, rowDimProd,
+        update_H(n, p, H, weight, rowCovariate, colCovariate, rowK, rowSlices, rowEstimateMap, rowDimProd,
                  colK, colSlices, colEstimateMap, colDimProd, rowOffset, colOffset)
 
 

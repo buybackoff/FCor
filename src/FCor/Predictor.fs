@@ -23,7 +23,7 @@ type Factor(name : string, factorStorage : IFactorStorage) =
                         let sliceLength = int64 sliceLength
                         let m = length / sliceLength |> int
                         let k = length % sliceLength 
-                        use buffer = new IntVector(sliceLength, 0)
+                        use buffer = new UInt16Vector(sliceLength, 0us)
                         for i in 0..m-1 do
                             yield buffer
                         if k > 0L then
