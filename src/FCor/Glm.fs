@@ -5,6 +5,7 @@ open System
 open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
 open System.Collections.Generic
+open System.IO
 open FCor.ExplicitConversion
 
 type GlmLink =
@@ -47,6 +48,29 @@ type GlmGoodnessOfFit =
 
 module Glm =
 
+    let rec zipN (xss : seq<'T> list) : seq<'T list> =
+        match xss with
+            | [] -> Seq.singleton [] 
+            | head::[] ->
+                head|> Seq.map (fun x -> [x])
+            | head::tail ->
+                (zipN tail) |> Seq.zip head |> Seq.map (fun (x,y) -> x::y)
+
+    let toCsv (vars : StatVariable seq) (path : string) =
+        let join delimiter (data : #obj seq) =
+            data |> Seq.map (fun x -> x.ToString()) |> String.concat delimiter
+        use writer = new StreamWriter(path)
+        let header = vars |> Seq.map (fun v -> v.Name) |> join ","
+        writer.WriteLine header
+        let dataSeq = vars |> Seq.map (fun v -> match v with
+                                                    | StatVariable.Factor(f) -> f.AsSeq |> Seq.map (snd>>box)
+                                                    | Covariate(c) -> c.AsSeq |> Seq.map box
+                                      )
+                           |> Seq.toList |> zipN |> Seq.map (join ",")
+        dataSeq |> Seq.iter writer.WriteLine
+
+
+
     let lnGamma (x : float) =
         let mutable res = x
         MklFunctions.D_Lngam_Array(1L, &&res, &&res)
@@ -72,14 +96,6 @@ module Glm =
         | [] -> []
         | head::[] -> head |> List.map (fun x -> [x])
         | head::tail -> head |> List.map (fun x -> tail |> cartesian |> List.map (fun y -> x::y)) |> List.concat
-
-    let rec zipN (xss : seq<'T> list) : seq<'T list> =
-        match xss with
-            | [] -> Seq.singleton [] 
-            | head::[] ->
-                head|> Seq.map (fun x -> [x])
-            | head::tail ->
-                (zipN tail) |> Seq.zip head |> Seq.map (fun (x,y) -> x::y)
 
     let rec zipDesign (design : ((seq<'T list> * int[] * int[]) option * seq<'S> option) list) : seq<(('T list * int[] * int[]) option * 'S option) list> =
         match design with

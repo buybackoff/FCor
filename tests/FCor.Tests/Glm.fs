@@ -1,6 +1,7 @@
 ﻿namespace FCor.Tests
 
 open FCor
+open FCor.Math
 open Xunit
 open FsCheck
 open FsCheck.Xunit
@@ -26,23 +27,20 @@ module Glm =
         let rng = new MT19937Rng()
         let rnd = new Random()
         MklControl.SetMaxThreads 1
-        let rnd20 = Array.init N (fun i -> rnd.Next(20))
-        let rnd100 = Array.init N (fun i -> rnd.Next(100))
-        let ACol = Array.init N (fun i -> sprintf "A%d" rnd20.[i])
-        let BCol = Array.init N (fun i -> sprintf "B%d" rnd100.[i])
+
+        let v20 = rand rng N : Vector
+        let v100 = rand rng N : Vector
         let X = rand rng N : Vector
         let gamRnd = gammaRnd rng 0.0 1.0 1.0 N : Vector
-        let xbeta = (2.2 + (new Vector(rnd20 |> Array.map float)) / 20.0 + (new Vector(rnd100 |> Array.map float)) / 100.0) + 3.3 * X
+        let xbeta = eval (2.2 + v20.AsExpr + v100 + 3.3 * X.AsExpr)
         let Y = gamRnd .* exp(xbeta)
 
         let XVar = new Covariate("X", new CovariateStorage(X))
-        let AStorage = new FactorStorage(N)
-        AStorage.SetSlice(0, ACol)
+        let AStorage = new FactorStorage(seq{0..N-1} |> Seq.map (fun i -> sprintf "A%d" (v20.[i] * 20.0 |> floor |> int)))
         let AVar = new Factor("A", AStorage)
-        let BStorage = new FactorStorage(N)
-        BStorage.SetSlice(0, BCol)
+        let BStorage = new FactorStorage(seq{0..N-1} |> Seq.map (fun i -> sprintf "B%d" (v100.[i] * 100.0 |> floor |> int)))
         let BVar = new Factor("B", BStorage)
         let YVar = new Covariate("Y", new CovariateStorage(Y))
-        let glm = Glm.fitModel YVar.AsExpr (AVar + BVar + XVar) true Gamma Ln 100000 50 1e-10
+        let glm = Glm.fitModel YVar.AsExpr (AVar + BVar + XVar) true Gamma Ln 15000 50 1e-6
         ()
 

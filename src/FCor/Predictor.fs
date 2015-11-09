@@ -40,6 +40,13 @@ type Factor(name : string, factorStorage : IFactorStorage) =
 
     member this.GetLevel(levelIndex) = factorStorage.GetLevel(levelIndex)
 
+    member this.AsSeq =
+        let slices = this.GetSlices(0L, factorStorage.Length - 1L, 10000)
+        slices |> Seq.map (fun slice -> 
+                               seq{0L..slice.LongLength - 1L} 
+                               |> Seq.map (fun index -> let levelIndex = slice.[index] in levelIndex, this.GetLevel(int levelIndex)))
+                               |> Seq.concat
+
     static member Intercept = intercept
 
     static member (*) (factor1 : Factor, factor2 : Factor) : CategoricalPredictor =
@@ -69,6 +76,13 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
     member this.AsExpr = CovariateExpr.Var(this)
 
     member this.GetSlices(fromObs : int64, toObs : int64, sliceLen) = covariateStorage.GetSlices(fromObs, toObs, sliceLen)
+
+    member this.AsSeq =
+        let slices = this.GetSlices(0L, covariateStorage.Length - 1L, 10000)
+        slices |> Seq.map (fun slice -> 
+                               seq{0L..slice.LongLength - 1L} 
+                               |> Seq.map (fun index -> slice.[index]))
+                               |> Seq.concat
 
     static member (*) (factor : Factor, covariate : Covariate) : Predictor =
         factor * covariate.AsExpr
@@ -190,6 +204,11 @@ and CovariateExpr =
 and StatVariable =
     | Factor of Factor
     | Covariate of Covariate
+
+    member this.Name = 
+       match this with
+           | Factor(f) -> f.Name
+           | Covariate(c) -> c.Name
 
     static member (*) (statVar1 : StatVariable, statVar2 : StatVariable) : Predictor =
         match statVar1, statVar2 with

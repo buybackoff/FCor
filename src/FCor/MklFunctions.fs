@@ -21,11 +21,15 @@ type internal CompCode =
 
 type FloatPtr = nativeptr<float>
 
+type Float32Ptr = nativeptr<float32>
+
 type BoolPtr = nativeptr<bool>
 
 type Int32Ptr = nativeptr<int>
 
 type UInt16Ptr = nativeptr<uint16>
+
+type UInt8Ptr = nativeptr<uint8>
 
 type internal MklFunctions() =
 
@@ -103,11 +107,26 @@ type internal MklFunctions() =
     [<DllImport("kernel32")>]
     static extern IntPtr LoadLibrary(string lpFileName)
 
+
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern int d_create_array(IntPtr length, FloatPtr* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern int d_create_zero_array(IntPtr length, FloatPtr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int d_resize_array(IntPtr length, FloatPtr* array)
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int s_create_array(IntPtr length, Float32Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int s_create_zero_array(IntPtr length, Float32Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int s_resize_array(IntPtr length, Float32Ptr* array)
+
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern int b_create_array(IntPtr length, BoolPtr* array)
@@ -116,10 +135,32 @@ type internal MklFunctions() =
     static extern int b_create_zero_array(IntPtr length, BoolPtr* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int b_resize_array(IntPtr length, BoolPtr* array)
+
+
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern int i32_create_array(IntPtr length, Int32Ptr* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern int i32_create_zero_array(IntPtr length, Int32Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int i32_resize_array(IntPtr length, Int32Ptr* array)
+
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int ui8_create_array(IntPtr length, UInt8Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int ui8_create_zero_array(IntPtr length, UInt8Ptr* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int ui8_resize_array(IntPtr length, UInt8Ptr* array)
+
+
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern int ui16_create_array(IntPtr length, UInt16Ptr* array)
@@ -128,7 +169,15 @@ type internal MklFunctions() =
     static extern int ui16_create_zero_array(IntPtr length, UInt16Ptr* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int ui16_resize_array(IntPtr length, UInt16Ptr* array)
+
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_fill_array(float a, IntPtr length, float* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void s_fill_array(float32 a, IntPtr length, float32* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void b_fill_array(bool a, IntPtr length, bool* array)
@@ -137,10 +186,16 @@ type internal MklFunctions() =
     static extern void i32_fill_array(int a, IntPtr length, int* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void ui8_fill_array(uint8 a, IntPtr length, uint8* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void ui16_fill_array(uint16 a, IntPtr length, uint16* array)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void d_copy_array(IntPtr length, float* fromArray, float* toArray)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void s_copy_array(IntPtr length, float32* fromArray, float32* toArray)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void b_copy_array(IntPtr length, bool* fromArray, bool* toArray)
@@ -149,7 +204,62 @@ type internal MklFunctions() =
     static extern void i32_copy_array(IntPtr length, int* fromArray, int* toArray)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void ui8_copy_array(IntPtr length, uint8* fromArray, uint8* toArray)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void ui16_copy_array(IntPtr length, uint16* fromArray, uint16* toArray)
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern float d_get_item(IntPtr i, float* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void d_set_item(IntPtr i, float* array, float a)
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern float32 s_get_item(IntPtr i, float32* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void s_set_item(IntPtr i, float32* array, float32 a)
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern bool b_get_item(IntPtr i, bool* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void b_set_item(IntPtr i, bool* array, bool a)
+
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern int i32_get_item(IntPtr i, int* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void i32_set_item(IntPtr i, int* array, int a)
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern uint8 ui8_get_item(IntPtr i, uint8* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void ui8_set_item(IntPtr i, uint8* array, uint8 a)
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern uint16 ui16_get_item(IntPtr i, uint16* array)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void ui16_set_item(IntPtr i, uint16* array, uint16 a)
+
+
+
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void s_d_convert_array(IntPtr length, float32* fromArray, float* toArray)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void ui8_ui16_convert_array(IntPtr length, uint8* fromArray, uint16* toArray)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void free_array(IntPtr array)
@@ -928,11 +1038,29 @@ type internal MklFunctions() =
     static member D_Create_Zero_Array(length : int64, array) =
         d_create_zero_array(new IntPtr(length), array) |> validateRetCode
 
+    static member D_Resize_Array(length : int64, array) =
+        d_resize_array(new IntPtr(length), array) |> validateRetCode
+
+
+    static member S_Create_Array(length : int64, array) =
+        s_create_array(new IntPtr(length), array) |> validateRetCode
+
+    static member S_Create_Zero_Array(length : int64, array) =
+        s_create_zero_array(new IntPtr(length), array) |> validateRetCode
+
+    static member S_Resize_Array(length : int64, array) =
+        s_resize_array(new IntPtr(length), array) |> validateRetCode
+
+
     static member B_Create_Array(length : int64, array) =
         b_create_array(new IntPtr(length), array) |> validateRetCode
 
     static member B_Create_Zero_Array(length : int64, array) =
         b_create_zero_array(new IntPtr(length), array) |> validateRetCode
+
+    static member B_Resize_Array(length : int64, array) =
+        b_resize_array(new IntPtr(length), array) |> validateRetCode
+
 
     static member I32_Create_Array(length : int64, array) =
         i32_create_array(new IntPtr(length), array) |> validateRetCode
@@ -940,14 +1068,37 @@ type internal MklFunctions() =
     static member I32_Create_Zero_Array(length : int64, array) =
         i32_create_zero_array(new IntPtr(length), array) |> validateRetCode
 
+    static member I32_Resize_Array(length : int64, array) =
+        i32_resize_array(new IntPtr(length), array) |> validateRetCode
+
+
+    static member UI8_Create_Array(length : int64, array) =
+        ui8_create_array(new IntPtr(length), array) |> validateRetCode
+
+    static member UI8_Create_Zero_Array(length : int64, array) =
+        ui8_create_zero_array(new IntPtr(length), array) |> validateRetCode
+
+    static member UI8_Resize_Array(length : int64, array) =
+        ui8_resize_array(new IntPtr(length), array) |> validateRetCode
+
+
     static member UI16_Create_Array(length : int64, array) =
         ui16_create_array(new IntPtr(length), array) |> validateRetCode
 
     static member UI16_Create_Zero_Array(length : int64, array) =
         ui16_create_zero_array(new IntPtr(length), array) |> validateRetCode
 
-    static member D_Fill_Array(a, length : int64, array : nativeptr<float>) =
+    static member UI16_Resize_Array(length : int64, array) =
+        ui16_resize_array(new IntPtr(length), array) |> validateRetCode
+
+
+
+
+    static member D_Fill_Array(a, length : int64, array) =
        d_fill_array(a, new IntPtr(length), array) 
+
+    static member S_Fill_Array(a, length : int64, array) =
+       s_fill_array(a, new IntPtr(length), array) 
 
     static member B_Fill_Array(a, length : int64, array) =
        b_fill_array(a, new IntPtr(length), array)
@@ -955,11 +1106,17 @@ type internal MklFunctions() =
     static member I32_Fill_Array(a, length : int64, array) =
        i32_fill_array(a, new IntPtr(length), array)
 
+    static member UI8_Fill_Array(a, length : int64, array) =
+       ui8_fill_array(a, new IntPtr(length), array)
+
     static member UI16_Fill_Array(a, length : int64, array) =
        ui16_fill_array(a, new IntPtr(length), array)
 
     static member D_Copy_Array(length : int64, fromArray, toArray) =
        d_copy_array(new IntPtr(length), fromArray, toArray)
+
+    static member S_Copy_Array(length : int64, fromArray, toArray) =
+       s_copy_array(new IntPtr(length), fromArray, toArray)
 
     static member B_Copy_Array(length : int64, fromArray, toArray) =
        b_copy_array(new IntPtr(length), fromArray, toArray)
@@ -967,8 +1124,58 @@ type internal MklFunctions() =
     static member I32_Copy_Array(length : int64, fromArray, toArray) =
        i32_copy_array(new IntPtr(length), fromArray, toArray)
 
+    static member UI8_Copy_Array(length : int64, fromArray, toArray) =
+       ui8_copy_array(new IntPtr(length), fromArray, toArray)
+
     static member UI16_Copy_Array(length : int64, fromArray, toArray) =
        ui16_copy_array(new IntPtr(length), fromArray, toArray)
+
+
+    static member D_Get_Item(i : int64, array) =
+       d_get_item(new IntPtr(i), array)
+
+    static member D_Set_Item(i : int64, array, a) =
+       d_set_item(new IntPtr(i), array, a)
+
+
+    static member S_Get_Item(i : int64, array) =
+       s_get_item(new IntPtr(i), array)
+
+    static member S_Set_Item(i : int64, array, a) =
+       s_set_item(new IntPtr(i), array, a)
+
+    static member B_Get_Item(i : int64, array) =
+       b_get_item(new IntPtr(i), array)
+
+    static member B_Set_Item(i : int64, array, a) =
+       b_set_item(new IntPtr(i), array, a)
+
+
+    static member I32_Get_Item(i : int64, array) =
+       i32_get_item(new IntPtr(i), array)
+
+    static member I32_Set_Item(i : int64, array, a) =
+       i32_set_item(new IntPtr(i), array, a)
+
+
+    static member UI8_Get_Item(i : int64, array) =
+       ui8_get_item(new IntPtr(i), array)
+
+    static member UI8_Set_Item(i : int64, array, a) =
+       ui8_set_item(new IntPtr(i), array, a)
+
+    static member UI16_Get_Item(i : int64, array) =
+       ui16_get_item(new IntPtr(i), array)
+
+    static member UI16_Set_Item(i : int64, array, a) =
+       ui16_set_item(new IntPtr(i), array, a)
+
+
+    static member S_D_Convert_Array(length : int64, fromArray, toArray) =
+       s_d_convert_array(new IntPtr(length), fromArray, toArray)
+
+    static member UI8_UI16_Convert_Array(length : int64, fromArray, toArray) =
+       ui8_ui16_convert_array(new IntPtr(length), fromArray, toArray)
 
 
     static member Free_Array(x : IntPtr) = free_array(x)
