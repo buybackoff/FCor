@@ -69,7 +69,86 @@ module Glm =
                            |> Seq.toList |> zipN |> Seq.map (join ",")
         dataSeq |> Seq.iter writer.WriteLine
 
+    let importCsv (path : string) =
+        let delimiter = ','
+        use sr = new StreamReader(path)
+        let firstN = 1000
+        let N = 100000
 
+        let isNotNumerics (s : string) =
+            s <> "#N/A" && s <> "" && s <> "N/A" && (match Single.TryParse(s) with | (true, _) -> false | _ -> true)
+
+        let take (sr : StreamReader) (nLines : int) =
+            let rec take' (sr : StreamReader) (nLines : int) (lines : string list) =
+                if nLines = 0 then lines
+                else
+                    let line = sr.ReadLine()
+                    if not <| String.IsNullOrEmpty(line) then take' sr (nLines - 1) (lines @ [line])
+                    else lines
+            take' sr nLines [] |> List.toArray
+
+        let take = take sr
+
+        let getColArray (splitLines : string[][]) col =
+            Array.init splitLines.Length (fun row -> if col < splitLines.[row].Length then splitLines.[row].[col] else String.Empty)
+
+        let headers = (take 1).[0].Split(",".ToCharArray())
+        let firstChunk = take firstN |> Array.map (fun line -> line.Split(",".ToCharArray()))
+        let isFactor = Array.init headers.Length (fun col -> col |> getColArray firstChunk |> Array.exists isNotNumerics)
+        let factorStorage = Array.init headers.Length (fun col -> new FactorStorage())
+        let covStorage = Array.init headers.Length (fun col -> new CovariateStorageFloat32())
+        let factorSlices = Array.init headers.Length (fun col -> if isFactor.[col] then Array.create N String.Empty else Array.create 0 String.Empty)
+        let covSlices = Array.init headers.Length (fun col -> if isFactor.[col] then Array.create 0 0.0f else Array.create N 0.0f)
+        
+        isFactor |> Array.iteri (fun col isFactor -> 
+                                     let colArray = getColArray firstChunk col
+                                     if isFactor then
+                                         factorStorage.[col].SetSlice(0L, colArray)
+                                     else
+                                         covStorage.[col].SetSlice(0L, colArray |> Array.map (fun s -> match Single.TryParse(s) with | (true, v) -> v | _ -> Single.NaN))
+                                )
+
+        let rec processChar (fromObs : int64) (N : int) (row : int) (col : int) (colCount : int) (isFactor : bool[]) (delimiter : char) (value : char []) (valueLen : int) =
+            if sr.Peek() >= 0 then
+                let ch = sr.Read() |> char
+                if ch = delimiter then
+                    if isFactor.[col] then 
+                        factorSlices.[col].[row] <- new String(Array.sub value 0 valueLen)
+                    else
+                        covSlices.[col].[row] <- match Single.TryParse(new String(Array.sub value 0 valueLen)) with | (true, v) -> v | _ -> Single.NaN
+                    processChar fromObs N row (col + 1) colCount isFactor delimiter value 0
+                elif ch = '\r' then
+                    if isFactor.[col] then 
+                        factorSlices.[col].[row] <- new String(Array.sub value 0 valueLen)
+                    else
+                        covSlices.[col].[row] <- match Single.TryParse(new String(Array.sub value 0 valueLen)) with | (true, v) -> v | _ -> Single.NaN
+                    if row = N - 1 then
+                        isFactor |> Array.Parallel.iteri (fun col isFactor ->
+                                                              if isFactor then factorStorage.[col].SetSlice(fromObs, factorSlices.[col])
+                                                              else covStorage.[col].SetSlice(fromObs, covSlices.[col]))
+                        if sr.Peek() |> char = '\n' then sr.Read() |> ignore
+                        processChar (fromObs + int64(N)) N 0 0 colCount isFactor delimiter value 0
+                    else
+                        if sr.Peek() |> char = '\n' then sr.Read() |> ignore
+                        processChar fromObs N (row + 1) 0 colCount isFactor delimiter value 0
+                else
+                    value.[valueLen] <- ch
+                    processChar fromObs N row col colCount isFactor delimiter value (valueLen + 1) 
+            elif row > 0 then
+                isFactor |> Array.Parallel.iteri (fun col isFactor ->
+                                                        if isFactor then factorStorage.[col].SetSlice(fromObs, Array.sub factorSlices.[col] 0 row)
+                                                        else covStorage.[col].SetSlice(fromObs, Array.sub covSlices.[col] 0 row))
+            else ()
+
+
+        processChar (int64(firstN)) N 0 0 headers.Length isFactor delimiter (Array.create 100 ' ') 0
+                   
+        isFactor |> Array.zip headers |> Array.mapi (fun col (name, isFactor) ->
+                                                         if isFactor then 
+                                                             StatVariable.Factor(new Factor(name, factorStorage.[col]))
+                                                         else
+                                                             StatVariable.Covariate(new Covariate(name, covStorage.[col]))
+                                                    )
 
     let lnGamma (x : float) =
         let mutable res = x

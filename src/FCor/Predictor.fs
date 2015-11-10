@@ -224,6 +224,11 @@ and StatVariable =
             | Covariate(c), Factor(f) -> c + f
             | Covariate(c1), Covariate(c2) -> c1 + c2 
 
+    static member (+) (predictors : Predictor list, statVar : StatVariable) : Predictor list =
+        match statVar with
+            | Factor(f) -> predictors + f
+            | Covariate(c) -> predictors + c
+
 and CategoricalPredictor =
     | Factor of Factor
     | CategoricalInteraction of CategoricalPredictor * Factor
