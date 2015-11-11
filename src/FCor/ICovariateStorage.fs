@@ -14,16 +14,22 @@ type ICovariateStorage =
 type CovariateStorageFloat32 () =
     let mutable isDisposed = false
     let mutable length = 0L
+    let mutable bufferSize = 0L
     let mutable nativeArray : nativeptr<float32> = IntPtr.Zero |> NativePtr.ofNativeInt<float32>
 
     member this.SetSlice(fromObs : int64, data : float32[]) =
         let newLength = fromObs + int64(data.Length)
-        let mutable natArr = nativeArray
-        let nativeArrayPtr = &&natArr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<Float32Ptr> 
-        MklFunctions.S_Resize_Array(newLength, nativeArrayPtr) 
-        nativeArray <- NativePtr.read nativeArrayPtr
-        data |> Array.iteri (fun i x -> MklFunctions.S_Set_Item(fromObs + int64(i), nativeArray, x))
+        let newBufferSize = if newLength <= bufferSize then bufferSize else bufferSize + 1000000L
+        if newBufferSize > bufferSize then
+            let mutable natArr = nativeArray
+            let nativeArrayPtr = &&natArr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<Float32Ptr> 
+            MklFunctions.S_Resize_Array(newBufferSize, nativeArrayPtr) 
+            nativeArray <- NativePtr.read nativeArrayPtr
+            data |> Array.iteri (fun i x -> MklFunctions.S_Set_Item(fromObs + int64(i), nativeArray, x))
+        else
+            data |> Array.iteri (fun i x -> MklFunctions.S_Set_Item(fromObs + int64(i), nativeArray, x))
         length <- newLength
+        bufferSize <- newBufferSize
 
     interface ICovariateStorage with
         member this.Length = length

@@ -40,10 +40,10 @@ let YVar = new Covariate("Y", YStorage)
 #time
 let pathCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv"
 
-//Glm.toCsv [StatVariable.Factor(AVar);StatVariable.Factor(BVar);StatVariable.Covariate(XVar);StatVariable.Covariate(YVar)] pathCsv
+Glm.toCsv [StatVariable.Factor(AVar);StatVariable.Factor(BVar);StatVariable.Covariate(XVar);StatVariable.Covariate(YVar)] pathCsv
 
-//let statVars = Glm.importCsv pathCsv
-
+let statVars = Glm.importCsv pathCsv
+statVars.[1]
 let glm = Glm.fitModel YVar.AsExpr (AVar + BVar + XVar) true Gamma Ln 15000 50 1e-6
 let pp = glm |> Option.map fst |> Option.map (fun prms -> prms |> List.filter (fun p -> p.Predictor = "X"))
 glm |> Option.map snd

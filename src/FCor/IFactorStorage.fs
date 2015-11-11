@@ -19,6 +19,7 @@ type FactorStorage () =
     let levelIndexMap = Dictionary<string, uint16>()
     let mutable isDisposed = false
     let mutable length = 0L
+    let mutable bufferSize = 0L
     let mutable nativeArray : Choice<nativeptr<uint8>, nativeptr<uint16>> = IntPtr.Zero |> NativePtr.ofNativeInt<uint8> |> Choice1Of2
 
     member this.SetSlice(fromObs : int64, levels : string[]) =
@@ -28,6 +29,7 @@ type FactorStorage () =
                                                levelMap.Add(levelIndex', level))
 
         let newLength = fromObs + int64(levels.Length)
+        let newBufferSize = if newLength <= bufferSize then bufferSize else bufferSize + 1000000L
         if levelIndexMap.Count > 255 then
             match nativeArray with
                 | Choice1Of2(natArr) -> 
@@ -57,17 +59,24 @@ type FactorStorage () =
         else
             match nativeArray with
                 | Choice1Of2(natArr) -> 
-                    let mutable natArr = natArr
-                    let nativeArrayUInt8Ptr = &&natArr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<UInt8Ptr>
-                    MklFunctions.UI8_Resize_Array(newLength, nativeArrayUInt8Ptr)
-                    let nativeArrayUInt8 = NativePtr.read nativeArrayUInt8Ptr
-                    levels |> Array.iteri (fun i level -> 
-                                               let levelIndex = levelIndexMap.[level]
-                                               MklFunctions.UI8_Set_Item(fromObs + int64(i), nativeArrayUInt8, levelIndex |> uint8)
-                                          )
-                    nativeArray <- Choice1Of2(nativeArrayUInt8)
+                    if bufferSize < newBufferSize then
+                        let mutable natArr = natArr
+                        let nativeArrayUInt8Ptr = &&natArr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<UInt8Ptr>
+                        MklFunctions.UI8_Resize_Array(newBufferSize, nativeArrayUInt8Ptr)
+                        let nativeArrayUInt8 = NativePtr.read nativeArrayUInt8Ptr
+                        levels |> Array.iteri (fun i level -> 
+                                                   let levelIndex = levelIndexMap.[level]
+                                                   MklFunctions.UI8_Set_Item(fromObs + int64(i), nativeArrayUInt8, levelIndex |> uint8)
+                                              )
+                        nativeArray <- Choice1Of2(nativeArrayUInt8)
+                    else
+                        levels |> Array.iteri (fun i level -> 
+                                                   let levelIndex = levelIndexMap.[level]
+                                                   MklFunctions.UI8_Set_Item(fromObs + int64(i), natArr, levelIndex |> uint8)
+                                              )
                 | _ -> ()
         length <- newLength
+        bufferSize <- newBufferSize
 
     interface IFactorStorage with
         member __.Length = length |> int64
