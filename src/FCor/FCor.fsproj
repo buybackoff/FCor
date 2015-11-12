@@ -49,6 +49,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ProvidedTypes.fsi" />
+    <Compile Include="ProvidedTypes.fs" />
     <Compile Include="DisplayControl.fs" />
     <Compile Include="GenericFormat.fs" />
     <Compile Include="ExplicitConversion.fs" />
@@ -63,6 +65,7 @@
     <Compile Include="ICovariateStorage.fs" />
     <Compile Include="Predictor.fs" />
     <Compile Include="Glm.fs" />
+    <Compile Include="CsvTypeProvider.fs" />
     <Compile Include="Overloading.fs" />
     <Compile Include="MklRng.fs" />
     <Compile Include="Math.fs" />

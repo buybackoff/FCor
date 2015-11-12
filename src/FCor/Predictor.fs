@@ -210,6 +210,16 @@ and StatVariable =
            | Factor(f) -> f.Name
            | Covariate(c) -> c.Name
 
+    member this.AsFactor =
+        match this with
+            | Factor(f) -> f
+            | _ -> raise (new InvalidCastException())
+
+    member this.AsCovariate =
+        match this with
+            | Covariate(c) -> c
+            | _ -> raise (new InvalidCastException())
+
     static member (*) (statVar1 : StatVariable, statVar2 : StatVariable) : Predictor =
         match statVar1, statVar2 with
             | Factor(f1), Factor(f2) -> f1 * f2 |> (!!)

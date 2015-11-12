@@ -69,14 +69,14 @@ module Glm =
                            |> Seq.toList |> zipN |> Seq.map (join ",")
         dataSeq |> Seq.iter writer.WriteLine
 
-    let importCsv (path : string) =
+    let importCsv (path : string) (sampleOnly : bool) =
         let delimiter = ','
         use sr = new StreamReader(path)
         let firstN = 1000
         let N = 1000
 
         let isNotNumerics (s : string) =
-            s <> "#N/A" && s <> "" && s <> "N/A" && (match Single.TryParse(s) with | (true, _) -> false | _ -> true)
+            s <> "#N/A" && s <> String.Empty && s <> "N/A" && s <> "." && (match Single.TryParse(s) with | (true, _) -> false | _ -> true)
 
         let take (sr : StreamReader) (nLines : int) =
             let rec take' (sr : StreamReader) (nLines : int) (lines : string list) =
@@ -107,43 +107,43 @@ module Glm =
                                      else
                                          covStorage.[col].SetSlice(0L, colArray |> Array.map (fun s -> match Single.TryParse(s) with | (true, v) -> v | _ -> Single.NaN))
                                 )
-
-
-        let rec processLine (fromObs : int64) (N : int) (row : int) (isFactor : bool[]) (delimiter : char) =
-            let line = sr.ReadLine()
-            if not <| String.IsNullOrEmpty(line) then
-                line.Split(",".ToCharArray()) |> Array.iteri (fun col s -> slices.[col].[row] <- s)
-                if row = N - 1 then
-                    isFactor |> Array.iteri (fun col isFactor -> 
-                                                if not isFactor then
-                                                    covSlices.[col] <- slices.[col] |> Array.Parallel.map (fun s -> let f = ref 0.0f
-                                                                                                                    if Single.TryParse(s, f) then !f else Single.NaN) 
-                                            )
-                    isFactor |> Array.Parallel.iteri (fun col isFactor ->
-                                                            if isFactor then factorStorage.[col].SetSlice(fromObs, slices.[col])
-                                                            else
-                                                                covStorage.[col].SetSlice(fromObs, covSlices.[col]))
-                    processLine (fromObs + int64(N)) N 0 isFactor delimiter 
+        if not sampleOnly then
+            let rec processLine (fromObs : int64) (N : int) (row : int) (isFactor : bool[]) (delimiter : char) =
+                let line = sr.ReadLine()
+                if not <| String.IsNullOrEmpty(line) then
+                    line.Split(",".ToCharArray()) |> Array.iteri (fun col s -> slices.[col].[row] <- s)
+                    if row = N - 1 then
+                        isFactor |> Array.iteri (fun col isFactor -> 
+                                                    if not isFactor then
+                                                        covSlices.[col] <- slices.[col] |> Array.Parallel.map (fun s -> let f = ref 0.0f
+                                                                                                                        if Single.TryParse(s, f) then !f else Single.NaN) 
+                                                )
+                        isFactor |> Array.Parallel.iteri (fun col isFactor ->
+                                                                if isFactor then factorStorage.[col].SetSlice(fromObs, slices.[col])
+                                                                else
+                                                                    covStorage.[col].SetSlice(fromObs, covSlices.[col]))
+                        processLine (fromObs + int64(N)) N 0 isFactor delimiter 
+                    else
+                        processLine fromObs N (row + 1) isFactor delimiter 
                 else
-                    processLine fromObs N (row + 1) isFactor delimiter 
-            else
-                if row > 0 then
-                    isFactor |> Array.iteri (fun col isFactor -> 
-                                                if not isFactor then
-                                                    covSlices.[col] <- slices.[col] |> Array.Parallel.map (fun s -> let f = ref 0.0f
-                                                                                                                    if Single.TryParse(s, f) then !f else Single.NaN) 
-                                            )
-                    isFactor |> Array.Parallel.iteri (fun col isFactor ->
-                                                            if isFactor then factorStorage.[col].SetSlice(fromObs, Array.sub slices.[col] 0 row)
-                                                            else covStorage.[col].SetSlice(fromObs, Array.sub (covSlices.[col]) 0 row))
-                else ()
+                    if row > 0 then
+                        isFactor |> Array.iteri (fun col isFactor -> 
+                                                    if not isFactor then
+                                                        covSlices.[col] <- slices.[col] |> Array.Parallel.map (fun s -> let f = ref 0.0f
+                                                                                                                        if Single.TryParse(s, f) then !f else Single.NaN) 
+                                                )
+                        isFactor |> Array.Parallel.iteri (fun col isFactor ->
+                                                                if isFactor then factorStorage.[col].SetSlice(fromObs, Array.sub slices.[col] 0 row)
+                                                                else covStorage.[col].SetSlice(fromObs, Array.sub (covSlices.[col]) 0 row))
+                    else ()
 
-        processLine (int64(firstN)) N 0 isFactor delimiter 
+            processLine (int64(firstN)) N 0 isFactor delimiter 
+
         isFactor |> Array.zip headers |> Array.mapi (fun col (name, isFactor) ->
                                                          if isFactor then 
                                                              StatVariable.Factor(new Factor(name, factorStorage.[col]))
                                                          else
-                                                             StatVariable.Covariate(new Covariate(name, covStorage.[col]))
+                                                             Covariate(new Covariate(name, covStorage.[col]))
                                                     )
 
     let lnGamma (x : float) =
