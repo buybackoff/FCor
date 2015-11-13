@@ -7,6 +7,10 @@ module Math =
 
     let inline trunc x = truncate x
 
+    let inline max2 (x : 'S) (y : 'U) : 'V  = ((^T or ^S) : (static member Max: ^T * ^S * ^U -> ^V) DummyType, x, y)
+
+    let inline min2 (x : 'S) (y : 'U) : 'V  = ((^T or ^S) : (static member Min: ^T * ^S * ^U -> ^V) DummyType, x, y)
+
     let inline asinh (x :'S) : 'S = ((^T or ^S) : (static member ASinh: ^T * ^S -> ^S) DummyType, x)
 
     let inline acosh (x :'S) : 'S = ((^T or ^S) : (static member ACosh: ^T * ^S -> ^S) DummyType, x)

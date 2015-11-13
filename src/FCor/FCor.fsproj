@@ -64,6 +64,7 @@
     <Compile Include="IFactorStorage.fs" />
     <Compile Include="ICovariateStorage.fs" />
     <Compile Include="Predictor.fs" />
+    <Compile Include="DataFrame.fs" />
     <Compile Include="Glm.fs" />
     <Compile Include="CsvTypeProvider.fs" />
     <Compile Include="Overloading.fs" />

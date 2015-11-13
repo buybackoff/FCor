@@ -13,11 +13,16 @@ type GlmLink =
     | Ln
     | Log of float
     | Power of float
+    | Logit
+    | Probit
+    | LogLog
+    | CLogLog
 
 type GlmDistribution =
     | Gaussian
     | Gamma
     | Poisson
+    | Binomial
 
 type GlmDispersion =
     | MaxLikelihood
@@ -42,11 +47,26 @@ type GlmGoodnessOfFit =
     {
      LogLikehood : float
      Deviance : float
+     ScaledDeviance : float
      PearsonChi : float
+     ScaledPearsonChi : float
      Scale : float
     }
 
 module Glm =
+
+    let rec trigamma (x : float) =
+        if x > 100.0 then 1.0/x + 1.0 / (2.0*x*x) + 1.0 / (6.0*x*x*x) - 1.0/(30.0*x*x*x*x*x) + 1.0/(42.0*x*x*x*x*x*x*x) - 1.0/(30.0*x*x*x*x*x*x*x*x*x)
+        else
+            trigamma (x+1.0)+1.0/(x*x)
+
+    let psi (x : float) =
+        let mutable res = x
+        MklFunctions.D_Digam_Array(1L, &&res, &&res)
+        res
+
+    let gammaLogL' (alpha : float) (dev : float) (N : float) =
+        psi(alpha) - Math.Log(alpha) + dev / (2.0 * N)
 
     let rec zipN (xss : seq<'T> list) : seq<'T list> =
         match xss with
@@ -144,7 +164,7 @@ module Glm =
                                                              StatVariable.Factor(new Factor(name, factorStorage.[col]))
                                                          else
                                                              Covariate(new Covariate(name, covStorage.[col]))
-                                                    )
+                                                    ) |> Array.toList
 
     let lnGamma (x : float) =
         let mutable res = x
@@ -312,8 +332,12 @@ module Glm =
             | Ln -> Vector.Exp(xbeta)
             | Log(d) -> Vector.Exp(xbeta * Math.Log(d))
             | Power(d) -> xbeta .^ (1.0 / d)
+            | Logit -> Vector.Exp(xbeta) ./ (1.0 + Vector.Exp(xbeta))
+            | LogLog -> Vector.Exp(-Vector.Exp(-xbeta))
+            | CLogLog -> 1.0 - Vector.Exp(-Vector.Exp(xbeta))
+            | Probit -> Vector.Normcdf(xbeta)
 
-    let get_u (resp : Vector) (pred : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
+    let get_u (resp : Vector) (pred : Vector) (xbeta : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
         match glmDistribution, glmLink with
             | Gaussian, Id -> 
                 (resp - pred)
@@ -339,8 +363,14 @@ module Glm =
                 (resp - pred) * Math.Log(d)
             | Poisson, Power(d) ->
                 ((resp - pred) * d) .* (pred .^ (-1.0 / d))
+            | Binomial, Logit -> resp - pred
+            | Binomial, LogLog -> -(resp - pred) ./ (1.0 - pred) .* Vector.Log(pred)
+            | Binomial, CLogLog -> -(resp - pred) ./ pred .* Vector.Log(1.0 - pred)
+            | Binomial, Probit -> 
+                (resp - pred) ./ (pred .* (1.0 - pred)) .* (Vector.Exp(-0.5 * xbeta .* xbeta) / (Math.Sqrt(2.0 * Math.PI)))
+            | _ -> raise (new InvalidOperationException())
 
-    let getWeight (pred : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
+    let getWeight (pred : Vector) (xbeta : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
         match glmDistribution, glmLink with
             | Gaussian, Id -> 
                 Vector.Empty
@@ -366,6 +396,11 @@ module Glm =
                 Math.Log(d) * Math.Log(d) * pred
             | Poisson, Power(d) ->
                 d * d * (pred .^ (1.0 - 2.0 / d))
+            | Binomial, Logit -> pred .* (1.0 - pred)
+            | Binomial, LogLog -> pred .* Vector.Log(pred) .* Vector.Log(pred) ./ (1.0 - pred)
+            | Binomial, CLogLog -> (1.0 - pred) .* (Vector.Log(1.0 - pred) ./ pred) .* Vector.Log(1.0 - pred)
+            | Binomial, Probit -> (Vector.Exp(-0.5 * xbeta .* xbeta) ./ (Math.Sqrt(2.0 * Math.PI)) .^ 2.0) ./ (pred*(1.0 - pred))
+            | _ -> raise (new InvalidOperationException())
 
     let getXBeta (design : ((UInt16Vector list * int[] * int[]) option * Vector option) list) (beta : Vector) (sliceLen : int)
                  (cumEstimateCounts: int[]) =
@@ -601,8 +636,8 @@ module Glm =
                                                let sliceLength = resp.Length
                                                use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
                                                use pred = getPred xbeta glmLink
-                                               use u = get_u resp pred glmLink glmDistribution
-                                               use weight = getWeight resp glmLink glmDistribution
+                                               use u = get_u resp pred xbeta glmLink glmDistribution
+                                               use weight = getWeight pred xbeta glmLink glmDistribution
                                                use updateU = getU slice u sliceLength cumEstimateCounts
                                                use updateH = getH slice weight sliceLength cumEstimateCounts
                                                VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
@@ -702,6 +737,8 @@ module Glm =
                 VectorExpr.EvalIn(VectorExpr.IfFunction((resp .= 0.0), (2.0 * pred.AsExpr), (2.0 * (resp .* VectorExpr.Log(resp ./ pred) - (resp - pred))) ), None)
             | Gamma ->
                 VectorExpr.EvalIn(-2.0 * (VectorExpr.Log(resp ./ pred) - (resp ./ pred) + 1.0), None) 
+            | Binomial -> 
+                VectorExpr.EvalIn(VectorExpr.IfFunction((resp .= 0.0), (-2.0 * VectorExpr.Log(1.0 - pred.AsExpr)), (-2.0 * VectorExpr.Log(pred.AsExpr))), None)
 
     let getPearsonChi (resp : Vector) (pred : Vector) (glmDistribution : GlmDistribution) =
         let resp = resp.AsExpr
@@ -712,6 +749,8 @@ module Glm =
                 VectorExpr.EvalIn(((resp - pred) ./ VectorExpr.Sqrt(pred.AsExpr)) .^ 2, None)
             | Gamma ->
                 VectorExpr.EvalIn(((resp ./ pred) - 1.0) .^ 2, None) 
+            | Binomial ->
+                VectorExpr.EvalIn((resp - pred) ./ VectorExpr.Sqrt(pred.AsExpr .* (1.0 - pred.AsExpr)) .^ 2, None)
 
     let getLogLikelihoodPart (resp : Vector) (pred : Vector) (glmDistribution : GlmDistribution) =
         let resp = resp.AsExpr
@@ -722,18 +761,54 @@ module Glm =
                 VectorExpr.EvalIn((resp .* VectorExpr.Log(pred.AsExpr) - pred.AsExpr), None)
             | Gamma ->
                 VectorExpr.EvalIn((VectorExpr.Log(pred ./ resp) + (resp ./ pred)), None) 
+            | Binomial ->
+                VectorExpr.EvalIn(VectorExpr.IfFunction((resp .= 0.0), 
+                                                        (VectorExpr.Log(1.0 - pred.AsExpr)),
+                                                        (VectorExpr.Log(pred.AsExpr))), None)
 
     let getLogLikelihood (logLikelihoodPart : float) (N : int64) (phi : float) (glmDistribution : GlmDistribution) =
         match glmDistribution with
             | Gaussian ->
                 -0.5 * (logLikelihoodPart / phi + float(N) * Math.Log(2.0 * Math.PI * phi))
             | Poisson ->
-                logLikelihoodPart
+                logLikelihoodPart / phi
             | Gamma ->
                 phi * logLikelihoodPart + (phi * Math.Log(phi) - lnGamma(phi)) * float(N)
+            | Binomial -> 
+                logLikelihoodPart / phi
+
+    let getPhi (dispersion : GlmDispersion) (glmDistribution : GlmDistribution) (N : int64) (dof : int) (pearsonChi : float) (deviance : float) =
+        let N_dof = float(N - int64(dof))
+        let N = float N
+        match dispersion with
+            | MaxLikelihood ->
+                match glmDistribution with
+                    | Gaussian -> deviance / N_dof
+                    | Poisson -> 1.0
+                    | Binomial -> 1.0
+                    | Gamma -> 
+                        let dev= deviance / N_dof
+                        let scale = (6.0*N_dof+2.0*N*dev)/(dev*(6.0*N_dof+N*dev))
+                        let rec getScale (currScale : float) (d : float) (N' : float) (iter : int) (maxIter : int) =
+                            let gamLogL' = gammaLogL' currScale d N'
+                            if iter >= maxIter then Double.NaN
+                            elif Math.Abs(gamLogL') <= 1e-10 then
+                                printfn "Scale converged after %d iter" iter
+                                currScale
+                            else 
+                                getScale (currScale - (gammaLogL' currScale d N') / ((trigamma currScale) - 1.0 / currScale)) d N' (iter + 1) maxIter
+                        1.0 / getScale scale deviance N 0 100
+            | Deviance -> deviance / N_dof
+            | Pearson -> pearsonChi / N_dof
+
+    let getScale (phi : float) (glmDistribution : GlmDistribution) =
+        match glmDistribution with
+            | Gamma -> 1.0 / phi
+            | Gaussian -> Math.Sqrt(phi)
+            | _ -> phi
 
     let getGoodnessOfFit (response : Covariate) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[] * int[]) option * Covariate option) list)
-                         (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector)
+                         (glmDistribution : GlmDistribution) (glmLink : GlmLink) (dispersion : GlmDispersion) (beta : Vector)
                          (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) =
  
         let respSlices = response.GetSlices(0L, obsCount - 1L, sliceLength)
@@ -751,14 +826,16 @@ module Glm =
                                     new Vector([|Vector.Sum(deviance); Vector.Sum(pearsonChi); Vector.Sum(likelihoodPart)|])
                                 )
                    |> Seq.reduce (+)
-        let dof = beta.Length |> int64
+        let dof = beta.Length 
         let N = response.Length
-        let phi = tempRes.[0] / float(N - dof)
+        let phi = getPhi dispersion glmDistribution N dof tempRes.[1] tempRes.[0] 
         {
          LogLikehood = getLogLikelihood tempRes.[2] N phi glmDistribution
          Deviance = tempRes.[0]
+         ScaledDeviance = tempRes.[0] / phi
          PearsonChi = tempRes.[1]
-         Scale = phi
+         ScaledPearsonChi = tempRes.[1] /phi
+         Scale = getScale phi glmDistribution
         }
 
     let getInitBeta (estimateCount : int) (link : GlmLink) (meanResponseEstimate : float) =
@@ -772,10 +849,21 @@ module Glm =
                 beta.[0] <- Math.Log(meanResponseEstimate) / Math.Log(d)
             | Power(d) ->
                 beta.[0] <- Math.Pow(meanResponseEstimate, 1.0 / d)
+            | Logit ->
+                beta.[0] <- Math.Log(meanResponseEstimate / (1.0 - meanResponseEstimate))
+            | LogLog ->
+                beta.[0] <- -Math.Log(-Math.Log(meanResponseEstimate))
+            | CLogLog ->
+                beta.[0] <- Math.Log(-Math.Log(1.0 - meanResponseEstimate))
+            | Probit ->
+                beta.[0] <- 
+                    let mutable res = meanResponseEstimate
+                    MklFunctions.D_CdfNormInv_Array(1L, &&res, &&res)
+                    res
         beta
 
     let fitModel (response : CovariateExpr) (predictors : Predictor list) (includeIntercept : bool)
-                 (glmDistribution : GlmDistribution) (glmLink : GlmLink) (sliceLength : int) (maxIter : int) (eps : float) =
+                 (glmDistribution : GlmDistribution) (glmLink : GlmLink) (glmDispersion : GlmDispersion) (sliceLength : int) (maxIter : int) (eps : float) =
         let minLen = min (predictors |> List.map (fun p -> p.MinLength) |> List.min) response.MinLength
         let maxLen = max (predictors |> List.map (fun p -> p.MaxLength) |> List.max) response.MaxLength
         if minLen <> maxLen then raise (new ArgumentException("Glm design data length mismatch"))
@@ -792,7 +880,7 @@ module Glm =
         if converged then
             printfn "converged in %d iter" iter
             let parameters = getParameterEstimates estimableDesign beta invHDiag cumEstimateCounts
-            let goodnessOfFit = getGoodnessOfFit response design glmDistribution glmLink beta length sliceLength cumEstimateCounts
+            let goodnessOfFit = getGoodnessOfFit response design glmDistribution glmLink glmDispersion beta length sliceLength cumEstimateCounts
             (parameters, goodnessOfFit) |> Some
         else 
             None

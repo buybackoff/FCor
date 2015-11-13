@@ -14,16 +14,15 @@ open Microsoft.FSharp.Quotations
 
 module CsvTypeProviderUtil =
 
-    let getStatVariable (statVarMap : obj) (name : string) =
-        let statVarMap = statVarMap:?>Map<string, StatVariable>
-        if statVarMap.ContainsKey(name) then
-            match statVarMap.[name] with
-                | StatVariable.Factor(f) -> f:>obj
-                | Covariate(c) -> c:>obj
-        else null
+    let getStatVariable (dataFrame : obj) (name : string) =
+        let dataFrame = dataFrame:?>DataFrame
+        match dataFrame.[name] with
+            | StatVariable.Factor(f) -> f:>obj
+            | Covariate(c) -> c:>obj
 
     let getCsvVars (path : string) (sampleOnly : bool) =
-        (Glm.importCsv path sampleOnly |> Array.map (fun svar -> svar.Name, svar) |> Map.ofArray):>obj
+        let svars = Glm.importCsv path sampleOnly
+        new DataFrame(svars):>obj
 
 [<TypeProvider>]
 type public CsvTypeProvider(cfg:TypeProviderConfig) as this =
@@ -35,27 +34,26 @@ type public CsvTypeProvider(cfg:TypeProviderConfig) as this =
     let filename = ProvidedStaticParameter("filename", typeof<string>)
     do csvTy.DefineStaticParameters([filename], fun tyName [| :? string as filename |] ->
         let resolvedFilename = Path.Combine(cfg.ResolutionFolder, filename)
-        let statVars = Glm.importCsv resolvedFilename true 
+        let dataFrame = new DataFrame(Glm.importCsv resolvedFilename true)
         let ty = ProvidedTypeDefinition(asm, ns, tyName, Some(typeof<obj>))
+        ty.HideObjectMethods <- true
         let ctor0 = ProvidedConstructor([], InvokeCode = fun [] -> <@@ CsvTypeProviderUtil.getCsvVars resolvedFilename false @@>)
         ty.AddMember ctor0
         let ctor1 = ProvidedConstructor([ProvidedParameter("csvPath", typeof<string>)], InvokeCode = fun [csvPath] -> <@@ CsvTypeProviderUtil.getCsvVars (%%csvPath:string) false @@>)
         ty.AddMember ctor1
 
-        statVars |> Array.iter (fun statVar ->
-                                   let name = statVar.Name
-                                   match statVar with
-                                       | StatVariable.Factor(_) ->
-                                           let prop = ProvidedProperty(statVar.Name, typeof<Factor>, 
-                                                                       GetterCode = fun args -> <@@ CsvTypeProviderUtil.getStatVariable (%%args.[0]:obj) name
-                                                                                                 @@>)
+        dataFrame.Factors |> List.iter (fun factor ->
+                                           let name = factor.Name
+                                           let prop = ProvidedProperty(name, typeof<Factor>,  GetterCode = fun args -> <@@ CsvTypeProviderUtil.getStatVariable (%%args.[0]:obj) name @@>)
                                            ty.AddMember prop  
-                                       | Covariate(_) ->
-                                           let prop = ProvidedProperty(statVar.Name, typeof<Covariate>, 
-                                                                       GetterCode = fun args -> <@@ CsvTypeProviderUtil.getStatVariable (%%args.[0]:obj) name
-                                                                                                 @@>)
-                                           ty.AddMember prop      
-                              )
+                                       )
+        dataFrame.Covariates |> List.iter (fun covariate ->
+                                               let name = covariate.Name
+                                               let prop = ProvidedProperty(name, typeof<Covariate>, GetterCode = fun args -> <@@ CsvTypeProviderUtil.getStatVariable (%%args.[0]:obj) name @@>)
+                                               ty.AddMember prop  
+                                       )
+        let dataFrameProp = ProvidedProperty("DataFrame", typeof<DataFrame>, GetterCode = fun args -> <@@ %%args.[0] @@>)
+        ty.AddMember dataFrameProp  
         ty)
     do this.AddNamespace(ns, [csvTy])
 

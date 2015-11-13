@@ -38,3 +38,4 @@ type DisplayControl() =
         if moreCols then sb.Append(more.PadLeft(maxChars)) |> ignore
         sb.Append("\r\n") |> ignore
         sb.ToString()
+

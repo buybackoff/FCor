@@ -6,6 +6,7 @@ open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
 open System.Collections.Generic
 open FCor.ExplicitConversion
+open System.Text
 
 type Factor(name : string, factorStorage : IFactorStorage) =
 
@@ -47,6 +48,18 @@ type Factor(name : string, factorStorage : IFactorStorage) =
                                |> Seq.map (fun index -> let levelIndex = slice.[index] in levelIndex, this.GetLevel(int levelIndex)))
                                |> Seq.concat
 
+
+    interface IFormattable with
+        member this.ToString(format, provider) = 
+            let n, _ = DisplayControl.MaxDisplaySize
+            let slice = this.AsSeq |> Seq.take (min n factorStorage.Length |> int) |> Seq.map snd |> Seq.toArray
+            let more = if int64(slice.Length) < factorStorage.Length then "..." else ""
+            let data = slice |> String.concat " "
+            sprintf "Factor '%s' with %d obs and %d levels: %s %s" name factorStorage.Length factorStorage.LevelCount data more
+
+    override this.ToString() =
+        (this:>IFormattable).ToString("", null)
+
     static member Intercept = intercept
 
     static member (*) (factor1 : Factor, factor2 : Factor) : CategoricalPredictor =
@@ -67,6 +80,17 @@ type Factor(name : string, factorStorage : IFactorStorage) =
     static member (+) (factor : Factor, predictors : Predictor list) =
         !!factor :: predictors
 
+    interface IDisposable with
+        member this.Dispose() = this.DoDispose(true)
+
+    member internal this.DoDispose(isDisposing) = 
+        if isDisposing then GC.SuppressFinalize(this)
+        match factorStorage with
+            | :? IDisposable as d -> d.Dispose()
+            | _ -> ()
+
+    override this.Finalize() = try this.DoDispose(false) with _ -> ()
+
 
 and Covariate(name : string, covariateStorage : ICovariateStorage) =
 
@@ -83,6 +107,17 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
                                seq{0L..slice.LongLength - 1L} 
                                |> Seq.map (fun index -> slice.[index]))
                                |> Seq.concat
+
+    interface IFormattable with
+        member this.ToString(format, provider) = 
+            let n, _ = DisplayControl.MaxDisplaySize
+            let slice = this.AsSeq |> Seq.take (min n covariateStorage.Length |> int) |> Seq.map float32 |> Seq.toArray
+            let more = if int64(slice.Length) < covariateStorage.Length then "..." else ""
+            let data = slice |> Array.map (fun x -> x.ToString()) |> String.concat " "
+            sprintf "Covariate '%s' with %d obs: %s %s" name covariateStorage.Length data more
+
+    override this.ToString() =
+        (this:>IFormattable).ToString("", null)
 
     static member (*) (factor : Factor, covariate : Covariate) : Predictor =
         factor * covariate.AsExpr
@@ -122,6 +157,17 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
     static member Log(covariate :  Covariate) = CovariateExpr.Log(covariate.AsExpr)
 
     static member Sqrt(covariate :  Covariate) = CovariateExpr.Sqrt(covariate.AsExpr)
+
+    interface IDisposable with
+        member this.Dispose() = this.DoDispose(true)
+
+    member internal this.DoDispose(isDisposing) = 
+        if isDisposing then GC.SuppressFinalize(this)
+        match covariateStorage with
+            | :? IDisposable as d -> d.Dispose()
+            | _ -> ()
+
+    override this.Finalize() = try this.DoDispose(false) with _ -> ()
 
 and CovariateExpr =
     | Var of Covariate
@@ -180,17 +226,99 @@ and CovariateExpr =
                             yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
                       }
              }
-        let name = this.Name
+        let name = this.Name // remove ()
         new Covariate(name, covariateStorage)
 
+    static member (*) (covariateExpr1 : CovariateExpr, covariateExpr2 : CovariateExpr) =
+        BinaryFunction(covariateExpr1, covariateExpr2, VectorExpr.op_DotMultiply, "({0:G}*{1:G})")
+
+    static member (/) (covariateExpr1 : CovariateExpr, covariateExpr2 : CovariateExpr) =
+        BinaryFunction(covariateExpr1, covariateExpr2, VectorExpr.op_DotDivide, "({0:G}/{1:G})")
+
+    static member (+) (covariateExpr1 : CovariateExpr, covariateExpr2 : CovariateExpr) =
+        BinaryFunction(covariateExpr1, covariateExpr2, VectorExpr.op_Addition, "({0:G}+{1:G})")
+
+    static member (-) (covariateExpr1 : CovariateExpr, covariateExpr2 : CovariateExpr) =
+        BinaryFunction(covariateExpr1, covariateExpr2, VectorExpr.op_Subtraction, "({0:G}-{1:G})")
+
+    static member Min (covariateExpr1 : CovariateExpr, covariateExpr2 : CovariateExpr) =
+        BinaryFunction(covariateExpr1, covariateExpr2, VectorExpr.Min, "min({0:G},{1:G})")
+
+    static member Max (covariateExpr1 : CovariateExpr, covariateExpr2 : CovariateExpr) =
+        BinaryFunction(covariateExpr1, covariateExpr2, VectorExpr.Max, "max({0:G},{1:G})")
+
+
+    static member (*) (covariateExpr : CovariateExpr, a : float) =
+        UnaryFunction(covariateExpr, (fun expr -> expr .* a), sprintf "(%G*{0:G})" a)
+
+    static member (*) (a : float, covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, (fun expr -> a .* expr), sprintf "(%G*{0:G})" a)
+
+    static member (/) (covariateExpr : CovariateExpr, a : float) =
+        UnaryFunction(covariateExpr, (fun expr -> expr ./ a), sprintf "({0:G}/%G)" a)
+
+    static member (/) (a : float, covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, (fun expr -> a ./ expr), sprintf "(%G/{0:G})" a)
+
+    static member (+) (covariateExpr : CovariateExpr, a : float) =
+        UnaryFunction(covariateExpr, (fun expr -> expr + a), sprintf "(%G+{0:G})" a)
+
+    static member (+) (a : float, covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, (fun expr -> a + expr), sprintf "(%G+{0:G})" a)
+
+    static member (-) (covariateExpr : CovariateExpr, a : float) =
+        UnaryFunction(covariateExpr, (fun expr -> expr - a), sprintf "({0:G}-%G)" a)
+
+    static member (-) (a : float, covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, (fun expr -> a - expr), sprintf "(%G-{0:G})" a)
+
+    static member Min (covariateExpr : CovariateExpr, a : float) =
+        UnaryFunction(covariateExpr, (fun expr -> VectorExpr.Min(expr, a)), sprintf "min({0:G},%G)" a)
+
+    static member Min (a : float, covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, (fun expr -> VectorExpr.Min(a, expr)), sprintf "min(%G,{0:G})" a)
+
+    static member Max (covariateExpr : CovariateExpr, a : float) =
+        UnaryFunction(covariateExpr, (fun expr -> VectorExpr.Max(expr, a)), sprintf "max({0:G},%G)" a)
+
+    static member Max (a : float, covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, (fun expr -> VectorExpr.Max(a, expr)), sprintf "max(%G,{0:G})" a)
+
+    static member (^) (covariateExpr : CovariateExpr, n : int) =
+        UnaryFunction(covariateExpr, (fun expr -> expr .^ n), sprintf "{0:G}^%d" n)
+
+    static member (^) (covariateExpr : CovariateExpr, a : float) =
+        UnaryFunction(covariateExpr, (fun expr -> expr .^ a), sprintf "{0:G}^%G" a)
+
+    static member (~-) (covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, VectorExpr.op_UnaryNegation, "(-{0:G})")
+
+    static member Abs(covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, VectorExpr.Abs, "abs({0:G})")
+
     static member Log(covariateExpr : CovariateExpr) =
-        UnaryFunction(covariateExpr, VectorExpr.Log, "log({0})")
+        UnaryFunction(covariateExpr, VectorExpr.Log, "log({0:G})")
+
+    static member Log10(covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, VectorExpr.Log10, "log10({0:G})")
+
+    static member Exp(covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, VectorExpr.Exp, "exp({0:G})")
 
     static member Sqrt(covariateExpr : CovariateExpr) =
-        UnaryFunction(covariateExpr, VectorExpr.Sqrt, "sqrt({0})")
+        UnaryFunction(covariateExpr, VectorExpr.Sqrt, "sqrt({0:G})")
 
-    static member (*) (covariateExpr1 : CovariateExpr, covariateExpr2 : CovariateExpr) =
-        BinaryFunction(covariateExpr1, covariateExpr2, VectorExpr.op_DotMultiply, "{0}*{1}")
+    static member Round(covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, VectorExpr.Round, "round({0:G})")
+
+    static member Ceiling(covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, VectorExpr.Ceiling, "ceil({0:G})")
+
+    static member Floor(covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, VectorExpr.Floor, "floor({0:G})")
+
+    static member Truncate(covariateExpr : CovariateExpr) =
+        UnaryFunction(covariateExpr, VectorExpr.Truncate, "trunc({0:G})")
 
     static member (*) (factor : Factor, covariateExpr : CovariateExpr) : Predictor =
         MixedInteraction(!!factor, covariateExpr)
@@ -200,6 +328,15 @@ and CovariateExpr =
 
     static member (*) (covariateExpr : CovariateExpr, catPredictor : CategoricalPredictor) : Predictor =
         MixedInteraction(catPredictor, covariateExpr)
+
+    static member (+) (factor : Factor, covariateExpr : CovariateExpr) : Predictor list =
+        factor + covariateExpr.AsCovariate
+
+    static member (+) (covariate : Covariate, covariateExpr : CovariateExpr) : Predictor list =
+        covariate + covariateExpr.AsCovariate
+
+    static member (+) (predictors : Predictor list, covariate : CovariateExpr) : Predictor list =
+        predictors + NumericalPredictor(covariate)
         
 and StatVariable =
     | Factor of Factor

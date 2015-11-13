@@ -276,3 +276,192 @@ module Overloading =
 
         static member Cov (DummyType, x) = Matrix.Cov(x)
 
+
+        static member Max (DummyType, x : BoolVector, y : BoolVector) = BoolVector.Max(x, y)
+
+        static member Max (DummyType, x : BoolVector, y : bool) = BoolVector.Max(x, y)
+
+        static member Max (DummyType, x : bool, y : BoolVector) = BoolVector.Max(x, y)
+
+
+        static member Max (DummyType, x : BoolVectorExpr, y : BoolVectorExpr) = BoolVectorExpr.Max(x, y)
+
+        static member Max (DummyType, x : BoolVectorExpr, y : BoolVector) = BoolVectorExpr.Max(x, y)
+
+        static member Max (DummyType, x : BoolVector, y : BoolVectorExpr) = BoolVectorExpr.Max(x, y)
+
+        static member Max (DummyType, x : BoolVectorExpr, y : bool) = BoolVectorExpr.Max(x, y)
+
+        static member Max (DummyType, x : bool, y : BoolVectorExpr) = BoolVectorExpr.Max(x, y)
+
+
+        static member Max (DummyType, x : Vector, y : Vector) = Vector.Max(x, y)
+
+        static member Max (DummyType, x : Vector, y : float) = Vector.Max(x, y)
+
+        static member Max (DummyType, x : float, y : Vector) = Vector.Max(x, y)
+
+
+
+        static member Max (DummyType, x : VectorExpr, y : VectorExpr) = VectorExpr.Max(x, y)
+
+        static member Max (DummyType, x : VectorExpr, y : Vector) = VectorExpr.Max(x, y)
+
+        static member Max (DummyType, x : Vector, y : VectorExpr) = VectorExpr.Max(x, y)
+
+        static member Max (DummyType, x : VectorExpr, y : float) = VectorExpr.Max(x, y)
+
+        static member Max (DummyType, x : float, y : VectorExpr) = VectorExpr.Max(x, y)
+
+
+        static member Max (DummyType, x : BoolMatrix, y : BoolMatrix) = BoolMatrix.Max(x, y)
+
+        static member Max (DummyType, x : BoolMatrix, y : bool) = BoolMatrix.Max(x, y)
+
+        static member Max (DummyType, x : bool, y : BoolMatrix) = BoolMatrix.Max(x, y)
+
+
+        static member Max (DummyType, x : BoolMatrixExpr, y : BoolMatrixExpr) = BoolMatrixExpr.Max(x, y)
+
+        static member Max (DummyType, x : BoolMatrixExpr, y : BoolMatrix) = BoolMatrixExpr.Max(x, y)
+
+        static member Max (DummyType, x : BoolMatrix, y : BoolMatrixExpr) = BoolMatrixExpr.Max(x, y)
+
+        static member Max (DummyType, x : BoolMatrixExpr, y : bool) = BoolMatrixExpr.Max(x, y)
+
+        static member Max (DummyType, x : bool, y : BoolMatrixExpr) = BoolMatrixExpr.Max(x, y)
+
+
+        static member Max (DummyType, x : Matrix, y : Matrix) = Matrix.Max(x, y)
+
+        static member Max (DummyType, x : Matrix, y : float) = Matrix.Max(x, y)
+
+        static member Max (DummyType, x : float, y : Matrix) = Matrix.Max(x, y)
+
+
+
+        static member Max (DummyType, x : MatrixExpr, y : MatrixExpr) = MatrixExpr.Max(x, y)
+
+        static member Max (DummyType, x : MatrixExpr, y : Matrix) = MatrixExpr.Max(x, y)
+
+        static member Max (DummyType, x : Matrix, y : MatrixExpr) = MatrixExpr.Max(x, y)
+
+        static member Max (DummyType, x : MatrixExpr, y : float) = MatrixExpr.Max(x, y)
+
+        static member Max (DummyType, x : float, y : MatrixExpr) = MatrixExpr.Max(x, y)
+
+
+        static member Max (DummyType, x : CovariateExpr, y : CovariateExpr) = CovariateExpr.Max(x, y)
+
+        static member Max (DummyType, x : CovariateExpr, y : float) = CovariateExpr.Max(x, y)
+
+        static member Max (DummyType, x : float, y : CovariateExpr) = CovariateExpr.Max(x, y)
+
+
+        static member Max (DummyType, a : float, b : float) = max a b
+
+        static member Max (DummyType, a : float32, b : float32) = max a b
+
+        static member Max (DummyType, a : int, b : int) = max a b
+
+        static member Max (DummyType, a : int64, b : int64) = max a b
+
+        static member Max (DummyType, a : bool, b : bool) = max a b
+
+
+
+
+
+
+
+        static member Min (DummyType, x : BoolVector, y : BoolVector) = BoolVector.Min(x, y)
+
+        static member Min (DummyType, x : BoolVector, y : bool) = BoolVector.Min(x, y)
+
+        static member Min (DummyType, x : bool, y : BoolVector) = BoolVector.Min(x, y)
+
+
+        static member Min (DummyType, x : BoolVectorExpr, y : BoolVectorExpr) = BoolVectorExpr.Min(x, y)
+
+        static member Min (DummyType, x : BoolVectorExpr, y : BoolVector) = BoolVectorExpr.Min(x, y)
+
+        static member Min (DummyType, x : BoolVector, y : BoolVectorExpr) = BoolVectorExpr.Min(x, y)
+
+        static member Min (DummyType, x : BoolVectorExpr, y : bool) = BoolVectorExpr.Min(x, y)
+
+        static member Min (DummyType, x : bool, y : BoolVectorExpr) = BoolVectorExpr.Min(x, y)
+
+
+        static member Min (DummyType, x : Vector, y : Vector) = Vector.Min(x, y)
+
+        static member Min (DummyType, x : Vector, y : float) = Vector.Min(x, y)
+
+        static member Min (DummyType, x : float, y : Vector) = Vector.Min(x, y)
+
+
+
+        static member Min (DummyType, x : VectorExpr, y : VectorExpr) = VectorExpr.Min(x, y)
+
+        static member Min (DummyType, x : VectorExpr, y : Vector) = VectorExpr.Min(x, y)
+
+        static member Min (DummyType, x : Vector, y : VectorExpr) = VectorExpr.Min(x, y)
+
+        static member Min (DummyType, x : VectorExpr, y : float) = VectorExpr.Min(x, y)
+
+        static member Min (DummyType, x : float, y : VectorExpr) = VectorExpr.Min(x, y)
+
+
+        static member Min (DummyType, x : BoolMatrix, y : BoolMatrix) = BoolMatrix.Min(x, y)
+
+        static member Min (DummyType, x : BoolMatrix, y : bool) = BoolMatrix.Min(x, y)
+
+        static member Min (DummyType, x : bool, y : BoolMatrix) = BoolMatrix.Min(x, y)
+
+
+        static member Min (DummyType, x : BoolMatrixExpr, y : BoolMatrixExpr) = BoolMatrixExpr.Min(x, y)
+
+        static member Min (DummyType, x : BoolMatrixExpr, y : BoolMatrix) = BoolMatrixExpr.Min(x, y)
+
+        static member Min (DummyType, x : BoolMatrix, y : BoolMatrixExpr) = BoolMatrixExpr.Min(x, y)
+
+        static member Min (DummyType, x : BoolMatrixExpr, y : bool) = BoolMatrixExpr.Min(x, y)
+
+        static member Min (DummyType, x : bool, y : BoolMatrixExpr) = BoolMatrixExpr.Min(x, y)
+
+
+        static member Min (DummyType, x : Matrix, y : Matrix) = Matrix.Min(x, y)
+
+        static member Min (DummyType, x : Matrix, y : float) = Matrix.Min(x, y)
+
+        static member Min (DummyType, x : float, y : Matrix) = Matrix.Min(x, y)
+
+
+
+        static member Min (DummyType, x : MatrixExpr, y : MatrixExpr) = MatrixExpr.Min(x, y)
+
+        static member Min (DummyType, x : MatrixExpr, y : Matrix) = MatrixExpr.Min(x, y)
+
+        static member Min (DummyType, x : Matrix, y : MatrixExpr) = MatrixExpr.Min(x, y)
+
+        static member Min (DummyType, x : MatrixExpr, y : float) = MatrixExpr.Min(x, y)
+
+        static member Min (DummyType, x : float, y : MatrixExpr) = MatrixExpr.Min(x, y)
+
+
+        static member Min (DummyType, x : CovariateExpr, y : CovariateExpr) = CovariateExpr.Min(x, y)
+
+        static member Min (DummyType, x : CovariateExpr, y : float) = CovariateExpr.Min(x, y)
+
+        static member Min (DummyType, x : float, y : CovariateExpr) = CovariateExpr.Min(x, y)
+
+
+        static member Min (DummyType, a : float, b : float) = min a b
+
+        static member Min (DummyType, a : float32, b : float32) = min a b
+
+        static member Min (DummyType, a : int, b : int) = min a b
+
+        static member Min (DummyType, a : int64, b : int64) = min a b
+
+        static member Min (DummyType, a : bool, b : bool) = min a b
+

@@ -16,7 +16,6 @@ open BasicStats
 //type MyDataFrame = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv">
 //let df = new MyDataFrame()
 
-
 //let N = 5000000
 //let rng = new MT19937Rng()
 //let rnd = new Random()
@@ -42,15 +41,19 @@ open BasicStats
 //let YStorage = new CovariateStorageFloat32()
 //YStorage.SetSlice(0L, Y.ToArray() |> Array.map float32)
 //let YVar = new Covariate("Y", YStorage)
-//#time
-//let pathCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv"
+#time
+let pathCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv"
 
 //Glm.toCsv [StatVariable.Factor(AVar);StatVariable.Factor(BVar);StatVariable.Covariate(XVar);StatVariable.Covariate(YVar)] pathCsv
 
-//let statVars = Glm.importCsv pathCsv
+let statVars = Glm.importCsv pathCsv false
+let A = statVars.[0].AsFactor
+let B = statVars.[1].AsFactor
+let X = statVars.[2].AsCovariate
+let Y = statVars.[3].AsCovariate
 
-let glm = Glm.fitModel df.Y.AsExpr (df.A + df.B + df.X) true Gamma Ln 15000 50 1e-6
-let pp = glm |> Option.map fst |> Option.map (fun prms -> prms |> List.filter (fun p -> p.Predictor = "X"))
+let glm = Glm.fitModel Y.AsExpr (A + B + X) true Gamma Ln MaxLikelihood 15000 50 1e-6
+let pp = glm |> Option.map fst |> Option.map (fun prms -> prms |> List.filter (fun p -> p.Predictor.Contains "X"))
 glm |> Option.map snd
 
 //let X = rand rng 1000000 : Vector
