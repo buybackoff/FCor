@@ -679,8 +679,7 @@ type internal MklFunctions() =
     static extern void d_digam_array(IntPtr n, float* x, float* y)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
-    static extern void d_cdfchi_array(IntPtr n, float* x, float* y)
-
+    static extern void d_cdfchi_array(IntPtr n, float df, float* x, float* y)
 
 
 
@@ -1608,8 +1607,8 @@ type internal MklFunctions() =
     static member D_Digam_Array(n : int64, x, y) =
         d_digam_array(new IntPtr(n), x, y)
 
-    static member D_Cdfchi_Array(n : int64, x, y) =
-        d_cdfchi_array(new IntPtr(n), x, y)
+    static member D_Cdfchi_Array(n : int64, df, x, y) =
+        d_cdfchi_array(new IntPtr(n), df, x, y)
 
 
 

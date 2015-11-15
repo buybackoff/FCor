@@ -397,9 +397,22 @@ and CategoricalPredictor =
             | CategoricalInteraction(c, f) ->
                 max c.MaxLength f.Length
 
+    member this.Name =
+        match this with
+            | Factor(f) -> f.Name
+            | CategoricalInteraction(c, f) -> sprintf "%s*%s" c.Name f.Name
+
     static member op_Explicit(factor : Factor) = Factor(factor)
     static member op_Explicit(catPred :  CategoricalPredictor, factor : Factor) = CategoricalInteraction(catPred, factor)
     static member op_Explicit(factor1 :  Factor, factor2 : Factor) = CategoricalInteraction(Factor(factor1), factor2)
+    static member op_Explicit(factors : Factor list) = 
+        let rec fromList (factors : Factor list) =
+            match factors with
+                | [] -> raise (new InvalidOperationException())
+                | h::[] -> Factor(h)
+                | h::t -> CategoricalInteraction(fromList t, h)
+        factors |> (List.rev >> fromList)
+
 
 and Predictor =
     | CategoricalPredictor of CategoricalPredictor
@@ -423,6 +436,12 @@ and Predictor =
             | CategoricalPredictor(catPred) -> catPred.AsList, None
             | NumericalPredictor(x) -> [], Some(x)
             | MixedInteraction(catPred, covExpr) -> catPred.AsList, Some(covExpr)
+
+    member this.Name =
+        match this with
+            | CategoricalPredictor(catPred) -> catPred.Name
+            | NumericalPredictor(x) -> x.Name
+            | MixedInteraction(catPred, covExpr) -> sprintf "%s*%s" catPred.Name covExpr.Name
 
     static member op_Explicit(catPred :  CategoricalPredictor) = CategoricalPredictor(catPred)
     static member op_Explicit(factor :  Factor) = CategoricalPredictor(CategoricalPredictor.Factor(factor))

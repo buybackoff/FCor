@@ -6,6 +6,7 @@ open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
 open System.Collections.Generic
 open System.IO
+open System.Text
 open FCor.ExplicitConversion
 
 type GlmLink =
@@ -34,24 +35,79 @@ type FactorMask =
     | DisableOneLevel
     | DisableAllLevels
 
-type ParameterEstimate =
+type GlmParameterEstimate =
     {
-     Predictor :  string
-     Level : string
+     Predictor :  Predictor
+     Levels : string list
      Value : float
      Std : float
      IsDisabled : bool
+     WaldChiSq : float
+     PValue : float
     }
 
+[<StructuredFormatDisplay("{AsString}")>]
 type GlmGoodnessOfFit =
     {
+     ValidObsCount : int64
+     DoF : int     
      LogLikehood : float
      Deviance : float
-     ScaledDeviance : float
      PearsonChi : float
-     ScaledPearsonChi : float
-     Scale : float
+     AIC : float
+     MLScale : float
+     MLPhi : float    
     }
+    
+    member this.AsString =
+            let sb = new StringBuilder()
+            let N_dof = float (this.ValidObsCount - int64 this.DoF)
+            sb.AppendLine <| "Goodness of Fit:" |> ignore
+            sb.AppendLine <| sprintf "%-20s%-12s%s%-12s" "Criterion" "Value" "  " "Value/DoF" |> ignore
+            sb.AppendLine <| sprintf "%-20s%12G%s%12G" "Deviance" (float this.Deviance) "  " (float (this.Deviance / N_dof)) |> ignore
+            sb.AppendLine <| sprintf "%-20s%12G%s%12G" "Pearson Chi-Square" (float this.PearsonChi) "  " (float (this.PearsonChi / N_dof)) |> ignore
+            sb.AppendLine <| sprintf "%-20s%12G" "Log Likelihood" (float this.LogLikehood) |> ignore
+            sb.AppendLine <| sprintf "%-20s%12G" "AIC" (float this.AIC) |> ignore
+            sb.AppendLine <| sprintf "%-20s%12G" "ML Scale" (float this.MLScale) |> ignore
+            sb.AppendLine <| sprintf "%-20s%12G" "ML Phi" (float this.MLPhi) |> ignore
+            sb.ToString()
+
+[<StructuredFormatDisplay("{AsString}")>]
+type GlmModel =
+    {
+     Response : CovariateExpr
+     Predictors : Predictor list
+     Distribution : GlmDistribution
+     Link : GlmLink
+     HasIntercept : bool
+     GoodnessOfFit : GlmGoodnessOfFit
+     Beta : Vector
+     InvHDiag : Vector
+     Iter : int
+     Parameters : GlmParameterEstimate list
+    }
+    member this.AsString =
+        let sb = new StringBuilder()
+        sb.AppendLine <| "Generalized Linear Model" |> ignore
+        sb.AppendLine <| sprintf "%-15s %A" "Distribution" this.Distribution |> ignore
+        sb.AppendLine <| sprintf "%-15s %A" "Link" this.Link |> ignore
+        sb.AppendLine <| sprintf "%-15s %s" "Response" this.Response.Name |> ignore
+        sb.AppendLine <| sprintf "%-15s %s" "Predictors" (String.Join("+", this.Predictors |> List.map (fun p -> p.Name))) |> ignore
+        sb.AppendLine <| sprintf "%-15s %b" "Intercept" this.HasIntercept |> ignore
+        sb.AppendLine <| sprintf "%-15s %i" "Valid Obs Count" this.GoodnessOfFit.ValidObsCount |> ignore
+        sb.AppendLine <| sprintf "Algorithm converged in %d iterations" this.Iter |> ignore
+        sb.AppendLine("") |> ignore
+        sb.Append(this.GoodnessOfFit.AsString) |> ignore
+        sb.AppendLine("") |> ignore
+        sb.AppendLine <| "Parameter Estimates" |> ignore
+        sb.AppendLine <| sprintf "%-15s  %-15s  %-3s  %-12s %-12s %-12s %-12s" "Predictor" "Level" "DoF" "Estimate" "StdError" "Wald ChiSq" "Pr > ChiSq" |> ignore
+        this.Parameters |> List.iter (fun prm -> 
+                                          sb.AppendLine <| sprintf "%-15s  %-15s  %3d  %12G %12G %12G %12G" prm.Predictor.Name (String.Join("*", prm.Levels))
+                                                                   (if prm.IsDisabled then 0 else 1) prm.Value prm.Std prm.WaldChiSq prm.PValue |> ignore
+                                     )
+        sb.ToString()
+        
+
 
 module Glm =
 
@@ -63,6 +119,11 @@ module Glm =
     let psi (x : float) =
         let mutable res = x
         MklFunctions.D_Digam_Array(1L, &&res, &&res)
+        res
+
+    let chicdf (df : float, x : float) =
+        let mutable res = x
+        MklFunctions.D_Cdfchi_Array(1L, df, &&res, &&res)
         res
 
     let gammaLogL' (alpha : float) (dev : float) (N : float) =
@@ -613,7 +674,7 @@ module Glm =
         H
 
     let rec iwls (response : Covariate) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[] * int[]) option * Covariate option) list)
-                 (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector)
+                 (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector) (H : Matrix option)
                  (maxIter : int) (iter : int) (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) eps =
         if iter > maxIter then 
             beta, Vector.Empty, iter, false
@@ -621,30 +682,57 @@ module Glm =
             let processorCount = Environment.ProcessorCount
             let processorChunk = obsCount / int64(processorCount)
             let U, H =
-                seq{0..processorCount - 1} 
-                   |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
-                   |> Seq.toArray 
-                   |> Array.Parallel.map (fun (fromObs, toObs) -> 
-                                            let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
-                                            let U = new Vector(totalEstimateCount, 0.0)
-                                            let H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
-                                            let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
-                                            let design' =
-                                                design |> List.map (fun (factorsOpt, covOpt) -> factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength)))
-                                                       |> zipDesign |> Seq.zip respSlices
-                                            for resp, slice in design' do
-                                               let sliceLength = resp.Length
-                                               use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
-                                               use pred = getPred xbeta glmLink
-                                               use u = get_u resp pred xbeta glmLink glmDistribution
-                                               use weight = getWeight pred xbeta glmLink glmDistribution
-                                               use updateU = getU slice u sliceLength cumEstimateCounts
-                                               use updateH = getH slice weight sliceLength cumEstimateCounts
-                                               VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
-                                               MatrixExpr.EvalIn(H.AsExpr + updateH, Some H) |> ignore  
-                                            U, H    
-                                          )
-                |> Array.reduce (fun (u1, h1) (u2, h2) -> (u1 + u2), (h1 + h2))
+                match H with
+                    | Some(H) ->
+                        seq{0..processorCount - 1} 
+                           |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
+                           |> Seq.toArray 
+                           |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                                                    let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
+                                                    let U = new Vector(totalEstimateCount, 0.0)
+                                                    let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                                    let design' =
+                                                        design |> List.map (fun (factorsOpt, covOpt) ->
+                                                                                factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
+                                                                                           |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength)))
+                                                               |> zipDesign |> Seq.zip respSlices
+                                                    for resp, slice in design' do
+                                                       let sliceLength = resp.Length
+                                                       use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
+                                                       use pred = getPred xbeta glmLink
+                                                       use u = get_u resp pred xbeta glmLink glmDistribution
+                                                       use updateU = getU slice u sliceLength cumEstimateCounts
+                                                       VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
+                                                    U   
+                                                  )
+                        |> Array.reduce (+), H
+                    | None -> 
+                        seq{0..processorCount - 1} 
+                           |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
+                           |> Seq.toArray 
+                           |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                                                    let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
+                                                    let U = new Vector(totalEstimateCount, 0.0)
+                                                    let H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
+                                                    let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                                    let design' =
+                                                        design |> List.map (fun (factorsOpt, covOpt) ->
+                                                                                factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
+                                                                                           |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength)))
+                                                               |> zipDesign |> Seq.zip respSlices
+                                                    for resp, slice in design' do
+                                                       let sliceLength = resp.Length
+                                                       use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
+                                                       use pred = getPred xbeta glmLink
+                                                       use u = get_u resp pred xbeta glmLink glmDistribution
+                                                       use weight = getWeight pred xbeta glmLink glmDistribution
+                                                       use updateU = getU slice u sliceLength cumEstimateCounts
+                                                       use updateH = getH slice weight sliceLength cumEstimateCounts
+                                                       VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
+                                                       MatrixExpr.EvalIn(H.AsExpr + updateH, Some H) |> ignore  
+                                                    U, H    
+                                                  )
+                        |> Array.reduce (fun (u1, h1) (u2, h2) -> (u1 + u2), (h1 + h2))
 
             //calc next beta from U and H
             //MatrixExpr.EvalIn(H.AsExpr + (Matrix.Transpose(Matrix.UpperTri(H, 1))), Some H) |> ignore
@@ -653,13 +741,14 @@ module Glm =
             if (glmDistribution = Gaussian && glmLink = Id) || epsEqualVector beta nextBeta eps then
                 let invHDiag = Matrix.CholInv(H).Diag(0)
                 nextBeta, invHDiag,  iter, true
+            elif glmDistribution = Gamma && glmLink = Ln then  // weight is 1
+                iwls response design glmDistribution glmLink nextBeta (Some H) maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps
             else
-                iwls response design glmDistribution glmLink nextBeta maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps
+                iwls response design glmDistribution glmLink nextBeta None maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps
 
     let getParameterEstimates (design : ((Factor * FactorMask) list * CovariateExpr option) list) (beta : Vector)
                               (invHDiag : Vector) (cumEstimateCounts : int[]) =
 
-        let join (s1 : string) (s2 : string) = s1 + "*" + s2
         design |> List.mapi (fun i (maskedFactors, cov) ->
                                  let predictorOffset = if i = 0 then 0 else cumEstimateCounts.[i - 1]
                                  match maskedFactors, cov with
@@ -668,61 +757,69 @@ module Glm =
                                          let factors = maskedFactors |> List.map fst
                                          let cumDisabledCount = Array.sub (isDisabled |> List.toArray |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isDisabled.Length 
                                          let dimProd = factors |> List.map (fun f -> f.LevelCount) |> getDimProd
-                                         let predName = factors |> List.map (fun f -> f.Name) |> List.reduce join
                                          isDisabled |> List.mapi (fun index x -> 
                                                                       let estimateIndex = predictorOffset + index - cumDisabledCount.[index]
                                                                       let subscripts = ind2sub index dimProd
-                                                                      let level = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.GetLevel(s)) |> List.reduce join
+                                                                      let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.GetLevel(s))
                                                                       if x then
                                                                           {
-                                                                           Predictor = predName
-                                                                           Level = level
+                                                                           Predictor = CategoricalPredictor(!!factors)
+                                                                           Levels = levels
                                                                            Value = 0.0
                                                                            Std = 0.0
-                                                                           IsDisabled = true                                                                       
+                                                                           IsDisabled = true 
+                                                                           WaldChiSq = Double.NaN  
+                                                                           PValue = Double.NaN                                                                  
                                                                           }
                                                                       else
                                                                           {
-                                                                           Predictor = predName
-                                                                           Level = level
+                                                                           Predictor = CategoricalPredictor(Factor(factors.[0]))
+                                                                           Levels = levels
                                                                            Value = beta.[estimateIndex]
                                                                            Std = Math.Sqrt(invHDiag.[estimateIndex])
-                                                                           IsDisabled = false                                                                       
+                                                                           IsDisabled = false   
+                                                                           WaldChiSq = Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0)  
+                                                                           PValue = 1.0 - chicdf(1.0, Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0) )                                                                     
                                                                           }
                                                                   )
                                      | [], Some cov ->
                                          [{
-                                          Predictor = cov.Name
-                                          Level = ""
+                                          Predictor = NumericalPredictor cov
+                                          Levels = []
                                           Value = beta.[predictorOffset]
                                           Std = Math.Sqrt(invHDiag.[predictorOffset])
-                                          IsDisabled = false                                                                       
+                                          IsDisabled = false  
+                                          WaldChiSq = Math.Pow(beta.[predictorOffset] / Math.Sqrt(invHDiag.[predictorOffset]), 2.0)  
+                                          PValue = 1.0 - chicdf(1.0, Math.Pow(beta.[predictorOffset] / Math.Sqrt(invHDiag.[predictorOffset]), 2.0) )                                                                         
                                          }]   
                                      | (h::t), Some cov ->
                                          let isDisabled = getDisabled maskedFactors |> Array.toList
                                          let factors = maskedFactors |> List.map fst
                                          let cumDisabledCount = Array.sub (isDisabled |> List.toArray |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isDisabled.Length  
                                          let dimProd = factors |> List.map (fun f -> f.LevelCount) |> getDimProd
-                                         let predName = join (factors |> List.map (fun f -> f.Name) |> List.reduce join) cov.Name
                                          isDisabled |> List.mapi (fun index x -> 
                                                                       let estimateIndex = predictorOffset + index - cumDisabledCount.[index]
                                                                       let subscripts = ind2sub index dimProd
-                                                                      let level = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.GetLevel(s)) |> List.reduce join
+                                                                      let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.GetLevel(s))
                                                                       if x then
                                                                           {
-                                                                           Predictor = predName
-                                                                           Level = level
+                                                                           Predictor = MixedInteraction(!!factors, cov)
+                                                                           Levels = levels
                                                                            Value = 0.0
                                                                            Std = 0.0
-                                                                           IsDisabled = true                                                                       
+                                                                           IsDisabled = true    
+                                                                           WaldChiSq = Double.NaN
+                                                                           PValue = Double.NaN                                                                
                                                                           }
                                                                       else
                                                                           {
-                                                                           Predictor = predName
-                                                                           Level = level
+                                                                           Predictor = MixedInteraction(!!factors, cov)
+                                                                           Levels = levels
                                                                            Value = beta.[estimateIndex]
                                                                            Std = Math.Sqrt(invHDiag.[estimateIndex])
-                                                                           IsDisabled = false                                                                       
+                                                                           IsDisabled = false    
+                                                                           WaldChiSq = Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0)   
+                                                                           PValue = 1.0 - chicdf(1.0, Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0) )                                                                    
                                                                           }
                                                                   )                                      
                                      | [], None -> []                                 
@@ -808,7 +905,7 @@ module Glm =
             | _ -> phi
 
     let getGoodnessOfFit (response : Covariate) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[] * int[]) option * Covariate option) list)
-                         (glmDistribution : GlmDistribution) (glmLink : GlmLink) (dispersion : GlmDispersion) (beta : Vector)
+                         (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector)
                          (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) =
  
         let respSlices = response.GetSlices(0L, obsCount - 1L, sliceLength)
@@ -828,14 +925,17 @@ module Glm =
                    |> Seq.reduce (+)
         let dof = beta.Length 
         let N = response.Length
-        let phi = getPhi dispersion glmDistribution N dof tempRes.[1] tempRes.[0] 
+        let phi = getPhi MaxLikelihood glmDistribution N dof tempRes.[1] tempRes.[0] 
+        let logLikelihood = getLogLikelihood tempRes.[2] N phi glmDistribution
         {
-         LogLikehood = getLogLikelihood tempRes.[2] N phi glmDistribution
+         ValidObsCount = N
+         DoF = dof
+         LogLikehood = logLikelihood
          Deviance = tempRes.[0]
-         ScaledDeviance = tempRes.[0] / phi
          PearsonChi = tempRes.[1]
-         ScaledPearsonChi = tempRes.[1] /phi
-         Scale = getScale phi glmDistribution
+         AIC = -2.0 * logLikelihood + 2.0 * float(N - int64 dof)
+         MLScale = getScale phi glmDistribution
+         MLPhi = phi
         }
 
     let getInitBeta (estimateCount : int) (link : GlmLink) (meanResponseEstimate : float) =
@@ -863,25 +963,35 @@ module Glm =
         beta
 
     let fitModel (response : CovariateExpr) (predictors : Predictor list) (includeIntercept : bool)
-                 (glmDistribution : GlmDistribution) (glmLink : GlmLink) (glmDispersion : GlmDispersion) (sliceLength : int) (maxIter : int) (eps : float) =
+                 (glmDistribution : GlmDistribution) (glmLink : GlmLink) (sliceLength : int) (maxIter : int) (eps : float) =
         let minLen = min (predictors |> List.map (fun p -> p.MinLength) |> List.min) response.MinLength
         let maxLen = max (predictors |> List.map (fun p -> p.MaxLength) |> List.max) response.MaxLength
         if minLen <> maxLen then raise (new ArgumentException("Glm design data length mismatch"))
         let length = minLen
-        let response = response.AsCovariate
-        let meanReponseSlice = Vector.Mean((response.GetSlices(0L, int64(sliceLength - 1), sliceLength) |> Seq.take 1 |> Seq.toArray).[0])
+        let respCov = response.AsCovariate
+        let meanReponseSlice = Vector.Mean((respCov.GetSlices(0L, int64(sliceLength - 1), sliceLength) |> Seq.take 1 |> Seq.toArray).[0])
 
         let estimableDesign = getEstimableDesign predictors includeIntercept
         let estimateCounts = estimableDesign |> List.map getEstimateCount |> List.toArray
         let cumEstimateCounts = Array.sub (estimateCounts |> Array.scan (+) 0) 1 estimateCounts.Length
         let initBeta = getInitBeta cumEstimateCounts.[cumEstimateCounts.Length - 1] glmLink meanReponseSlice
         let design = estimableDesign |> List.map (fun (factors, cov) -> (getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
-        let beta, invHDiag, iter, converged = iwls response design glmDistribution glmLink initBeta maxIter 0 length sliceLength cumEstimateCounts eps
+        let beta, invHDiag, iter, converged = iwls respCov design glmDistribution glmLink initBeta None maxIter 0 length sliceLength cumEstimateCounts eps
         if converged then
-            printfn "converged in %d iter" iter
             let parameters = getParameterEstimates estimableDesign beta invHDiag cumEstimateCounts
-            let goodnessOfFit = getGoodnessOfFit response design glmDistribution glmLink glmDispersion beta length sliceLength cumEstimateCounts
-            (parameters, goodnessOfFit) |> Some
+            let goodnessOfFit = getGoodnessOfFit respCov design glmDistribution glmLink beta length sliceLength cumEstimateCounts
+            {
+             Response = response
+             Predictors = predictors
+             Distribution = glmDistribution
+             Link = glmLink
+             HasIntercept = includeIntercept
+             GoodnessOfFit = goodnessOfFit
+             Beta = beta
+             InvHDiag = invHDiag
+             Iter = iter
+             Parameters = parameters
+            }
         else 
-            None
+            raise (new InvalidOperationException(sprintf "Glm algorithm did not converge after %d iterations" iter))
 
