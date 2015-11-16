@@ -11,7 +11,7 @@
 #include <cmath>
 #include <mkl_service.h>
 
-int sub2ind(int n, int* dimProd, unsigned short* subscripts)
+inline int sub2ind(int n, int* dimProd, unsigned short* subscripts)
 {
 	int index = subscripts[0];
 	for (int i = 1; i < n; i++)
@@ -19,6 +19,54 @@ int sub2ind(int n, int* dimProd, unsigned short* subscripts)
 		index += subscripts[i] * dimProd[i];
 	}
 	return index;
+}
+
+inline int findcutindex(int breakCount, double* breaks, double x)
+{
+	for (int i = 0; i < breakCount - 2; i++)
+	{
+		if (x >= breaks[i] && x < breaks[i+1])
+		{
+			return i;
+		}
+	}
+	if (x >= breaks[breakCount - 2] && x <= breaks[breakCount-1])
+	{
+		return breakCount - 2;
+	}
+	return breakCount - 1;
+}
+
+extern "C" __declspec(dllexport) void get_cut_level_index(int n, int breakCount, double* breaks, double* numSlice, unsigned short* result)
+{
+	for (int i = 0; i < n; i++)
+	{
+		result[i] = findcutindex(breakCount, breaks, numSlice[i]);
+	}
+}
+
+extern "C" __declspec(dllexport) void get_cross_level_index(int n, unsigned short rowCount, unsigned short* slice1, unsigned short* slice2, unsigned short* result)
+{
+	for (int i = 0; i < n; i++)
+	{
+		result[i] = slice2[i] * rowCount + slice1[i];
+	}
+}
+
+extern "C" __declspec(dllexport) void level_index_to_numeric(int n, unsigned short* slice, double* x, double* map)
+{
+	for (int i = 0; i < n; i++)
+	{
+		x[i] = map[slice[i]];
+	}
+}
+
+extern "C" __declspec(dllexport) void update_level_index(int n, unsigned short* slice, unsigned short* map)
+{
+	for (int i = 0; i < n; i++)
+	{
+		slice[i] = map[slice[i]];
+	}
 }
 
 extern "C" __declspec(dllexport) void update_xbeta(int n, double* xbeta, int k, unsigned short** slices, int* estimateMap, int* dimProd,

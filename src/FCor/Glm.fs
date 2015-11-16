@@ -773,7 +773,7 @@ module Glm =
                                                                           }
                                                                       else
                                                                           {
-                                                                           Predictor = CategoricalPredictor(Factor(factors.[0]))
+                                                                           Predictor = CategoricalPredictor(!!factors)
                                                                            Levels = levels
                                                                            Value = beta.[estimateIndex]
                                                                            Std = Math.Sqrt(invHDiag.[estimateIndex])

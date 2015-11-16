@@ -52,7 +52,16 @@ let B = statVars.[1].AsFactor
 let X = statVars.[2].AsCovariate
 let Y = statVars.[3].AsCovariate
 
-let glm = Glm.fitModel Y.AsExpr (A + B + X) true Gamma Ln 15000 50 1e-6
+//let A' = FromFactor(!!A, fun level -> level.Substring(1) |> float)
+//let B' = FromFactor(Rename(!!B, fun level -> level.Substring(1)), float)
+//let A'' = A'.AsCovariate
+//let B'' = B'.AsCovariate   
+
+let A' = FromFactor(!!A, fun level -> level.Substring(1) |> float)
+
+let C = Cut(10.0 * !!X, [|0.0..2.0..10.0|])
+
+let glm = Glm.fitModel Y.AsExpr ([!!C]) true Gamma Ln 15000 50 1e-6
 //let pp = glm |> Option.map (fun x -> x.Parameters) |> Option.map (fun prms -> prms |> List.filter (fun p -> p.Predictor.Name.Contains "X"))
 let goodness = glm.GoodnessOfFit // |> Option.map (fun x -> x.GoodnessOfFit)
 

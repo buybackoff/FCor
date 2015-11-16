@@ -1016,6 +1016,17 @@ type internal MklFunctions() =
     static extern void s_multiply_matrices(float32* x, float32* y, float32* z, IntPtr n, IntPtr m, IntPtr k, bool trans)
 
 
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void get_cut_level_index(int n, int breakCount, double[] breaks, double* numSlice, UInt16Ptr result)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void get_cross_level_index(int n, UInt16 rowCount, UInt16Ptr slice1, UInt16Ptr slice2, UInt16Ptr result)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void level_index_to_numeric(int n, UInt16Ptr slice, float* x, float[] map)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void update_level_index(int n, UInt16Ptr slice, UInt16[] map)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void update_xbeta(int n, double* xbeta, int k, UInt16Ptr[] slices, int[] estimateMap, int[] dimProd, double* beta, double* covariate, int offset)
@@ -1950,6 +1961,19 @@ type internal MklFunctions() =
 
     static member S_Multiply_Matrices(x, y, z, n : int64, m : int64, k :  int64, trans) =
         s_multiply_matrices(x, y, z, new IntPtr(n), new IntPtr(m), new IntPtr(k), trans)
+
+
+    static member Get_Cut_Level_Index(n, breaks : float[], numSlice, result) =
+        get_cut_level_index(n, breaks.Length, breaks, numSlice, result)
+
+    static member Get_Cross_Level_Index(n, rowCount, slice1, slice2, result) =
+        get_cross_level_index(n, rowCount, slice1, slice2, result)
+
+    static member Level_Index_To_Numeric(n, slice, x, map) =
+        level_index_to_numeric(n, slice, x, map)
+
+    static member Update_Level_Index(n, slice, map) =
+        update_level_index(n, slice, map)
 
     static member Glm_Update_XBeta(n : int, xbeta, k, slices, estimateMap, dimProd, beta, covariate, offset) =
         update_xbeta(n, xbeta, k, slices, estimateMap, dimProd, beta, covariate, offset)
