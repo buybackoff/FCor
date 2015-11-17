@@ -23,24 +23,14 @@ module Glm =
 //        let YVar = new Covariate("Y", new CovariateStorage(Y))
 //        let glm = Glm.fitModel YVar.AsExpr [NumericalPredictor XVar.AsExpr] true Gaussian Id 1000000 50 1e-10
 //        ()
-        let N = 1000000
-        let rng = new MT19937Rng()
-        let rnd = new Random()
         MklControl.SetMaxThreads 1
-
-        let v20 = rand rng N : Vector
-        let v100 = rand rng N : Vector
-        let X = rand rng N : Vector
-        let gamRnd = gammaRnd rng 0.0 1.0 1.0 N : Vector
-        let xbeta = eval (2.2 + v20.AsExpr + v100 + 3.3 * X.AsExpr)
-        let Y = gamRnd .* exp(xbeta)
-
-        let XVar = new Covariate("X", new CovariateStorage(X))
-        let AStorage = new FactorStorage(seq{0..N-1} |> Seq.map (fun i -> sprintf "A%d" (v20.[i] * 20.0 |> floor |> int)))
-        let AVar = new Factor("A", AStorage)
-        let BStorage = new FactorStorage(seq{0..N-1} |> Seq.map (fun i -> sprintf "B%d" (v100.[i] * 100.0 |> floor |> int)))
-        let BVar = new Factor("B", BStorage)
-        let YVar = new Covariate("Y", new CovariateStorage(Y))
-        let glm = Glm.fitModel YVar.AsExpr (AVar + BVar + XVar) true Gamma Ln 15000 50 1e-6
+        let pathCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv"
+        let statVars = Glm.importCsv pathCsv false
+        let A = statVars.[0].AsFactor
+        let B = statVars.[1].AsFactor
+        let X = statVars.[2].AsCovariate
+        let Y = statVars.[3].AsCovariate
+        let A' = Rename(!!A, fun level -> if level = "A1" || level = "A2" || level = "A3" then level else "N/A")
+        let glm = Glm.fitModel Y.AsExpr ([!!A']) true Gamma Ln 10000 50 1e-6
         ()
 

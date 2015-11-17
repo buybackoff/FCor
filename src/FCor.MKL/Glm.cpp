@@ -37,11 +37,103 @@ inline int findcutindex(int breakCount, double* breaks, double x)
 	return breakCount - 1;
 }
 
+inline int findknotindex(int knotCount, int* knots, double x)
+{
+	for (int i = 0; i < knotCount - 1; i++)
+	{
+		if (x == (double)knots[i])
+		{
+			return i;
+		}
+	}
+	return knotCount;
+}
+
+extern "C" __declspec(dllexport) double sum_array_notnan(int n, double* x)
+{
+	double res = nan("");
+	bool isnan = true;
+	for (int i = 0; i < n; i++)
+	{
+		double y = x[i];
+		if (y == y)
+		{
+			if (isnan)
+			{
+				res = y;
+				isnan = false;
+			}
+			else
+			{
+				res += y;
+			}
+		}
+	}
+	return res;
+}
+
+extern "C" __declspec(dllexport) double innerprod_arrays_notnan(int n, double* x, double* y)
+{
+	double res = nan("");
+	bool isnan = true;
+	for (int i = 0; i < n; i++)
+	{
+		double X = x[i];
+		double Y = y[i];
+		if (X == X && Y == Y)
+		{
+			if (isnan)
+			{
+				res = X * Y;
+				isnan = false;
+			}
+			else
+			{
+				res += X * Y;
+			}
+		}
+	}
+	return res;
+}
+
+extern "C" __declspec(dllexport) double innerprod_3arrays_notnan(int n, double* x, double* y, double* z)
+{
+	double res = nan("");
+	bool isnan = true;
+	for (int i = 0; i < n; i++)
+	{
+		double X = x[i];
+		double Y = y[i];
+		double Z = z[i];
+		if (X == X && Y == Y && Z == Z)
+		{
+			if (isnan)
+			{
+				res = X * Y * Z;
+				isnan = false;
+			}
+			else
+			{
+				res += X * Y * Z;
+			}
+		}
+	}
+	return res;
+}
+
 extern "C" __declspec(dllexport) void get_cut_level_index(int n, int breakCount, double* breaks, double* numSlice, unsigned short* result)
 {
 	for (int i = 0; i < n; i++)
 	{
 		result[i] = findcutindex(breakCount, breaks, numSlice[i]);
+	}
+}
+
+extern "C" __declspec(dllexport) void get_knot_level_index(int n, int knotCount, int* knots, double* numSlice, unsigned short* result)
+{
+	for (int i = 0; i < n; i++)
+	{
+		result[i] = findknotindex(knotCount, knots, numSlice[i]);
 	}
 }
 
@@ -85,6 +177,10 @@ extern "C" __declspec(dllexport) void update_xbeta(int n, double* xbeta, int k, 
 				{
 					xbeta[i] += offsetBeta[index];
 				}
+				else if (index == -2) // NA
+				{
+					xbeta[i] = nan("");
+				}
 			}
 		}
 		else
@@ -100,6 +196,10 @@ extern "C" __declspec(dllexport) void update_xbeta(int n, double* xbeta, int k, 
 				{
 					xbeta[i] += offsetBeta[index];
 				}
+				else if (index == -2) // NA
+				{
+					xbeta[i] = nan("");
+				}
 			}
 		}
 	}
@@ -109,10 +209,22 @@ extern "C" __declspec(dllexport) void update_xbeta(int n, double* xbeta, int k, 
 		{
 			for (int i = 0; i < n; i++)
 			{
-				int index = estimateMap[slices[0][i]];
-				if (index >= 0)
+				double cov = covariate[i];
+				if (cov == cov)
 				{
-					xbeta[i] += offsetBeta[index] * covariate[i];
+					int index = estimateMap[slices[0][i]];
+					if (index >= 0)
+					{
+						xbeta[i] += offsetBeta[index] * cov;
+					}
+					else if (index == -2) // NA
+					{
+						xbeta[i] = nan("");
+					}
+				}
+				else
+				{
+					xbeta[i] = nan("");
 				}
 			}
 		}
@@ -120,14 +232,26 @@ extern "C" __declspec(dllexport) void update_xbeta(int n, double* xbeta, int k, 
 		{
 			for (int i = 0; i < n; i++)
 			{
-				for (int j = 0; j < k; j++)
+				double cov = covariate[i];
+				if (cov == cov)
 				{
-					subscripts[j] = slices[j][i];
+					for (int j = 0; j < k; j++)
+					{
+						subscripts[j] = slices[j][i];
+					}
+					int index = estimateMap[sub2ind(k, dimProd, subscripts)];
+					if (index >= 0)
+					{
+						xbeta[i] += offsetBeta[index] * cov;
+					}
+					else if (index == -2) // NA
+					{
+						xbeta[i] = nan("");
+					}
 				}
-				int index = estimateMap[sub2ind(k, dimProd, subscripts)];
-				if (index >= 0)
+				else
 				{
-					xbeta[i] += offsetBeta[index] * covariate[i];
+					xbeta[i] = nan("");
 				}
 			}
 		}
@@ -147,10 +271,14 @@ extern "C" __declspec(dllexport) void update_U(int n, double* U, double* u, int 
 		{
 			for (int i = 0; i < n; i++)
 			{
-				int index = estimateMap[slices[0][i]];
-				if (index >= 0)
+				double ui = u[i];
+				if (ui == ui)
 				{
-					offsetU[index] += u[i];
+					int index = estimateMap[slices[0][i]];
+					if (index >= 0)
+					{
+						offsetU[index] += ui;
+					}
 				}
 			}
 		}
@@ -158,14 +286,18 @@ extern "C" __declspec(dllexport) void update_U(int n, double* U, double* u, int 
 		{
 			for (int i = 0; i < n; i++)
 			{
-				for (int j = 0; j < k; j++)
+				double ui = u[i];
+				if (ui == ui)
 				{
-					subscripts[j] = slices[j][i];
-				}
-				int index = estimateMap[sub2ind(k, dimProd, subscripts)];
-				if (index >= 0)
-				{
-					offsetU[index] += u[i];
+					for (int j = 0; j < k; j++)
+					{
+						subscripts[j] = slices[j][i];
+					}
+					int index = estimateMap[sub2ind(k, dimProd, subscripts)];
+					if (index >= 0)
+					{
+						offsetU[index] += ui;
+					}
 				}
 			}
 		}
@@ -176,10 +308,15 @@ extern "C" __declspec(dllexport) void update_U(int n, double* U, double* u, int 
 		{
 			for (int i = 0; i < n; i++)
 			{
-				int index = estimateMap[slices[0][i]];
-				if (index >= 0)
+				double cov = covariate[i];
+				double ui = u[i];
+				if (ui == ui && cov == cov)
 				{
-					offsetU[index] += u[i] * covariate[i];
+					int index = estimateMap[slices[0][i]];
+					if (index >= 0)
+					{ 
+						offsetU[index] += ui * cov;
+					}
 				}
 			}
 		}
@@ -187,14 +324,19 @@ extern "C" __declspec(dllexport) void update_U(int n, double* U, double* u, int 
 		{
 			for (int i = 0; i < n; i++)
 			{
-				for (int j = 0; j < k; j++)
+				double cov = covariate[i];
+				double ui = u[i];
+				if (ui == ui && cov == cov)
 				{
-					subscripts[j] = slices[j][i];
-				}
-				int index = estimateMap[sub2ind(k, dimProd, subscripts)];
-				if (index >= 0)
-				{
-					offsetU[index] += u[i] * covariate[i];
+					for (int j = 0; j < k; j++)
+					{
+						subscripts[j] = slices[j][i];
+					}
+					int index = estimateMap[sub2ind(k, dimProd, subscripts)];
+					if (index >= 0)
+					{
+						offsetU[index] += ui * cov;
+					}
 				}
 			}
 		}
@@ -209,27 +351,32 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	double* offsetH = H + colOffset * p + rowOffset;
 	unsigned short* rowSubscripts = (unsigned short*)mkl_malloc(rowK*sizeof(unsigned short), 64);
 	unsigned short* colSubscripts = (unsigned short*)mkl_malloc(colK*sizeof(unsigned short), 64);
-	int rowIndex;
-	int colIndex;
 	if (rowK == 0 && rowCovariate != nullptr && colK != 0 && colCovariate != nullptr && weight != nullptr)
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (colK == 1)
+			double w = weight[i];
+			double rowCov = rowCovariate[i];
+			double colCov = colCovariate[i];
+			if (w == w && rowCov == rowCov && colCov == colCov)
 			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				int colIndex;
+				if (colK == 1)
 				{
-					colSubscripts[j] = colSlices[j][i];
+					colIndex = colEstimateMap[colSlices[0][i]];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (colIndex >= 0)
-			{
-		        offsetH[colIndex * p] += weight[i] * rowCovariate[i] * colCovariate[i];
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (colIndex >= 0)
+				{
+					offsetH[colIndex * p] += w * rowCov * colCov;
+				}
 			}
 		}
 	}
@@ -237,21 +384,27 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (colK == 1)
+			double rowCov = rowCovariate[i];
+			double colCov = colCovariate[i];
+			if (rowCov == rowCov && colCov == colCov)
 			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				int colIndex;
+				if (colK == 1)
 				{
-					colSubscripts[j] = colSlices[j][i];
+					colIndex = colEstimateMap[colSlices[0][i]];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (colIndex >= 0)
-			{
-				offsetH[colIndex * p] += rowCovariate[i] * colCovariate[i];
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (colIndex >= 0)
+				{
+					offsetH[colIndex * p] += rowCov * colCov;
+				}
 			}
 		}
 	}
@@ -259,21 +412,27 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (colK == 1)
+			double w = weight[i];
+			double rowCov = rowCovariate[i];
+			if (w == w && rowCov == rowCov)
 			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				int colIndex;
+				if (colK == 1)
 				{
-					colSubscripts[j] = colSlices[j][i];
+					colIndex = colEstimateMap[colSlices[0][i]];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (colIndex >= 0)
-			{
-				offsetH[colIndex * p] += weight[i] * rowCovariate[i];
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (colIndex >= 0)
+				{
+					offsetH[colIndex * p] += w * rowCov;
+				}
 			}
 		}
 	}
@@ -281,21 +440,26 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (colK == 1)
+			double rowCov = rowCovariate[i];
+			if (rowCov == rowCov)
 			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				int colIndex;
+				if (colK == 1)
 				{
-					colSubscripts[j] = colSlices[j][i];
+					colIndex = colEstimateMap[colSlices[0][i]];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (colIndex >= 0)
-			{
-				offsetH[colIndex * p] += rowCovariate[i];
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (colIndex >= 0)
+				{
+					offsetH[colIndex * p] += rowCov;
+				}
 			}
 		}
 	}
@@ -303,21 +467,28 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double w = weight[i];
+			double rowCov = rowCovariate[i];
+			double colCov = colCovariate[i];
+			if (w == w && rowCov == rowCov && colCov == colCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int rowIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (rowIndex >= 0)
-			{
-				offsetH[rowIndex] += weight[i] * rowCovariate[i] * colCovariate[i];
+				else
+				{
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+				}
+				if (rowIndex >= 0)
+				{
+					offsetH[rowIndex] += w * rowCov * colCov;
+				}
 			}
 		}
 	}
@@ -325,21 +496,27 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double rowCov = rowCovariate[i];
+			double colCov = colCovariate[i];
+			if (rowCov == rowCov && colCov == colCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int rowIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (rowIndex >= 0)
-			{
-				offsetH[rowIndex] += rowCovariate[i] * colCovariate[i];
+				else
+				{
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+				}
+				if (rowIndex >= 0)
+				{
+					offsetH[rowIndex] += rowCov * colCov;
+				}
 			}
 		}
 	}
@@ -347,67 +524,83 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double w = weight[i];
+			double rowCov = rowCovariate[i];
+			double colCov = colCovariate[i];
+			if (w == w && rowCov == rowCov && colCov == colCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int rowIndex;
+				int colIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (colK == 1)
-			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				else
 				{
-					colSubscripts[j] = colSlices[j][i];
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				if (colK == 1)
+				{
+					colIndex = colEstimateMap[colSlices[0][i]];
+				}
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (rowIndex >= 0 && colIndex >= 0)
+				{
+					offsetH[colIndex  * p + rowIndex] += w * rowCov * colCov;
+				}
 			}
-			if (rowIndex >= 0 && colIndex >= 0)
-			{
-				offsetH[colIndex  * p + rowIndex] += weight[i] * rowCovariate[i] * colCovariate[i];
-			}
+
 		}
 	}
 	else if (rowK != 0 && rowCovariate != nullptr && colK != 0 && colCovariate != nullptr && weight == nullptr)
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double rowCov = rowCovariate[i];
+			double colCov = colCovariate[i];
+			if (rowCov == rowCov && colCov == colCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int colIndex;
+				int rowIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (colK == 1)
-			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				else
 				{
-					colSubscripts[j] = colSlices[j][i];
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (rowIndex >= 0 && colIndex >= 0)
-			{
-				offsetH[colIndex  * p + rowIndex] += rowCovariate[i] * colCovariate[i];
+				if (colK == 1)
+				{
+					colIndex = colEstimateMap[colSlices[0][i]];
+				}
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (rowIndex >= 0 && colIndex >= 0)
+				{
+					offsetH[colIndex  * p + rowIndex] += rowCov * colCov;
+				}
 			}
 		}
 	}
@@ -415,33 +608,40 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double w = weight[i];
+			double rowCov = rowCovariate[i];
+			if (w == w && rowCov == rowCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int colIndex;
+				int rowIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (colK == 1)
-			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				else
 				{
-					colSubscripts[j] = colSlices[j][i];
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (rowIndex >= 0 && colIndex >= 0)
-			{
-				offsetH[colIndex  * p + rowIndex] += weight[i] * rowCovariate[i];
+				if (colK == 1)
+				{
+					colIndex = colEstimateMap[colSlices[0][i]];
+				}
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (rowIndex >= 0 && colIndex >= 0)
+				{
+					offsetH[colIndex  * p + rowIndex] += w * rowCov;
+				}
 			}
 		}
 	}
@@ -449,33 +649,39 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double rowCov = rowCovariate[i];
+			if (rowCov == rowCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int colIndex;
+				int rowIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (colK == 1)
-			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				else
 				{
-					colSubscripts[j] = colSlices[j][i];
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (rowIndex >= 0 && colIndex >= 0)
-			{
-				offsetH[colIndex  * p + rowIndex] += rowCovariate[i];
+				if (colK == 1)
+				{
+					colIndex = colEstimateMap[colSlices[0][i]];
+				}
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (rowIndex >= 0 && colIndex >= 0)
+				{
+					offsetH[colIndex  * p + rowIndex] += rowCov;
+				}
 			}
 		}
 	}
@@ -483,21 +689,27 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double w = weight[i];
+			double colCov = colCovariate[i];
+			if (w == w && colCov == colCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int rowIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (rowIndex >= 0)
-			{
-				offsetH[rowIndex] += weight[i] * colCovariate[i];
+				else
+				{
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+				}
+				if (rowIndex >= 0)
+				{
+					offsetH[rowIndex] += w * colCov;
+				}
 			}
 		}
 	}
@@ -505,21 +717,26 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double colCov = colCovariate[i];
+			if (colCov == colCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int rowIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (rowIndex >= 0)
-			{
-				offsetH[rowIndex] += colCovariate[i];
+				else
+				{
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
+				}
+				if (rowIndex >= 0)
+				{
+					offsetH[rowIndex] += colCov;
+				}
 			}
 		}
 	}
@@ -527,33 +744,40 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double w = weight[i];
+			double colCov = colCovariate[i];
+			if (w == w && colCov == colCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int rowIndex;
+				int colIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (colK == 1)
-			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				else
 				{
-					colSubscripts[j] = colSlices[j][i];
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (rowIndex >= 0 && colIndex >= 0)
-			{
-				offsetH[colIndex  * p + rowIndex] += weight[i] * colCovariate[i];
+				if (colK == 1)
+				{
+					colIndex = colEstimateMap[colSlices[0][i]];
+				}
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (rowIndex >= 0 && colIndex >= 0)
+				{
+					offsetH[colIndex  * p + rowIndex] += w * colCov;
+				}
 			}
 		}
 	}
@@ -561,33 +785,39 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double colCov = colCovariate[i];
+			if (colCov == colCov)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int rowIndex;
+				int colIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (colK == 1)
-			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				else
 				{
-					colSubscripts[j] = colSlices[j][i];
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (rowIndex >= 0 && colIndex >= 0)
-			{
-				offsetH[colIndex  * p + rowIndex] += colCovariate[i];
+				if (colK == 1)
+				{
+					colIndex = colEstimateMap[colSlices[0][i]];
+				}
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (rowIndex >= 0 && colIndex >= 0)
+				{
+					offsetH[colIndex  * p + rowIndex] += colCov;
+				}
 			}
 		}
 	}
@@ -595,33 +825,39 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
-			if (rowK == 1)
+			double w = weight[i];
+			if (w == w)
 			{
-				rowIndex = rowEstimateMap[rowSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < rowK; j++)
+				int rowIndex;
+				int colIndex;
+				if (rowK == 1)
 				{
-					rowSubscripts[j] = rowSlices[j][i];
+					rowIndex = rowEstimateMap[rowSlices[0][i]];
 				}
-				rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
-			}
-			if (colK == 1)
-			{
-				colIndex = colEstimateMap[colSlices[0][i]];
-			}
-			else
-			{
-				for (int j = 0; j < colK; j++)
+				else
 				{
-					colSubscripts[j] = colSlices[j][i];
+					for (int j = 0; j < rowK; j++)
+					{
+						rowSubscripts[j] = rowSlices[j][i];
+					}
+					rowIndex = rowEstimateMap[sub2ind(rowK, rowDimProd, rowSubscripts)];
 				}
-				colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
-			}
-			if (rowIndex >= 0 && colIndex >= 0)
-			{
-				offsetH[colIndex * p + rowIndex] += weight[i];
+				if (colK == 1)
+				{
+					colIndex = colEstimateMap[colSlices[0][i]];
+				}
+				else
+				{
+					for (int j = 0; j < colK; j++)
+					{
+						colSubscripts[j] = colSlices[j][i];
+					}
+					colIndex = colEstimateMap[sub2ind(colK, colDimProd, colSubscripts)];
+				}
+				if (rowIndex >= 0 && colIndex >= 0)
+				{
+					offsetH[colIndex * p + rowIndex] += w;
+				}
 			}
 		}
 	}
@@ -629,6 +865,8 @@ extern "C" __declspec(dllexport) void update_H(int n, int p, double* H, double* 
 	{
 		for (int i = 0; i < n; i++)
 		{
+			int rowIndex;
+			int colIndex;
 			if (rowK == 1)
 			{
 				rowIndex = rowEstimateMap[rowSlices[0][i]];

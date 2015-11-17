@@ -33,6 +33,8 @@ type Factor(name : string, factorStorage : IFactorStorage) =
              }
         new Factor("<INTERCEPT>", factorStorage)
 
+    static member NAs = [|String.Empty;"#N/A";"N/A";"#n/a";"n/a"|]
+
     member this.Name = name
     member this.Length = factorStorage.Length
     member this.LevelCount = factorStorage.LevelCount
@@ -122,6 +124,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
     | MergeLevels of FactorExpr * (string seq)
     | Cross of FactorExpr * FactorExpr
     | Cut of CovariateExpr * float[]
+    | Int of CovariateExpr * int[]
 
     member this.Vars =
         match this with
@@ -130,6 +133,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | MergeLevels(f, _) -> f.Vars
             | Cross(f1, f2) -> f1.Vars @ f2.Vars
             | Cut(c, _) -> c.Vars
+            | Int(c, _) -> c.Vars
 
 
     member this.MinLength =
@@ -139,6 +143,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | MergeLevels(f, _) -> f.MinLength
             | Cross(f1, f2) -> min f1.MinLength f2.MinLength
             | Cut(c, _) -> c.MinLength
+            | Int(c, _) -> c.MinLength
 
     member this.MaxLength =
         match this with
@@ -147,6 +152,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | MergeLevels(f, _) -> f.MaxLength
             | Cross(f1, f2) -> max f1.MaxLength f2.MaxLength
             | Cut(c, _) -> c.MaxLength
+            | Int(c, _) -> c.MaxLength
 
     member this.Name =
         match this with
@@ -155,20 +161,31 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | MergeLevels(f, _) -> f.Name
             | Cross(f1, f2) -> sprintf "%s*%s" f1.Name f2.Name
             | Cut(c, _) -> sprintf "%s.AsFactor" c.Name 
+            | Int(c, _) -> sprintf "%s.AsFactor" c.Name 
 
     member this.AsFactor =
         match this with
             | Var(factor) -> factor
             | Rename(factor, renameFun) ->
                 let factor = factor.AsFactor
+                let dict1 = new Dictionary<string, int>()
+                let dict2 = new Dictionary<int, string>()
+                [|0..factor.LevelCount - 1|] |> Array.iter (fun index -> let newLevel = index |> factor.GetLevel |> renameFun
+                                                                         if not <| dict1.ContainsKey(newLevel) then
+                                                                             let levelIndex = dict1.Count
+                                                                             dict1.Add(newLevel, levelIndex)
+                                                                             dict2.Add(levelIndex, newLevel)
+                                                           )
+                let levelMap = Array.init factor.LevelCount (fun index -> dict1.[factor.GetLevel(index) |> renameFun] |> uint16)
                 let factorStorage = 
                      {
                       new IFactorStorage with
-                          member __.GetLevel(index) = factor.GetLevel(index) |> renameFun
+                          member __.GetLevel(index) = dict2.[index]
                           member __.Length = factor.Length
-                          member __.LevelCount = factor.LevelCount
+                          member __.LevelCount = dict1.Count
                           member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
-                              factor.GetSlices(fromObs, toObs, sliceLength)
+                              factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
+                                                                                                 v)
                      }
                 new Factor(factor.Name, factorStorage)
 
@@ -242,6 +259,29 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                           
                      }
                 new Factor(Cut(c, breaks).Name, factorStorage)
+            | Int(c, knots) ->
+                let covariate : Covariate = c.AsCovariate
+                let knots = knots |> Array.sort
+                if knots.Length - 1 > int UInt16.MaxValue then raise (new ArgumentException("Too many knots"))
+                if knots.Length < 2 then raise (new ArgumentException("There must be at least 2 knots"))
+                let factorStorage = 
+                     {
+                      new IFactorStorage with
+                          member __.GetLevel(index) =
+                              if index = knots.Length then
+                                  String.Empty
+                              else
+                                  sprintf "%d" knots.[index]
+                          member __.Length = covariate.Length
+                          member __.LevelCount = knots.Length + 1 // if outside then ""
+                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
+                              covariate.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun (slice : Vector) -> let v = new UInt16Vector(slice.Length, 0us)
+                                                                                                                   MklFunctions.Get_Knot_Level_Index(slice.Length, knots, slice.NativeArray, v.NativeArray)
+                                                                                                                   v
+                                                                                          )
+                          
+                     }
+                new Factor(Int(c, knots).Name, factorStorage)
 
 
     static member op_Explicit(x : FactorExpr) : Predictor = Predictor.CategoricalPredictor(!!x)

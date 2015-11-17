@@ -280,17 +280,37 @@ module Glm =
             | head::tail -> 
                 (index / head)::(ind2sub (index % head) tail)
 
+    let getNACount (factor : Factor) =
+        let nas = new Set<string>(Factor.NAs)
+        [0..factor.LevelCount - 1] |> List.filter (fun index -> nas.Contains(factor.GetLevel(index))) |> List.length
+
     let getIndexOfMaxLevel (factor : Factor) =
-        let levels = Array.init (factor.LevelCount) (fun i -> i, factor.GetLevel(i))
-        levels |> Array.sortInPlaceBy snd
-        levels.[levels.Length - 1] |> fst
+        let nas = new Set<string>(Factor.NAs)
+        let validlevels = Array.init (factor.LevelCount) (fun i -> i, factor.GetLevel(i)) |> Array.sortBy snd
+                          |> Array.filter (fun (_, level) -> not <| nas.Contains(level))
+        if validlevels.Length = 0 then -1
+        else
+            validlevels.[validlevels.Length - 1] |> fst
+
 
     let getDisabledSubscripts (maskedFactors : (Factor * FactorMask) list) =
+        let nas = new Set<string>(Factor.NAs)
         maskedFactors |> List.map (fun (factor, mask) -> 
                                         match mask with
                                             | EnableAllLevels -> []
-                                            | DisableOneLevel -> [getIndexOfMaxLevel factor]
-                                            | DisableAllLevels -> [0..factor.LevelCount - 1]
+                                            | DisableOneLevel ->
+                                                let indexOfMaxLevel = getIndexOfMaxLevel factor
+                                                if indexOfMaxLevel >= 0 then [indexOfMaxLevel]
+                                                else []
+                                            | DisableAllLevels ->
+                                                [0..factor.LevelCount - 1] |> List.filter (fun index -> not <| nas.Contains(factor.GetLevel(index)))
+                                    )
+                      |> cartesian
+
+    let getNASubscripts (maskedFactors : (Factor * FactorMask) list) =
+        let nas = new Set<string>(Factor.NAs)
+        maskedFactors |> List.map (fun (factor, _) -> 
+                                       [0..factor.LevelCount - 1] |> List.filter (fun index -> nas.Contains(factor.GetLevel(index)))
                                     )
                       |> cartesian
 
@@ -306,14 +326,30 @@ module Glm =
                                    )
         isDisabled
 
+    let getIsNA (maskedFactors : (Factor * FactorMask) list) =
+        let factors = maskedFactors |> List.map fst |> List.toArray
+        let allLevelCount = factors |> Array.fold (fun count f -> count * f.LevelCount) 1
+        let isNA = Array.create allLevelCount false
+        let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.LevelCount) |> getDimProd |> List.toArray
+        maskedFactors |> getNASubscripts
+                      |> List.iter (fun subscripts -> 
+                                        let naIndex = subscripts |> List.toArray |> sub2ind dimProd
+                                        isNA.[naIndex] <- true
+                                   )
+        isNA
+
     let getCategoricalSlicer (maskedFactors : (Factor * FactorMask) list) =
         match maskedFactors with
             | h::t ->
                 let factors = maskedFactors |> List.map fst 
                 let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.LevelCount) |> getDimProd |> List.toArray
                 let isDisabled = getDisabled maskedFactors
+                let isNA = getIsNA maskedFactors
                 let cumDisabledCount = Array.sub (isDisabled |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isDisabled.Length
-                let estimateMap = Array.init isDisabled.Length (fun i -> if isDisabled.[i] then -1 else i - cumDisabledCount.[i])
+                let cumNACount = Array.sub (isNA |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isNA.Length
+                let estimateMap = Array.init isDisabled.Length (fun i -> if isDisabled.[i] then -1
+                                                                         elif isNA.[i] then -2
+                                                                         else i - cumDisabledCount.[i] - cumNACount.[i])
                 let slicerFun =
                     fun (fromObs : int64, toObs : int64, sliceLen : int) ->
                         let slices = factors |> List.map (fun f -> f.GetSlices(fromObs, toObs, sliceLen)) |> zipN
@@ -329,9 +365,14 @@ module Glm =
                 | None -> 0
         let catCount = 
             maskedFactors |> List.fold (fun count (factor, mask) -> 
+                                            let naCount = getNACount factor
                                             count * match mask with
-                                                        | EnableAllLevels -> factor.LevelCount
-                                                        | DisableOneLevel -> factor.LevelCount - 1
+                                                        | EnableAllLevels -> factor.LevelCount - naCount
+                                                        | DisableOneLevel ->
+                                                            let maxLevelIndex = getIndexOfMaxLevel factor
+                                                            if maxLevelIndex >= 0 then 
+                                                                factor.LevelCount - 1 - naCount
+                                                            else naCount
                                                         | DisableAllLevels -> 0) 1
         match maskedFactors with
             | [] -> numCount
@@ -409,7 +450,7 @@ module Glm =
             | Gaussian, Power(d) ->
                 ((resp - pred) * d) .* (pred .^ (1.0 - 1.0 / d))
             | Gamma, Id -> 
-                (resp - pred) ./ (pred .*pred)
+                (resp - pred) ./ (pred .* pred)
             | Gamma, Ln ->
                 VectorExpr.EvalIn((resp.AsExpr - pred) ./ pred, None)
             | Gamma, Log(d) -> 
@@ -434,7 +475,8 @@ module Glm =
     let getWeight (pred : Vector) (xbeta : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
         match glmDistribution, glmLink with
             | Gaussian, Id -> 
-                Vector.Empty
+                let xbeta = xbeta.AsExpr
+                VectorExpr.EvalIn(VectorExpr.IfFunction((xbeta .= xbeta), VectorExpr.Scalar(1.0), VectorExpr.Scalar(Double.NaN)), None) 
             | Gaussian, Ln ->
                 pred .* pred
             | Gaussian, Log(d) -> 
@@ -444,7 +486,8 @@ module Glm =
             | Gamma, Id -> 
                 1.0 ./ (pred .*pred)
             | Gamma, Ln ->
-                Vector.Empty
+                let xbeta = xbeta.AsExpr
+                VectorExpr.EvalIn(VectorExpr.IfFunction((xbeta .= xbeta), VectorExpr.Scalar(1.0), VectorExpr.Scalar(Double.NaN)), None) 
             | Gamma, Log(d) -> 
                 new Vector(pred.Length, Math.Log(d) * Math.Log(d))
             | Gamma, Power(d) ->
@@ -471,7 +514,7 @@ module Glm =
                                     | Some(factors), None ->  
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1]  
                                         let slice, estimateMap, dimProd = factors
-                                        if estimateMap.Length = 1 && estimateMap.[0] <> -1 then
+                                        if estimateMap.Length = 1 && estimateMap.[0] >= 0 then
                                             VectorExpr.EvalIn(xbeta.AsExpr + beta.[offset], Some xbeta) |> ignore
                                         else
                                             let slice = slice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -482,7 +525,7 @@ module Glm =
                                     | Some(factors), Some(covariate) -> 
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1] 
                                         let slice, estimateMap, dimProd = factors
-                                        if estimateMap.Length = 1 && estimateMap.[0] <> -1 then
+                                        if estimateMap.Length = 1 && estimateMap.[0] >= 0 then
                                             VectorExpr.EvalIn(xbeta.AsExpr + beta.[offset] * covariate.AsExpr, Some xbeta) |> ignore
                                         else
                                             let slice = slice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -499,19 +542,22 @@ module Glm =
                                     | Some(factors), None ->   
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1] 
                                         let slice, estimateMap, dimProd = factors
-                                        if estimateMap.Length = 1 && estimateMap.[0] <> -1 then
-                                            U.[offset] <- U.[offset] + Vector.Sum(u)
+                                        if estimateMap.Length = 1 && estimateMap.[0] >= 0 then
+                                            let sum = MklFunctions.Sum_Array_NotNan(sliceLen, u.NativeArray)
+                                            U.[offset] <- U.[offset] + (if Double.IsNaN(sum) then 0.0 else sum)
                                         else
                                             let slice = slice |> List.map (fun v -> v.NativeArray) |> List.toArray
                                             MklFunctions.Glm_Update_U(sliceLen, U.NativeArray, u.NativeArray, slice.Length, slice, estimateMap, dimProd, Vector.Empty.NativeArray, offset)
                                     | None, Some(covariate) -> 
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1] 
-                                        U.[offset] <- U.[offset] + u * covariate
+                                        let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, u.NativeArray, covariate.NativeArray)
+                                        U.[offset] <- U.[offset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                                     | Some(factors), Some(covariate) ->
                                         let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1]  
                                         let slice, estimateMap, dimProd = factors
-                                        if estimateMap.Length = 1 && estimateMap.[0] <> -1 then
-                                            U.[offset] <- U.[offset] + u * covariate
+                                        if estimateMap.Length = 1 && estimateMap.[0] >= 0 then
+                                            let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, u.NativeArray, covariate.NativeArray)
+                                            U.[offset] <- U.[offset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                                         else
                                             let slice = slice |> List.map (fun v -> v.NativeArray) |> List.toArray
                                             MklFunctions.Glm_Update_U(sliceLen, U.NativeArray, u.NativeArray, slice.Length, slice, estimateMap, dimProd, covariate.NativeArray, offset)
@@ -535,11 +581,12 @@ module Glm =
                     | (Some(rowFactors), None), (Some(colFactors), None) ->
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         let colSlice, colEstimateMap, colDimProd = colFactors
-                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 && colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
+                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] >= 0 && colEstimateMap.Length = 1 && colEstimateMap.[0] >= 0 then
                             if weightIsOne then
                                 H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + float(sliceLen)
                             else
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(weight)
+                                let sum = MklFunctions.Sum_Array_NotNan(sliceLen, weight.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(sum) then 0.0 else sum)
                         else   
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -551,11 +598,13 @@ module Glm =
 
                     | (Some(rowFactors), None), (None, Some(colCovariate)) ->
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
-                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 then
+                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] >= 0 then
                             if weightIsOne then
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(colCovariate)
+                                let sum = MklFunctions.Sum_Array_NotNan(sliceLen, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(sum) then 0.0 else sum)
                             else
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * colCovariate
+                                let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, weight.NativeArray, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray,
@@ -567,11 +616,13 @@ module Glm =
                     | (Some(rowFactors), None), (Some(colFactors), Some(colCovariate)) ->
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         let colSlice, colEstimateMap, colDimProd = colFactors
-                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 && colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
+                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] >= 0 && colEstimateMap.Length = 1 && colEstimateMap.[0] >= 0 then
                             if weightIsOne then
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(colCovariate)
+                                let sum = MklFunctions.Sum_Array_NotNan(sliceLen, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(sum) then 0.0 else sum)
                             else
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * colCovariate
+                                let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, weight.NativeArray, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -583,18 +634,21 @@ module Glm =
 
                     | (None, Some(rowCovariate)), (None, Some(colCovariate)) -> 
                         if weightIsOne then
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + rowCovariate * colCovariate
+                            let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, rowCovariate.NativeArray, colCovariate.NativeArray)
+                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd) 
                         else
-                            use prod = VectorExpr.EvalIn((weight.AsExpr .* rowCovariate) .* colCovariate, None)
-                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
+                            let innerProd = MklFunctions.Innerprod_3Arrays_NotNan(sliceLen, weight.NativeArray, rowCovariate.NativeArray, colCovariate.NativeArray)
+                            H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
 
                     | (None, Some(rowCovariate)), (Some(colFactors), None) -> 
                         let colSlice, colEstimateMap, colDimProd = colFactors
-                        if colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
+                        if colEstimateMap.Length = 1 && colEstimateMap.[0] >= 0 then
                             if weightIsOne then
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(rowCovariate)
+                                let sum = MklFunctions.Sum_Array_NotNan(sliceLen, rowCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(sum) then 0.0 else sum)
                             else
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * rowCovariate
+                                let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, weight.NativeArray, rowCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                         else
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray,
@@ -605,12 +659,13 @@ module Glm =
 
                     | (None, Some(rowCovariate)), (Some(colFactors), Some(colCovariate)) -> 
                         let colSlice, colEstimateMap, colDimProd = colFactors
-                        if colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
+                        if colEstimateMap.Length = 1 && colEstimateMap.[0] >= 0 then
                             if weightIsOne then
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + rowCovariate * colCovariate
+                                let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, rowCovariate.NativeArray, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                             else
-                                use prod = VectorExpr.EvalIn(weight.AsExpr .* rowCovariate .* colCovariate, None)
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
+                                let innerProd = MklFunctions.Innerprod_3Arrays_NotNan(sliceLen, weight.NativeArray, rowCovariate.NativeArray, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                         else
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray,
@@ -622,12 +677,13 @@ module Glm =
                     | (Some(rowFactors), Some(rowCovariate)), (Some(colFactors), Some(colCovariate)) -> 
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         let colSlice, colEstimateMap, colDimProd = colFactors
-                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 && colEstimateMap.Length = 1 && colEstimateMap.[0] <> -1 then
+                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] >= 0 && colEstimateMap.Length = 1 && colEstimateMap.[0] >= 0 then
                             if weightIsOne then
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + rowCovariate * colCovariate
+                                let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, rowCovariate.NativeArray, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                             else
-                                use prod = VectorExpr.EvalIn(weight.AsExpr .* rowCovariate .* colCovariate, None)
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod)
+                                let innerProd = MklFunctions.Innerprod_3Arrays_NotNan(sliceLen, weight.NativeArray, rowCovariate.NativeArray, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -639,12 +695,13 @@ module Glm =
 
                     | (Some(rowFactors), Some(rowCovariate)), (None, Some(colCovariate)) -> 
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
-                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 then
+                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] >= 0 then
                             if weightIsOne then
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + rowCovariate * colCovariate
+                                let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, rowCovariate.NativeArray, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                             else
-                                use prod = VectorExpr.EvalIn(weight.AsExpr .* rowCovariate .* colCovariate , None)
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(prod) 
+                                let innetProd = MklFunctions.Innerprod_3Arrays_NotNan(sliceLen, weight.NativeArray, rowCovariate.NativeArray, colCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innetProd) then 0.0 else innetProd)
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             MklFunctions.Glm_Update_H(sliceLen, p, H.ColMajorDataVector.NativeArray, weight.NativeArray,
@@ -656,11 +713,13 @@ module Glm =
                     | (Some(rowFactors), Some(rowCovariate)), (Some(colFactors), None) -> 
                         let rowSlice, rowEstimateMap, rowDimProd = rowFactors
                         let colSlice, colEstimateMap, colDimProd = colFactors
-                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] <> -1 then
+                        if rowEstimateMap.Length = 1 && rowEstimateMap.[0] >= 0 then
                             if weightIsOne then
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + Vector.Sum(rowCovariate)
+                                let sum = MklFunctions.Sum_Array_NotNan(sliceLen, rowCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(sum) then 0.0 else sum)
                             else
-                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + weight * rowCovariate
+                                let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, weight.NativeArray, rowCovariate.NativeArray)
+                                H.[rowOffset, colOffset] <- H.[rowOffset, colOffset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
                         else
                             let rowSlice = rowSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
                             let colSlice = colSlice |> List.map (fun v -> v.NativeArray) |> List.toArray
@@ -754,14 +813,16 @@ module Glm =
                                  match maskedFactors, cov with
                                      | (h::t), None ->
                                          let isDisabled = getDisabled maskedFactors |> Array.toList
+                                         let isNA = getIsNA maskedFactors
                                          let factors = maskedFactors |> List.map fst
                                          let cumDisabledCount = Array.sub (isDisabled |> List.toArray |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isDisabled.Length 
+                                         let cumNACount = Array.sub (isNA |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isNA.Length 
                                          let dimProd = factors |> List.map (fun f -> f.LevelCount) |> getDimProd
-                                         isDisabled |> List.mapi (fun index x -> 
-                                                                      let estimateIndex = predictorOffset + index - cumDisabledCount.[index]
+                                         isDisabled |> List.mapi (fun index isDisabled -> 
+                                                                      let estimateIndex = predictorOffset + index - cumDisabledCount.[index] - cumNACount.[index]
                                                                       let subscripts = ind2sub index dimProd
                                                                       let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.GetLevel(s))
-                                                                      if x then
+                                                                      if isDisabled || isNA.[index] then
                                                                           {
                                                                            Predictor = CategoricalPredictor(!!factors)
                                                                            Levels = levels
@@ -794,14 +855,16 @@ module Glm =
                                          }]   
                                      | (h::t), Some cov ->
                                          let isDisabled = getDisabled maskedFactors |> Array.toList
+                                         let isNA = getIsNA maskedFactors
                                          let factors = maskedFactors |> List.map fst
                                          let cumDisabledCount = Array.sub (isDisabled |> List.toArray |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isDisabled.Length  
+                                         let cumNACount = Array.sub (isNA |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isNA.Length 
                                          let dimProd = factors |> List.map (fun f -> f.LevelCount) |> getDimProd
-                                         isDisabled |> List.mapi (fun index x -> 
-                                                                      let estimateIndex = predictorOffset + index - cumDisabledCount.[index]
+                                         isDisabled |> List.mapi (fun index isDisabled -> 
+                                                                      let estimateIndex = predictorOffset + index - cumDisabledCount.[index] - cumNACount.[index]
                                                                       let subscripts = ind2sub index dimProd
                                                                       let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.GetLevel(s))
-                                                                      if x then
+                                                                      if isDisabled || isNA.[index] then
                                                                           {
                                                                            Predictor = MixedInteraction(!!factors, cov)
                                                                            Levels = levels
@@ -888,7 +951,7 @@ module Glm =
                         let scale = (6.0*N_dof+2.0*N*dev)/(dev*(6.0*N_dof+N*dev))
                         let rec getScale (currScale : float) (d : float) (N' : float) (iter : int) (maxIter : int) =
                             let gamLogL' = gammaLogL' currScale d N'
-                            if iter >= maxIter then Double.NaN
+                            if Double.IsNaN(currScale) || iter >= maxIter then Double.NaN
                             elif Math.Abs(gamLogL') <= 1e-10 then
                                 printfn "Scale converged after %d iter" iter
                                 currScale
@@ -908,31 +971,47 @@ module Glm =
                          (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector)
                          (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) =
  
-        let respSlices = response.GetSlices(0L, obsCount - 1L, sliceLength)
-        let tempRes =
-            design |> List.map (fun (factorsOpt, covOpt) -> factorsOpt |> Option.map (fun f -> f(0L, obsCount - 1L, sliceLength)), covOpt |> Option.map (fun c -> c.GetSlices(0L, obsCount - 1L, sliceLength)))
-                   |> zipDesign 
-                   |> Seq.zip respSlices 
-                   |> Seq.map (fun (resp, slice) ->
-                                    let sliceLength = resp.Length
-                                    use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
-                                    use pred = getPred xbeta glmLink
-                                    use deviance = getDeviance resp pred glmDistribution
-                                    use pearsonChi = getPearsonChi resp pred glmDistribution
-                                    use likelihoodPart = getLogLikelihoodPart resp pred glmDistribution
-                                    new Vector([|Vector.Sum(deviance); Vector.Sum(pearsonChi); Vector.Sum(likelihoodPart)|])
-                                )
-                   |> Seq.reduce (+)
+        let processorCount = Environment.ProcessorCount
+        let processorChunk = obsCount / int64(processorCount)
+        let deviance, pearsonChi, likelihoodPart, validObs =
+            seq{0..processorCount - 1} 
+                |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
+                |> Seq.toArray 
+                |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                                            let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                            design |> List.map (fun (factorsOpt, covOpt) ->
+                                                                         factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
+                                                                                    |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength)))
+                                                   |> zipDesign |> Seq.zip respSlices
+                                                   |> Seq.fold (fun (devSum, pearsonSum, logLSum, validObs) (resp, slice) ->
+                                                                    let sliceLength = resp.Length
+                                                                    use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
+                                                                    use pred = getPred xbeta glmLink
+                                                                    use isValid = pred .= pred
+                                                                    use isValidPred = pred.[isValid]
+                                                                    use deviance = getDeviance resp pred glmDistribution
+                                                                    use pearsonChi = getPearsonChi resp pred glmDistribution
+                                                                    use likelihoodPart = getLogLikelihoodPart resp pred glmDistribution 
+                                                                    let dsum = MklFunctions.Sum_Array_NotNan(sliceLength, deviance.NativeArray)
+                                                                    let psum = MklFunctions.Sum_Array_NotNan(sliceLength, pearsonChi.NativeArray) 
+                                                                    let lsum = MklFunctions.Sum_Array_NotNan(sliceLength, likelihoodPart.NativeArray)                                            
+                                                                    (devSum + (if Double.IsNaN(dsum) then 0.0 else dsum)),
+                                                                     (pearsonSum + (if Double.IsNaN(psum) then 0.0 else psum)),
+                                                                      (logLSum + (if Double.IsNaN(lsum) then 0.0 else lsum)), (validObs + isValidPred.LongLength)
+                                                               ) (0.0, 0.0, 0.0, 0L)
+                                        )
+                |> Array.reduce (fun (d1, p1, l1, N1) (d2, p2, l2, N2) -> d1 + d2, p1 + p2, l1 + l2, N1 + N2)
+
         let dof = beta.Length 
-        let N = response.Length
-        let phi = getPhi MaxLikelihood glmDistribution N dof tempRes.[1] tempRes.[0] 
-        let logLikelihood = getLogLikelihood tempRes.[2] N phi glmDistribution
+        let N = validObs
+        let phi = getPhi MaxLikelihood glmDistribution N dof pearsonChi deviance
+        let logLikelihood = getLogLikelihood likelihoodPart N phi glmDistribution
         {
          ValidObsCount = N
          DoF = dof
          LogLikehood = logLikelihood
-         Deviance = tempRes.[0]
-         PearsonChi = tempRes.[1]
+         Deviance = deviance
+         PearsonChi = pearsonChi
          AIC = -2.0 * logLikelihood + 2.0 * float(N - int64 dof)
          MLScale = getScale phi glmDistribution
          MLPhi = phi
@@ -969,7 +1048,8 @@ module Glm =
         if minLen <> maxLen then raise (new ArgumentException("Glm design data length mismatch"))
         let length = minLen
         let respCov = response.AsCovariate
-        let meanReponseSlice = Vector.Mean((respCov.GetSlices(0L, int64(sliceLength - 1), sliceLength) |> Seq.take 1 |> Seq.toArray).[0])
+        let respSlice = (respCov.GetSlices(0L, int64(sliceLength - 1), sliceLength) |> Seq.take 1 |> Seq.toArray).[0]
+        let meanReponseSlice = Vector.Mean(respSlice.[respSlice .= respSlice])
 
         let estimableDesign = getEstimableDesign predictors includeIntercept
         let estimateCounts = estimableDesign |> List.map getEstimateCount |> List.toArray

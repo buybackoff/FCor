@@ -1016,6 +1016,19 @@ type internal MklFunctions() =
     static extern void s_multiply_matrices(float32* x, float32* y, float32* z, IntPtr n, IntPtr m, IntPtr k, bool trans)
 
 
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern float sum_array_notnan(int n, float* x)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern float innerprod_arrays_notnan(int n, float* x, float* y)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern float innerprod_3arrays_notnan(int n, float* x, float* y, float* z)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void get_knot_level_index(int n, int knotCount, int[] knots, double* numSlice, UInt16Ptr result)
+
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void get_cut_level_index(int n, int breakCount, double[] breaks, double* numSlice, UInt16Ptr result)
 
@@ -1962,6 +1975,18 @@ type internal MklFunctions() =
     static member S_Multiply_Matrices(x, y, z, n : int64, m : int64, k :  int64, trans) =
         s_multiply_matrices(x, y, z, new IntPtr(n), new IntPtr(m), new IntPtr(k), trans)
 
+
+    static member Innerprod_3Arrays_NotNan(n, x, y, z) =
+        innerprod_3arrays_notnan(n, x, y, z)
+
+    static member Innerprod_Arrays_NotNan(n, x, y) =
+        innerprod_arrays_notnan(n, x, y)
+
+    static member Sum_Array_NotNan(n, x) =
+        sum_array_notnan(n, x)
+
+    static member Get_Knot_Level_Index(n, knots : int[], numSlice, result) =
+        get_knot_level_index(n, knots.Length, knots, numSlice, result)
 
     static member Get_Cut_Level_Index(n, breaks : float[], numSlice, result) =
         get_cut_level_index(n, breaks.Length, breaks, numSlice, result)
