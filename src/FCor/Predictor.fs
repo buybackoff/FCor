@@ -98,7 +98,7 @@ type Factor(name : string, factorStorage : IFactorStorage) =
 
     static member (+) (x : Factor, y : CovariateExpr) : Predictor list = !!x + !!y
 
-    static member (+) (x : Factor, y : StatVariable) : Predictor list = !!x + !!y
+    static member (+) (x : Factor, y : StatVariable) : Predictor list = !!x + (!!y : Predictor)
 
     static member (+) (x : Factor, y : Predictor) : Predictor list = !!x + y
 
@@ -125,6 +125,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
     | Cross of FactorExpr * FactorExpr
     | Cut of CovariateExpr * float[]
     | Int of CovariateExpr * int[]
+    | Permute of FactorExpr * ((int * string)[])
 
     member this.Vars =
         match this with
@@ -134,6 +135,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | Cross(f1, f2) -> f1.Vars @ f2.Vars
             | Cut(c, _) -> c.Vars
             | Int(c, _) -> c.Vars
+            | Permute(f, _) -> f.Vars
 
 
     member this.MinLength =
@@ -144,6 +146,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | Cross(f1, f2) -> min f1.MinLength f2.MinLength
             | Cut(c, _) -> c.MinLength
             | Int(c, _) -> c.MinLength
+            | Permute(f, _) -> f.MinLength
 
     member this.MaxLength =
         match this with
@@ -153,6 +156,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | Cross(f1, f2) -> max f1.MaxLength f2.MaxLength
             | Cut(c, _) -> c.MaxLength
             | Int(c, _) -> c.MaxLength
+            | Permute(f, _) -> f.MaxLength
 
     member this.Name =
         match this with
@@ -162,6 +166,17 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | Cross(f1, f2) -> sprintf "%s*%s" f1.Name f2.Name
             | Cut(c, _) -> sprintf "%s.AsFactor" c.Name 
             | Int(c, _) -> sprintf "%s.AsFactor" c.Name 
+            | Permute(f, _) -> f.Name
+
+    static member Substitute (mapF :  StatVariable -> StatVariable) (factorExpr : FactorExpr) =
+        match factorExpr with
+            | Var(f) -> Var(mapF !!f |> (!!))
+            | Rename(f, renameF) -> Rename(FactorExpr.Substitute mapF f, renameF)
+            | MergeLevels(f, s) -> MergeLevels(FactorExpr.Substitute mapF f, s)
+            | Cross(f1, f2) -> Cross(FactorExpr.Substitute mapF f1, FactorExpr.Substitute mapF f2) 
+            | Cut(cov, breaks) -> Cut(CovariateExpr.Substitute mapF cov, breaks) 
+            | Int(cov, knots) -> Int(CovariateExpr.Substitute mapF cov, knots) 
+            | Permute(f, permutation) -> Permute(FactorExpr.Substitute mapF f, permutation)
 
     member this.AsFactor =
         match this with
@@ -283,6 +298,29 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                      }
                 new Factor(Int(c, knots).Name, factorStorage)
 
+            | Permute(factor, permutation) ->
+                let factor = factor.AsFactor
+                if (permutation |> Array.map fst |> Array.sort <> [|0..permutation.Length - 1|]) then
+                    raise (new ArgumentException("Invalid factor level permutation"))
+                let levelSet = permutation |> Array.map snd |> Set.ofArray
+                if levelSet.Count <> permutation.Length then 
+                   raise (new ArgumentException("Duplicate level in factor level permutation"))
+                if permutation.Length < factor.LevelCount then
+                    raise (new ArgumentException("Incomplete permutation of factor levels"))
+                let levelMap = permutation |> Array.map fst |> Array.map Checked.uint16
+                let permutationMap = permutation |> Map.ofArray
+                let factorStorage = 
+                     {
+                      new IFactorStorage with
+                          member __.GetLevel(index) = permutationMap.[index]
+                          member __.Length = factor.Length
+                          member __.LevelCount = permutation.Length
+                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
+                              factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
+                                                                                                 v)
+                     }
+                new Factor(factor.Name, factorStorage)
+
 
     static member op_Explicit(x : FactorExpr) : Predictor = Predictor.CategoricalPredictor(!!x)
 
@@ -313,7 +351,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
 
     static member (+) (x : FactorExpr, y : CovariateExpr) : Predictor list = !!x + !!y
 
-    static member (+) (x : FactorExpr, y : StatVariable) : Predictor list = !!x + !!y
+    static member (+) (x : FactorExpr, y : StatVariable) : Predictor list = !!x + (!!y:Predictor)
 
     static member (+) (x : FactorExpr, y : Predictor) : Predictor list = !!x + y
 
@@ -381,7 +419,7 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
 
     static member (+) (x : Covariate, y : CovariateExpr) : Predictor list = !!x + !!y
 
-    static member (+) (x : Covariate, y : StatVariable) : Predictor list = !!x + !!y
+    static member (+) (x : Covariate, y : StatVariable) : Predictor list = !!x + (!!y:Predictor)
 
     static member (+) (x : Covariate, y : Predictor) : Predictor list = !!x + y
 
@@ -433,6 +471,13 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
             | BinaryFunction(expr1, expr2, _, _) ->  
                 max expr1.MaxLength expr2.MaxLength
             | FromFactor(f, _) -> f.MaxLength
+
+    static member Substitute (mapF :  StatVariable -> StatVariable) (covExpr : CovariateExpr) =
+        match covExpr with
+            | Var(c) -> Var(mapF !!c |> (!!))
+            | UnaryFunction(cov, f, label) -> UnaryFunction(CovariateExpr.Substitute mapF cov, f, label)
+            | BinaryFunction(cov1, cov2, f, label) -> BinaryFunction(CovariateExpr.Substitute mapF cov1, CovariateExpr.Substitute mapF cov2, f, label)
+            | FromFactor(f, parse) -> FromFactor(FactorExpr.Substitute mapF f, parse)
 
     member this.GetSlicesExpr(fromObs : int64, toObs : int64, sliceLen : int) =
         match this with
@@ -501,7 +546,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
 
     static member (+) (x : CovariateExpr, y : CovariateExpr) : Predictor list = !!x + !!y
 
-    static member (+) (x : CovariateExpr, y : StatVariable) : Predictor list = !!x + !!y
+    static member (+) (x : CovariateExpr, y : StatVariable) : Predictor list = !!x + (!!y:Predictor)
 
     static member (+) (x : CovariateExpr, y : Predictor) : Predictor list = !!x + y
 
@@ -623,6 +668,14 @@ and StatVariable =
             | Covariate(c) -> c
             | _ -> raise (new InvalidCastException())
 
+    static member op_Explicit(x : StatVariable) : Factor = x.AsFactor
+
+    static member op_Explicit(x : StatVariable) : Covariate = x.AsCovariate
+
+    static member op_Explicit(x : Factor) = StatVariable.Factor(x)
+
+    static member op_Explicit(x : Covariate) = StatVariable.Covariate(x)
+
     static member op_Explicit(x : StatVariable) : Predictor =
         match x with
             | Factor(f) -> !!f
@@ -653,13 +706,13 @@ and StatVariable =
 
     static member (+) (x : StatVariable, y : CovariateExpr) : Predictor list = !!x + !!y
 
-    static member (+) (x : StatVariable, y : StatVariable) : Predictor list = !!x + !!y
+    static member (+) (x : StatVariable, y : StatVariable) : Predictor list = !!x + (!!y:Predictor)
 
     static member (+) (x : StatVariable, y : Predictor) : Predictor list = !!x + y
 
-    static member (+) (x : Predictor list, y : StatVariable) : Predictor list = x + !!y
+    static member (+) (x : Predictor list, y : StatVariable) : Predictor list = x + (!!y:Predictor)
 
-    static member (+) (x : StatVariable, y : Predictor list) : Predictor list = !!x + y
+    static member (+) (x : StatVariable, y : Predictor list) : Predictor list = (!!x:Predictor) + y
 
 
 and CategoricalPredictor =
@@ -687,6 +740,11 @@ and CategoricalPredictor =
         match this with
             | Factor(f) -> f.Name
             | CategoricalInteraction(c, f) -> sprintf "%s*%s" c.Name f.Name
+
+    static member Substitute (mapF : StatVariable -> StatVariable) (catPred : CategoricalPredictor) =
+        match catPred with
+            | Factor(f) -> Factor(FactorExpr.Substitute mapF f)
+            | CategoricalInteraction(catPred, f) -> CategoricalInteraction(CategoricalPredictor.Substitute mapF catPred, FactorExpr.Substitute mapF f)
 
     static member (*) (x : CategoricalPredictor, y : CategoricalPredictor) =
         match y with
@@ -718,7 +776,7 @@ and CategoricalPredictor =
 
     static member (+) (x : CategoricalPredictor, y : CovariateExpr) : Predictor list = !!x + !!y
 
-    static member (+) (x : CategoricalPredictor, y : StatVariable) : Predictor list = !!x + !!y
+    static member (+) (x : CategoricalPredictor, y : StatVariable) : Predictor list = !!x + (!!y:Predictor)
 
     static member (+) (x : CategoricalPredictor, y : Predictor) : Predictor list = !!x + y
 
@@ -768,6 +826,12 @@ and Predictor =
             | NumericalPredictor(x) -> x.Name
             | MixedInteraction(catPred, covExpr) -> sprintf "%s*%s" catPred.Name covExpr.Name
 
+    static member Substitute (mapF : StatVariable -> StatVariable) (predictor : Predictor) =
+        match predictor with
+            | CategoricalPredictor(cp) -> CategoricalPredictor(CategoricalPredictor.Substitute mapF cp)
+            | NumericalPredictor(x) -> NumericalPredictor(CovariateExpr.Substitute mapF x)
+            | MixedInteraction(c, n) -> MixedInteraction(CategoricalPredictor.Substitute mapF c, CovariateExpr.Substitute mapF n)
+
     static member (*) (x : Predictor, y : Predictor) : Predictor =
         match x, y with
             | CategoricalPredictor(x), CategoricalPredictor(y) -> CategoricalPredictor(x * y)
@@ -804,7 +868,7 @@ and Predictor =
 
     static member (+) (x : Predictor, y : CovariateExpr) : Predictor list = x + !!y
 
-    static member (+) (x : Predictor, y : StatVariable) : Predictor list = x + !!y
+    static member (+) (x : Predictor, y : StatVariable) : Predictor list = x + (!!y:Predictor)
 
     static member (+) (x : Predictor, y : Predictor) = [x; y]
 

@@ -1041,6 +1041,38 @@ module Glm =
                     res
         beta
 
+    let checkResponse (resp : Covariate) (glmDistribution : GlmDistribution) (sliceLen : int) =
+        match glmDistribution with
+            | Gaussian -> ()
+            | Gamma ->
+                let invalidCount =
+                    resp.GetSlices(0L, resp.Length - 1L, sliceLen)
+                        |> Seq.map (fun v -> 
+                                         use isInvalid = BoolVectorExpr.EvalIn(v.AsExpr .<= 0.0, None)
+                                         v.[isInvalid].LongLength
+                                   )
+                        |> Seq.reduce (+)
+                if invalidCount > 0L then raise (new ArgumentException("Gamma response must be > 0 or NaN"))
+            | Poisson ->
+                let invalidCount =
+                    resp.GetSlices(0L, resp.Length - 1L, sliceLen)
+                        |> Seq.map (fun v -> 
+                                         use isInvalid = BoolVectorExpr.EvalIn((v.AsExpr .< 0.0) .|| ( VectorExpr.Floor(v.AsExpr) .<> v.AsExpr) , None)
+                                         v.[isInvalid].LongLength
+                                   )
+                        |> Seq.reduce (+)
+                if invalidCount > 0L then raise (new ArgumentException("Poisson response must be 0 1 2... or NaN"))
+            | Binomial ->
+                let invalidCount =
+                    resp.GetSlices(0L, resp.Length - 1L, sliceLen)
+                        |> Seq.map (fun v -> 
+                                         use isInvalid = BoolVectorExpr.EvalIn((v.AsExpr .<> 0.0) .&& (v.AsExpr .<> 1.0) , None)
+                                         v.[isInvalid].LongLength
+                                   )
+                        |> Seq.reduce (+)
+                if invalidCount > 0L then raise (new ArgumentException("Binomial response must be 0, 1 or NaN"))
+
+
     let fitModel (response : CovariateExpr) (predictors : Predictor list) (includeIntercept : bool)
                  (glmDistribution : GlmDistribution) (glmLink : GlmLink) (sliceLength : int) (maxIter : int) (eps : float) =
         let minLen = min (predictors |> List.map (fun p -> p.MinLength) |> List.min) response.MinLength
@@ -1048,6 +1080,7 @@ module Glm =
         if minLen <> maxLen then raise (new ArgumentException("Glm design data length mismatch"))
         let length = minLen
         let respCov = response.AsCovariate
+        checkResponse respCov glmDistribution sliceLength
         let respSlice = (respCov.GetSlices(0L, int64(sliceLength - 1), sliceLength) |> Seq.take 1 |> Seq.toArray).[0]
         let meanReponseSlice = Vector.Mean(respSlice.[respSlice .= respSlice])
 
@@ -1074,4 +1107,83 @@ module Glm =
             }
         else 
             raise (new InvalidOperationException(sprintf "Glm algorithm did not converge after %d iterations" iter))
+
+    let getPermutedFactor (baseFactor : Factor) (factorToPermute : Factor) =
+        let baseLevelMap = new Dictionary<string, int>()
+        let permuteFactorMap = new Dictionary<int, string>()
+        let permuteFactorMapRev = new Dictionary<string, int>()
+        [|0..baseFactor.LevelCount - 1|] |> Array.iter (fun index -> baseLevelMap.Add(baseFactor.GetLevel(index), index))
+        [|0..factorToPermute.LevelCount - 1|] |> Array.iter (fun index -> permuteFactorMap.Add(index, factorToPermute.GetLevel(index))
+                                                                          permuteFactorMapRev.Add(factorToPermute.GetLevel(index), index))
+        let naSet = Factor.NAs |> Set.ofArray
+        let allLevelsInBase = 
+            [|0..factorToPermute.LevelCount - 1|] |> Array.map (fun index ->
+                                                                   let level = factorToPermute.GetLevel(index) in baseLevelMap.ContainsKey(level) || naSet.Contains(level))
+                                                  |> Array.reduce (&&)
+        if not allLevelsInBase then raise (new ArgumentException("Permuted factor: all not NA levels must be in base factor"))
+
+        //add NAs if not there
+        [|0..factorToPermute.LevelCount - 1|] |> Array.iter (fun index -> if not <| baseLevelMap.ContainsKey(factorToPermute.GetLevel(index)) then
+                                                                              let count = baseLevelMap.Count
+                                                                              baseLevelMap.Add(factorToPermute.GetLevel(index), count))
+
+        [|0..baseFactor.LevelCount - 1|] |> Array.iter (fun index -> 
+                                                            let level = baseFactor.GetLevel(index)
+                                                            if not <| permuteFactorMapRev.ContainsKey(level) then
+                                                                let count = permuteFactorMapRev.Count 
+                                                                permuteFactorMapRev.Add(level, count)
+                                                                permuteFactorMap.Add(count, level)
+                                                       )
+        let permutation = 
+            [|0..permuteFactorMap.Count - 1|] |> Array.map (fun index -> let level = permuteFactorMap.[index]
+                                                                         baseLevelMap.[level], level)
+        FactorExpr.Permute(factorToPermute.AsExpr, permutation)
+
+    let substituteVar (data : DataFrame) (statVar : StatVariable)  =
+        match statVar with
+            | StatVariable.Factor(f) -> 
+                let factorToPermute = data.[f.Name].AsFactor
+                (getPermutedFactor f factorToPermute).AsFactor |> (!!)
+            | StatVariable.Covariate(c) -> data.[c.Name]
+
+    let fitted (model : GlmModel) (data : DataFrame) : Covariate =
+        let predictors = model.Predictors |> List.map (Predictor.Substitute (substituteVar data))
+        let minLen = predictors |> List.map (fun p -> p.MinLength) |> List.min
+        let maxLen = predictors |> List.map (fun p -> p.MaxLength) |> List.max
+        if minLen <> maxLen then raise (new ArgumentException("Glm design data length mismatch"))
+        let length = minLen
+        let beta = model.Beta
+        let glmLink = model.Link
+        let estimableDesign = getEstimableDesign predictors model.HasIntercept
+        let estimateCounts = estimableDesign |> List.map getEstimateCount |> List.toArray
+        let cumEstimateCounts = Array.sub (estimateCounts |> Array.scan (+) 0) 1 estimateCounts.Length
+        let design = estimableDesign |> List.map (fun (factors, cov) -> (getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
+        
+        let covariateStorage = 
+             {
+              new ICovariateStorage with
+                  member __.Length = length
+                  member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
+                    design |> List.map (fun (factorsOpt, covOpt) ->
+                                                    factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
+                                                               |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength)))
+                            |> zipDesign
+                            |> Seq.map (fun slice ->
+                                            let sliceLen = 
+                                                match slice with
+                                                    | (Some(v::_, _, _), _)::_ -> v.Length
+                                                    | (_, Some(v))::_ -> v.Length
+                                                    | _ -> 0
+                                            use xbeta = getXBeta slice beta sliceLen cumEstimateCounts
+                                            getPred xbeta glmLink                               
+                                        )
+             }
+        new Covariate("Fitted", covariateStorage)        
+        
+        
+        
+        
+
+
+
 

@@ -13,8 +13,10 @@ open Overloading
 open BasicStats
 
 //open FCor.CsvProvider
-//type MyDataFrame = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv">
-//let df = new MyDataFrame()
+//[<LiteralAttribute>]
+//let pathPredictedCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatestpredict.csv"
+//type NewDataFrame = CsvDataFrame<pathPredictedCsv>
+//let newDF = new NewDataFrame()
 
 let N = 500000
 let rng = new MT19937Rng()
@@ -44,6 +46,7 @@ MklControl.SetMaxThreads 1
 #time
 let pathCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv"
 
+
 //Glm.toCsv [StatVariable.Factor(AVar);StatVariable.Factor(BVar);StatVariable.Covariate(XVar);StatVariable.Covariate(YVar)] pathCsv
 
 let statVars = Glm.importCsv pathCsv false
@@ -52,20 +55,12 @@ let B = statVars.[1].AsFactor
 let X = statVars.[2].AsCovariate
 let Y = statVars.[3].AsCovariate
 
-//let A' = FromFactor(!!A, fun level -> level.Substring(1) |> float)
-//let B' = FromFactor(Rename(!!B, fun level -> level.Substring(1)), float)
-//let A'' = A'.AsCovariate
-//let B'' = B'.AsCovariate   
+let model = Glm.fitModel Y.AsExpr (A + B + X) true Gamma Ln 10000 50 1e-6
+
+let fitted = Glm.fitted model (new DataFrame(statVars))
+let res = (Y.AsExpr - fitted.AsExpr).AsCovariate
 
 
-let C = Int(floor( 10.0 * !!X), [|0..9|])
-let C' = Rename(C, fun level -> if String.IsNullOrEmpty(level) then "N/A" else level)
-
-let A' = Rename(!!A, fun level -> if level = "A2" then "N/A" else level)
-
-let glm = Glm.fitModel Y.AsExpr (A + B + X) true Gamma Ln 10000 50 1e-6
-//let pp = glm |> Option.map (fun x -> x.Parameters) |> Option.map (fun prms -> prms |> List.filter (fun p -> p.Predictor.Name.Contains "X"))
-let goodness = glm.GoodnessOfFit // |> Option.map (fun x -> x.GoodnessOfFit)
 
 //let X = rand rng 1000000 : Vector
 //let e = normRnd rng 0.0 1.0 1000000 : Vector
