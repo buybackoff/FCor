@@ -12,6 +12,7 @@ open FCor.Random
 open Overloading
 open BasicStats
 
+
 //open FCor.CsvProvider
 //[<LiteralAttribute>]
 //let pathPredictedCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatestpredict.csv"
@@ -55,11 +56,10 @@ let B = statVars.[1].AsFactor
 let X = statVars.[2].AsCovariate
 let Y = statVars.[3].AsCovariate
 
-let model = Glm.fitModel Y.AsExpr (A + B + X) true Gamma Ln 10000 50 1e-6
+let model = Glm.fitModel Y.AsExpr (X + A + B + (2.0 * X.AsExpr)) true Gamma Ln 10000 100 1e-8
 
 let fitted = Glm.fitted model (new DataFrame(statVars))
 let res = (Y.AsExpr - fitted.AsExpr).AsCovariate
-
 
 
 //let X = rand rng 1000000 : Vector

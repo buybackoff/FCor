@@ -30,7 +30,6 @@ module Glm =
         let B = statVars.[1].AsFactor
         let X = statVars.[2].AsCovariate
         let Y = statVars.[3].AsCovariate
-        let A' = Rename(!!A, fun level -> if level = "A1" || level = "A2" || level = "A3" then level else "N/A")
-        let glm = Glm.fitModel Y.AsExpr ([!!A']) true Gamma Ln 10000 50 1e-6
+        let glm = Glm.fitModel Y.AsExpr (X + X) true Gamma Ln 10000 50 1e-6
         ()
 

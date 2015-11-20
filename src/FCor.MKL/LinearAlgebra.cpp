@@ -73,11 +73,14 @@ int cholesky_solve(MKL_INT n, MKL_INT nrhs, T* A, T* B, POSV posv)
 	{
 		return NOTPOSDEF;
 	}
-	if (info < 0)
+	else if (info < 0)
 	{
 		return MKLARGERROR;
 	}
-	return 0;
+	else
+	{
+		return 0;
+	}
 }
 
 template<typename T, typename GETRF>
