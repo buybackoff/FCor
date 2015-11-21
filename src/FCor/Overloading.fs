@@ -9,6 +9,80 @@ module Overloading =
 
     type DummyType = DummyType with
 
+        static member Abs (DummyType, x : float) = Math.Abs(x)
+        static member Abs (DummyType, x) = Vector.Abs(x)
+        static member Abs (DummyType, x) = Matrix.Abs(x)
+        static member Abs (DummyType, x) = VectorExpr.Abs(x)
+        static member Abs (DummyType, x) = MatrixExpr.Abs(x)
+        static member Abs (DummyType, x) = CovariateExpr.Abs(x)
+        static member Abs (DummyType, x) = Covariate.Abs(x)
+
+        static member Log (DummyType, x : float) = Math.Log(x)
+        static member Log (DummyType, x) = Vector.Log(x)
+        static member Log (DummyType, x) = Matrix.Log(x)
+        static member Log (DummyType, x) = VectorExpr.Log(x)
+        static member Log (DummyType, x) = MatrixExpr.Log(x)
+        static member Log (DummyType, x) = CovariateExpr.Log(x)
+        static member Log (DummyType, x) = Covariate.Log(x)
+
+
+        static member Log10 (DummyType, x : float) = Math.Log10(x)
+        static member Log10 (DummyType, x) = Vector.Log10(x)
+        static member Log10 (DummyType, x) = Matrix.Log10(x)
+        static member Log10 (DummyType, x) = VectorExpr.Log10(x)
+        static member Log10 (DummyType, x) = MatrixExpr.Log10(x)
+        static member Log10 (DummyType, x) = CovariateExpr.Log10(x)
+        static member Log10 (DummyType, x) = Covariate.Log10(x)
+
+
+        static member Exp (DummyType, x : float) = Math.Exp(x)
+        static member Exp (DummyType, x) = Vector.Exp(x)
+        static member Exp (DummyType, x) = Matrix.Exp(x)
+        static member Exp (DummyType, x) = VectorExpr.Exp(x)
+        static member Exp (DummyType, x) = MatrixExpr.Exp(x)
+        static member Exp (DummyType, x) = CovariateExpr.Exp(x)
+        static member Exp (DummyType, x) = Covariate.Exp(x)
+
+        static member Sqrt (DummyType, x : float) = Math.Sqrt(x)
+        static member Sqrt (DummyType, x) = Vector.Sqrt(x)
+        static member Sqrt (DummyType, x) = Matrix.Sqrt(x)
+        static member Sqrt (DummyType, x) = VectorExpr.Sqrt(x)
+        static member Sqrt (DummyType, x) = MatrixExpr.Sqrt(x)
+        static member Sqrt (DummyType, x) = CovariateExpr.Sqrt(x)
+        static member Sqrt (DummyType, x) = Covariate.Sqrt(x)
+
+        static member Round (DummyType, x : float) = Math.Round(x)
+        static member Round (DummyType, x) = Vector.Round(x)
+        static member Round (DummyType, x) = Matrix.Round(x)
+        static member Round (DummyType, x) = VectorExpr.Round(x)
+        static member Round (DummyType, x) = MatrixExpr.Round(x)
+        static member Round (DummyType, x) = CovariateExpr.Round(x)
+        static member Round (DummyType, x) = Covariate.Round(x)
+
+        static member Ceiling (DummyType, x : float) = Math.Ceiling(x)
+        static member Ceiling (DummyType, x) = Vector.Ceiling(x)
+        static member Ceiling (DummyType, x) = Matrix.Ceiling(x)
+        static member Ceiling (DummyType, x) = VectorExpr.Ceiling(x)
+        static member Ceiling (DummyType, x) = MatrixExpr.Ceiling(x)
+        static member Ceiling (DummyType, x) = CovariateExpr.Ceiling(x)
+        static member Ceiling (DummyType, x) = Covariate.Ceiling(x)
+
+        static member Floor (DummyType, x : float) = Math.Floor(x)
+        static member Floor (DummyType, x) = Vector.Floor(x)
+        static member Floor (DummyType, x) = Matrix.Floor(x)
+        static member Floor (DummyType, x) = VectorExpr.Floor(x)
+        static member Floor (DummyType, x) = MatrixExpr.Floor(x)
+        static member Floor (DummyType, x) = CovariateExpr.Floor(x)
+        static member Floor (DummyType, x) = Covariate.Floor(x)
+
+        static member Truncate (DummyType, x : float) = Math.Truncate(x)
+        static member Truncate (DummyType, x) = Vector.Truncate(x)
+        static member Truncate (DummyType, x) = Matrix.Truncate(x)
+        static member Truncate (DummyType, x) = VectorExpr.Truncate(x)
+        static member Truncate (DummyType, x) = MatrixExpr.Truncate(x)
+        static member Truncate (DummyType, x) = CovariateExpr.Truncate(x)
+        static member Truncate (DummyType, x) = Covariate.Truncate(x)
+
         static member ASinh (DummyType, x : float) = 
             let mutable res = x
             MklFunctions.D_ASinh_Array(1L, &&res, &&res)
@@ -455,6 +529,13 @@ module Overloading =
         static member Min (DummyType, x : float, y : CovariateExpr) = CovariateExpr.Min(x, y)
 
 
+        static member Min (DummyType, x : Covariate, y : Covariate) = Covariate.Min(x, y)
+
+        static member Min (DummyType, x : Covariate, y : float) = Covariate.Min(x, y)
+
+        static member Min (DummyType, x : float, y : Covariate) = Covariate.Min(x, y)
+
+
         static member Min (DummyType, a : float, b : float) = min a b
 
         static member Min (DummyType, a : float32, b : float32) = min a b
@@ -464,4 +545,70 @@ module Overloading =
         static member Min (DummyType, a : int64, b : int64) = min a b
 
         static member Min (DummyType, a : bool, b : bool) = min a b
+
+
+
+        static member StatFormula (DummyType, x : CovariateExpr, y : Predictor list) = x, y
+
+        static member StatFormula (DummyType, x : Covariate, y : Predictor list) = x.AsExpr, y
+
+        static member StatFormula (DummyType, x : CovariateExpr, y : Predictor) = x, [y]
+
+        static member StatFormula (DummyType, x : Covariate, y : Predictor) = x.AsExpr, [y]
+
+        static member StatFormula (DummyType, x : CovariateExpr, y : Factor) = x, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : Covariate, y : Factor) = x.AsExpr, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : CovariateExpr, y : FactorExpr) = x, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : Covariate, y : FactorExpr) = x.AsExpr, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : CovariateExpr, y : Covariate) = x, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : Covariate, y : Covariate) = x.AsExpr, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : CovariateExpr, y : CovariateExpr) = x, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : Covariate, y : CovariateExpr) = x.AsExpr, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : CovariateExpr, y : StatVariable) = x, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : Covariate, y : StatVariable) = x.AsExpr, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : CovariateExpr, y : CategoricalPredictor) = x, [(!!y:Predictor)]
+
+        static member StatFormula (DummyType, x : Covariate, y : CategoricalPredictor) = x.AsExpr, [(!!y:Predictor)]
+
+
+
+        static member ConvertStatVar (DummyType, x : Factor, f : string -> string) = Rename(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : FactorExpr, f : string -> string) = Rename(x, f)
+
+        static member ConvertStatVar (DummyType, x : Factor, f : string list) = MergeLevels(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : FactorExpr, f : string list) = MergeLevels(x, f)
+
+        static member ConvertStatVar (DummyType, x : Factor, f : string[]) = MergeLevels(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : FactorExpr, f : string[]) = MergeLevels(x, f)
+
+        static member ConvertStatVar (DummyType, x : Factor, f) = Permute(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : FactorExpr, f) = Permute(x, f)
+
+        static member ConvertStatVar (DummyType, x : Covariate, f : float[]) = Cut(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : CovariateExpr, f : float[]) = Cut(x, f)
+
+        static member ConvertStatVar (DummyType, x : Covariate, f : int[]) = Int(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : CovariateExpr, f : int[]) = Int(x, f)
+
+        static member ConvertStatVar (DummyType, x : Factor, f) = FromFactor(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : FactorExpr, f) = FromFactor(x, f)
+
+
 

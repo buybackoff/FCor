@@ -1027,6 +1027,9 @@ type internal MklFunctions() =
     static extern float innerprod_3arrays_notnan(int n, float* x, float* y, float* z)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
+    static extern void update_factor_freq(int n, UInt16Ptr slice, int64[] count)
+
+    [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
     static extern void get_knot_level_index(int n, int knotCount, int[] knots, double* numSlice, UInt16Ptr result)
 
     [<DllImport(dllName, CallingConvention = CallingConvention.Cdecl)>]
@@ -1984,6 +1987,9 @@ type internal MklFunctions() =
 
     static member Sum_Array_NotNan(n, x) =
         sum_array_notnan(n, x)
+
+    static member Update_Factor_Freq(sliceLen, slice, count) =
+        update_factor_freq(sliceLen, slice, count)
 
     static member Get_Knot_Level_Index(n, knots : int[], numSlice, result) =
         get_knot_level_index(n, knots.Length, knots, numSlice, result)

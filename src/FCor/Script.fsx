@@ -12,12 +12,13 @@ open FCor.Random
 open Overloading
 open BasicStats
 
-
 //open FCor.CsvProvider
 //[<LiteralAttribute>]
-//let pathPredictedCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatestpredict.csv"
-//type NewDataFrame = CsvDataFrame<pathPredictedCsv>
+//let pathPredictedCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest250K.csv"
+//type NewDataFrame = CsvDataFrame<HasHeaders = true, Filename = pathPredictedCsv>
 //let newDF = new NewDataFrame()
+//let A = newDF.A
+//let stats = A.GetStats()
 
 let N = 500000
 let rng = new MT19937Rng()
@@ -50,17 +51,18 @@ let pathCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv"
 
 //Glm.toCsv [StatVariable.Factor(AVar);StatVariable.Factor(BVar);StatVariable.Covariate(XVar);StatVariable.Covariate(YVar)] pathCsv
 
-let statVars = Glm.importCsv pathCsv false
+let statVars = Glm.importCsv pathCsv [|','|] [||] true false
 let A = statVars.[0].AsFactor
 let B = statVars.[1].AsFactor
 let X = statVars.[2].AsCovariate
 let Y = statVars.[3].AsCovariate
 
-let model = Glm.fitModel Y.AsExpr (X + A + B + (2.0 * X.AsExpr)) true Gamma Ln 10000 100 1e-8
+open StatModels
 
-let fitted = Glm.fitted model (new DataFrame(statVars))
-let res = (Y.AsExpr - fitted.AsExpr).AsCovariate
+let model = fitGLM (Y <~> (A + B + X)) true Gamma Ln 50 1e-8
 
+let fitted = model.Predict (new DataFrame(statVars))
+let resStats = fitted.GetStats()
 
 //let X = rand rng 1000000 : Vector
 //let e = normRnd rng 0.0 1.0 1000000 : Vector

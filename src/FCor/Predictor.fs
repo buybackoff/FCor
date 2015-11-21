@@ -8,6 +8,57 @@ open System.Collections.Generic
 open FCor.ExplicitConversion
 open System.Text
 
+[<StructuredFormatDisplay("{AsString}")>]
+type CovariateStats =
+    {
+     ObsCount : int64
+     NaNCount : int64
+     ``NaN%`` : float
+     Mean : float
+     Std : float
+     Min : float
+     Max : float
+    }
+    member this.AsString =
+        let sb = new StringBuilder()
+        sb.AppendLine() |> ignore
+        sb.AppendLine <| sprintf "%-15s%12d" "Obs Count" this.ObsCount |> ignore
+        sb.AppendLine <| sprintf "%-15s%12d" "NaN Freq" this.NaNCount |> ignore
+        sb.AppendLine <| sprintf "%-15s%12G" "NaN (%)" (100. * this.``NaN%``) |> ignore
+        sb.AppendLine <| sprintf "%-15s%12G" "Min" this.Min |> ignore
+        sb.AppendLine <| sprintf "%-15s%12G" "Max" this.Max |> ignore
+        sb.AppendLine <| sprintf "%-15s%12G" "Mean" this.Mean |> ignore
+        sb.AppendLine <| sprintf "%-15s%12G" "Std" this.Std |> ignore
+        sb.ToString()
+
+type FactorLevelStats =
+    {
+     Level : string
+     Freq : int64
+     ``Freq%`` : float
+    }
+
+[<StructuredFormatDisplay("{AsString}")>]
+type FactorStats =
+    {
+     ObsCount : int64
+     MissingFreq :  int64
+     ``Missing%`` : float
+     LevelStats : FactorLevelStats[]
+    }
+    member this.AsString =
+        let sb = new StringBuilder()
+        sb.AppendLine() |> ignore
+        sb.AppendLine <| sprintf "%-15s%12d" "Obs Count" this.ObsCount |> ignore
+        sb.AppendLine <| sprintf "%-15s%12d" "Missing Freq" this.MissingFreq |> ignore
+        sb.AppendLine <| sprintf "%-15s%12G" "Missing %" (100. * this.``Missing%``) |> ignore
+        sb.AppendLine() |> ignore
+        sb.AppendLine <| sprintf "%-15s%s%-12s%s%-12s" "Level" "  " "Frequency" "  " "Frequency %" |> ignore
+        this.LevelStats |> Array.iter (fun levelStat -> 
+                                           sb.AppendLine <| sprintf "%-15s%s%12d%s%12G" levelStat.Level "  " levelStat.Freq "  " (100.0 * levelStat.``Freq%``) |> ignore
+                                      )
+        sb.ToString()
+
 type Factor(name : string, factorStorage : IFactorStorage) =
 
     static let intercept = 
@@ -33,7 +84,7 @@ type Factor(name : string, factorStorage : IFactorStorage) =
              }
         new Factor("<INTERCEPT>", factorStorage)
 
-    static member NAs = [|String.Empty;"#N/A";"N/A";"#n/a";"n/a"|]
+    static member NAs = [|String.Empty;"#N/A";"N/A";"#n/a";"n/a";"."|]
 
     member this.Name = name
     member this.Length = factorStorage.Length
@@ -42,6 +93,45 @@ type Factor(name : string, factorStorage : IFactorStorage) =
     member this.GetSlices(fromObs : int64, toObs : int64, sliceLen : int) = factorStorage.GetSlices(fromObs, toObs, sliceLen)
 
     member this.GetLevel(levelIndex) = factorStorage.GetLevel(levelIndex)
+
+    member this.GetStats() = this.GetStats(10000)
+
+    member this.GetStats(sliceLen : int) =
+        let processorCount = Environment.ProcessorCount
+        let processorChunk = factorStorage.Length / int64(processorCount)
+        let levelFreq = 
+            seq{0..processorCount - 1} 
+                |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then factorStorage.Length - 1L else (int64(i + 1) * processorChunk - 1L))
+                |> Seq.toArray 
+                |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                                            this.GetSlices(fromObs, toObs, sliceLen)
+                                                |> Seq.fold (fun freq slice -> 
+                                                                MklFunctions.Update_Factor_Freq(slice.Length, slice.NativeArray, freq)
+                                                                freq
+                                                            ) (Array.create factorStorage.LevelCount 0L)
+                                        )
+                |> Array.reduce (fun freq1 freq2 -> freq2 |> Array.zip freq1 |> Array.map (fun (x,y) -> x + y))
+
+        let nans = new Set<_>(Factor.NAs)
+        let missingFreq =
+            [|0..this.LevelCount - 1|] |> Array.fold (fun freq levelIndex -> 
+                                                        if nans.Contains(this.GetLevel(levelIndex)) then
+                                                            freq + levelFreq.[levelIndex]
+                                                        else freq) 0L
+        let levelStats = 
+            Array.init this.LevelCount (fun i -> 
+                                            {
+                                             Level = this.GetLevel(i)
+                                             Freq = levelFreq.[i]
+                                             ``Freq%`` = float(levelFreq.[i]) / float(factorStorage.Length)
+                                            }            
+                                       )
+        {
+         ObsCount = factorStorage.Length
+         MissingFreq = missingFreq
+         ``Missing%`` = float(missingFreq) / float(factorStorage.Length)
+         LevelStats = levelStats
+        }
 
     member this.AsSeq =
         let slices = this.GetSlices(0L, factorStorage.Length - 1L, 10000)
@@ -72,6 +162,11 @@ type Factor(name : string, factorStorage : IFactorStorage) =
 
     static member op_Explicit(factor : Factor) : CategoricalPredictor = CategoricalPredictor.Factor(!!factor)
 
+    static member op_Explicit(x : string * string[]) =
+        let name, data = x
+        let factorStorage = new FactorStorage()
+        factorStorage.SetSlice(0L, data)
+        new Factor(name, factorStorage)
 
     static member (*) (x : Factor, y : Factor) : CategoricalPredictor = !!x * !!y
 
@@ -105,6 +200,8 @@ type Factor(name : string, factorStorage : IFactorStorage) =
     static member (+) (x : Predictor list, y : Factor) : Predictor list = x + (!!y:Predictor)
 
     static member (+) (x : Factor, y : Predictor list) : Predictor list = (!!x:Predictor) + y
+
+    static member (.*) (x : Factor, y : Factor) = Cross(x.AsExpr, y.AsExpr)
 
 
     interface IDisposable with
@@ -340,6 +437,12 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
 
     static member (*) (x : FactorExpr, y : Predictor) : Predictor = !!x * y
 
+    static member (.*) (x : FactorExpr, y : FactorExpr) = Cross(x, y)
+
+    static member (.*) (x : FactorExpr, y : Factor) = Cross(x, y.AsExpr)
+
+    static member (.*) (x : Factor, y : FactorExpr) = Cross(x.AsExpr, y)
+
 
     static member (+) (x : FactorExpr, y : Factor) : Predictor list = (!!x:Predictor) + (!!y:Predictor)
 
@@ -379,6 +482,49 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
                                |> Seq.map (fun index -> slice.[index]))
                                |> Seq.concat
 
+    member this.GetStats() = this.GetStats(10000) 
+
+    member this.GetStats(sliceLen) =
+        let processorCount = Environment.ProcessorCount
+        let processorChunk = covariateStorage.Length / int64(processorCount)
+        let nanCount, sum, sumSq, currMin, currMax =
+            seq{0..processorCount - 1} 
+                |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then covariateStorage.Length - 1L else (int64(i + 1) * processorChunk - 1L))
+                |> Seq.toArray 
+                |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                                            this.GetSlices(fromObs, toObs, sliceLen)
+                                                |> Seq.fold (fun (nanCount, sum, sumSq, currMin, currMax) slice -> 
+                                                                use isNaN = slice .<> slice
+                                                                use isNotNaN = BoolVector.Not isNaN
+                                                                use notNan = slice.[isNotNaN]
+                                                                let isAllNaN = notNan = Vector.Empty
+                                                                let sliceSum = if isAllNaN then 0.0 else Vector.Sum(notNan)
+                                                                let sliceSumSq = if isAllNaN then 0.0 else notNan * notNan
+                                                                let sliceNaNCount = int64(slice.Length) - notNan.LongLength
+                                                                let sliceMin = if isAllNaN then Double.NaN else Vector.Min(notNan)
+                                                                let sliceMax = if isAllNaN then Double.NaN else Vector.Max(notNan)
+                                                                (nanCount + sliceNaNCount,
+                                                                 (if Double.IsNaN(sliceSum) then sum else sliceSum + sum),
+                                                                 (if Double.IsNaN(sliceSumSq) then sumSq else sliceSumSq + sumSq),
+                                                                 (if Double.IsNaN(sliceMin) then currMin else min currMin sliceMin),
+                                                                 (if Double.IsNaN(sliceMax) then currMax else max currMax sliceMax)
+                                                                ) 
+                                                            ) (0L, 0.0, 0.0, Double.MaxValue, Double.MinValue)
+                                        )
+                |> Array.reduce (fun (nanCount1, sum1, sumSq1, currMin1, currMax1) (nanCount2, sum2, sumSq2, currMin2, currMax2) ->
+                                     (nanCount1 + nanCount2, sum1 + sum2, sumSq1 + sumSq2, min currMin1 currMin2, max currMax1 currMax2)
+                                )
+        let N = covariateStorage.Length - nanCount
+        {
+        ObsCount = covariateStorage.Length
+        NaNCount = nanCount
+        ``NaN%`` = float(nanCount) / float(covariateStorage.Length)
+        Mean = if N = 0L then Double.NaN else sum / float(N)
+        Std = if N <= 1L then Double.NaN else (sumSq - sum * sum / float(N)) / float(N - 1L) |> Math.Sqrt
+        Min = if N = 0L then Double.NaN else currMin
+        Max = if N = 0L then Double.NaN else currMax
+        }
+
     interface IFormattable with
         member this.ToString(format, provider) = 
             let n, _ = DisplayControl.MaxDisplaySize
@@ -393,6 +539,28 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
     static member op_Explicit(x : Covariate) : Predictor = Predictor.NumericalPredictor(!!x)
 
     static member op_Explicit(x : Covariate) : CovariateExpr = CovariateExpr.Var x
+
+    static member op_Explicit(x : string * Vector) =
+        let name, data = x
+        let covariateStorage = 
+             {
+              new ICovariateStorage with
+                  member __.Length = data.LongLength
+                  member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
+                    seq
+                      {
+                        let length = toObs - fromObs + 1L
+                        let sliceLength = int64 sliceLength
+                        let m = length / sliceLength |> int
+                        let k = length % sliceLength 
+                        for i in 0..m-1 do
+                            yield data.View(fromObs + int64(i) * sliceLength, fromObs + int64(i + 1) * sliceLength - 1L)
+                        if k > 0L then
+                            yield data.View(fromObs + int64(m) * sliceLength, fromObs + int64(m) * sliceLength + k - 1L)
+                      }
+             }
+        new Covariate(name, covariateStorage)
+
 
     static member (*) (x : Covariate, y : Factor) : Predictor = !!x * !!y
 
@@ -427,10 +595,96 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
 
     static member (+) (x : Covariate, y : Predictor list) : Predictor list = (!!x:Predictor) + y
 
-                
-    static member Log(covariate :  Covariate) = CovariateExpr.Log(covariate.AsExpr)
 
-    static member Sqrt(covariate :  Covariate) = CovariateExpr.Sqrt(covariate.AsExpr)
+
+
+    static member (/) (covariate1 : Covariate, covariate2 : Covariate) =
+        covariate1.AsExpr / covariate2.AsExpr
+
+    static member (.+) (covariate1 : Covariate, covariate2 : Covariate) =
+        covariate1.AsExpr .+ covariate2.AsExpr
+
+    static member (-) (covariate1 : Covariate, covariate2 : Covariate) =
+        covariate1.AsExpr - covariate2.AsExpr
+
+    static member Min (covariate1 : Covariate, covariate2 : Covariate) =
+        CovariateExpr.Min(covariate1.AsExpr, covariate2.AsExpr)
+
+    static member Max (covariate1 : Covariate, covariate2 : Covariate) =
+        CovariateExpr.Max(covariate1.AsExpr, covariate2.AsExpr)
+
+
+    static member (*) (covariate : Covariate, a : float) =
+        covariate.AsExpr * a
+
+    static member (*) (a : float, covariate : Covariate) =
+        a * covariate.AsExpr
+
+    static member (/) (covariate : Covariate, a : float) =
+        covariate.AsExpr / a
+
+    static member (/) (a : float, covariate : Covariate) =
+        a / covariate.AsExpr
+
+    static member (+) (covariate : Covariate, a : float) =
+        covariate.AsExpr + a
+
+    static member (+) (a : float, covariate : Covariate) =
+        a + covariate.AsExpr
+
+    static member (-) (covariate : Covariate, a : float) =
+        covariate.AsExpr - a
+
+    static member (-) (a : float, covariate : Covariate) =
+        a - covariate.AsExpr
+
+    static member Min (covariate : Covariate, a : float) =
+        CovariateExpr.Min(covariate.AsExpr, a)
+
+    static member Min (a : float, covariate : Covariate) =
+        CovariateExpr.Min(a, covariate.AsExpr)
+
+    static member Max (covariate : Covariate, a : float) =
+        CovariateExpr.Max(covariate.AsExpr, a)
+
+    static member Max (a : float, covariate : Covariate) =
+        CovariateExpr.Max(a, covariate.AsExpr)
+
+    static member (^) (covariate : Covariate, n : int) =
+        CovariateExpr.op_Concatenate(covariate.AsExpr, n)
+
+    static member (^) (covariate : Covariate, a : float) =
+        CovariateExpr.op_Concatenate(covariate.AsExpr, a)
+
+    static member (~-) (covariate : Covariate) =
+        -covariate.AsExpr
+
+    static member Abs(covariate : Covariate) =
+        CovariateExpr.Abs(covariate.AsExpr)
+
+    static member Log(covariate : Covariate) =
+         CovariateExpr.Log(covariate.AsExpr)
+
+    static member Log10(covariate : Covariate) =
+         CovariateExpr.Log10(covariate.AsExpr)
+
+    static member Exp(covariate : Covariate) =
+         CovariateExpr.Exp(covariate.AsExpr)
+
+    static member Sqrt(covariate : Covariate) =
+         CovariateExpr.Sqrt(covariate.AsExpr)
+
+    static member Round(covariate : Covariate) =
+         CovariateExpr.Round(covariate.AsExpr)
+
+    static member Ceiling(covariate : Covariate) =
+         CovariateExpr.Ceiling(covariate.AsExpr)
+
+    static member Floor(covariate : Covariate) =
+         CovariateExpr.Floor(covariate.AsExpr)
+
+    static member Truncate(covariate : Covariate) =
+         CovariateExpr.Truncate(covariate.AsExpr)
 
     interface IDisposable with
         member this.Dispose() = this.DoDispose(true)

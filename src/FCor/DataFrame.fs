@@ -10,6 +10,8 @@ open System.Text
 
 type DataFrame(statVars : StatVariable list) =
 
+    static member Empty = new DataFrame([])
+
     member this.Factors = statVars |> List.choose (fun svar -> match svar with | StatVariable.Factor(f) -> Some f | _ -> None)
 
     member this.Covariates = statVars |> List.choose (fun svar -> match svar with | StatVariable.Covariate(c) -> Some c | _ -> None)

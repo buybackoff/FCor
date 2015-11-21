@@ -5,11 +5,27 @@ open Overloading
 
 module Math =
 
-    let inline trunc x = truncate x
-
     let inline max2 (x : 'S) (y : 'U) : 'V  = ((^T or ^S) : (static member Max: ^T * ^S * ^U -> ^V) DummyType, x, y)
 
     let inline min2 (x : 'S) (y : 'U) : 'V  = ((^T or ^S) : (static member Min: ^T * ^S * ^U -> ^V) DummyType, x, y)
+
+    let inline abs (x :'S) : 'U = ((^T or ^S) : (static member Abs: ^T * ^S -> ^U) DummyType, x)
+
+    let inline log (x :'S) : 'U = ((^T or ^S) : (static member Log: ^T * ^S -> ^U) DummyType, x)
+
+    let inline log10 (x :'S) : 'U = ((^T or ^S) : (static member Log10: ^T * ^S -> ^U) DummyType, x)
+
+    let inline exp (x :'S) : 'U = ((^T or ^S) : (static member Exp: ^T * ^S -> ^U) DummyType, x)
+
+    let inline sqrt (x :'S) : 'U = ((^T or ^S) : (static member Sqrt: ^T * ^S -> ^U) DummyType, x)
+
+    let inline round (x :'S) : 'U = ((^T or ^S) : (static member Round: ^T * ^S -> ^U) DummyType, x)
+
+    let inline ceil (x :'S) : 'U = ((^T or ^S) : (static member Ceiling: ^T * ^S -> ^U) DummyType, x)
+
+    let inline floor (x :'S) : 'U = ((^T or ^S) : (static member Floor: ^T * ^S -> ^U) DummyType, x)
+
+    let inline trunc (x :'S) : 'U = ((^T or ^S) : (static member Truncate: ^T * ^S -> ^U) DummyType, x)
 
     let inline asinh (x :'S) : 'S = ((^T or ^S) : (static member ASinh: ^T * ^S -> ^S) DummyType, x)
 

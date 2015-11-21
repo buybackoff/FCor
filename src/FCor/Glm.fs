@@ -90,6 +90,7 @@ type GlmModel =
     }
     member this.AsString =
         let sb = new StringBuilder()
+        sb.AppendLine() |> ignore
         sb.AppendLine <| "Generalized Linear Model" |> ignore
         sb.AppendLine <| sprintf "%-15s %A" "Distribution" this.Distribution |> ignore
         sb.AppendLine <| sprintf "%-15s %A" "Link" this.Link |> ignore
@@ -152,14 +153,15 @@ module Glm =
                            |> Seq.toList |> zipN |> Seq.map (join ",")
         dataSeq |> Seq.iter writer.WriteLine
 
-    let importCsv (path : string) (sampleOnly : bool) =
-        let delimiter = ','
+    let importCsv (path : string) (delimiter : char[]) (dropVars : string[]) (hasHeaders : bool) (sampleOnly : bool) =
+        let dropVars = new Set<_>(dropVars)
         use sr = new StreamReader(path)
         let firstN = 1000
         let N = 1000
+        let nas = new Set<_>(Factor.NAs)
 
         let isNotNumerics (s : string) =
-            s <> "#N/A" && s <> String.Empty && s <> "N/A" && s <> "." && (match Single.TryParse(s) with | (true, _) -> false | _ -> true)
+            not <| nas.Contains(s) && (match Single.TryParse(s) with | (true, _) -> false | _ -> true)
 
         let take (sr : StreamReader) (nLines : int) =
             let rec take' (sr : StreamReader) (nLines : int) (lines : string list) =
@@ -175,59 +177,74 @@ module Glm =
         let getColArray (splitLines : string[][]) col =
             Array.init splitLines.Length (fun row -> if col < splitLines.[row].Length then splitLines.[row].[col] else String.Empty)
 
-        let headers = (take 1).[0].Split(",".ToCharArray())
-        let firstChunk = take firstN |> Array.map (fun line -> line.Split(",".ToCharArray()))
-        let isFactor = Array.init headers.Length (fun col -> col |> getColArray firstChunk |> Array.exists isNotNumerics)
+        let split (s : string) = s.Split delimiter 
+        let firstLine = (take 1)
+        let headers =
+            if hasHeaders then firstLine.[0] |> split
+            else firstLine.[0].Split(delimiter) |> Array.mapi (fun i _ -> sprintf "Col%d" i)
+        let isDropped = headers |> Array.map (fun h -> dropVars.Contains h)
+        let firstChunk =
+            if hasHeaders then 
+                take firstN |> Array.map split
+            else 
+                take firstN |> Array.append firstLine |> Array.map split
+        let isFactor = Array.init headers.Length (fun col -> if isDropped.[col] then false else col |> getColArray firstChunk |> Array.exists isNotNumerics)
         let factorStorage = Array.init headers.Length (fun col -> new FactorStorage())
         let covStorage = Array.init headers.Length (fun col -> new CovariateStorageFloat32())
         let covSlices = Array.init headers.Length (fun col -> if isFactor.[col] then Array.create 0 0.0f else Array.create N 0.0f)
-        let slices = Array.init headers.Length (fun col -> Array.create N String.Empty)
+        let slices = Array.init headers.Length (fun col -> if isDropped.[col] then Array.create 0 String.Empty else Array.create N String.Empty)
 
-        isFactor |> Array.iteri (fun col isFactor -> 
-                                     let colArray = getColArray firstChunk col
-                                     if isFactor then
-                                         factorStorage.[col].SetSlice(0L, colArray)
-                                     else
-                                         covStorage.[col].SetSlice(0L, colArray |> Array.map (fun s -> match Single.TryParse(s) with | (true, v) -> v | _ -> Single.NaN))
+        isFactor |> Array.zip isDropped
+            |> Array.iteri (fun col (isDropped, isFactor) -> 
+                                     if not isDropped then
+                                         let colArray = getColArray firstChunk col
+                                         if isFactor then
+                                             factorStorage.[col].SetSlice(0L, colArray)
+                                         else
+                                             covStorage.[col].SetSlice(0L, colArray |> Array.map (fun s -> match Single.TryParse(s) with | (true, v) -> v | _ -> Single.NaN))
                                 )
         if not sampleOnly then
-            let rec processLine (fromObs : int64) (N : int) (row : int) (isFactor : bool[]) (delimiter : char) =
+            let rec processLine (fromObs : int64) (N : int) (row : int) (isFactor : bool[]) (isDropped : bool[]) (delimiter : char[]) =
                 let line = sr.ReadLine()
                 if not <| String.IsNullOrEmpty(line) then
-                    line.Split(",".ToCharArray()) |> Array.iteri (fun col s -> slices.[col].[row] <- s)
+                    line.Split(delimiter) |> Array.iteri (fun col s -> if not isDropped.[col] then slices.[col].[row] <- s)
                     if row = N - 1 then
                         isFactor |> Array.iteri (fun col isFactor -> 
-                                                    if not isFactor then
+                                                    if not isFactor && not isDropped.[col] then
                                                         covSlices.[col] <- slices.[col] |> Array.Parallel.map (fun s -> let f = ref 0.0f
                                                                                                                         if Single.TryParse(s, f) then !f else Single.NaN) 
                                                 )
                         isFactor |> Array.Parallel.iteri (fun col isFactor ->
-                                                                if isFactor then factorStorage.[col].SetSlice(fromObs, slices.[col])
-                                                                else
-                                                                    covStorage.[col].SetSlice(fromObs, covSlices.[col]))
-                        processLine (fromObs + int64(N)) N 0 isFactor delimiter 
+                                                                if not isDropped.[col] then
+                                                                    if isFactor then factorStorage.[col].SetSlice(fromObs, slices.[col])
+                                                                    else
+                                                                        covStorage.[col].SetSlice(fromObs, covSlices.[col]))
+                        processLine (fromObs + int64(N)) N 0 isFactor isDropped delimiter 
                     else
-                        processLine fromObs N (row + 1) isFactor delimiter 
+                        processLine fromObs N (row + 1) isFactor isDropped delimiter 
                 else
                     if row > 0 then
                         isFactor |> Array.iteri (fun col isFactor -> 
-                                                    if not isFactor then
+                                                    if not isFactor && not isDropped.[col] then
                                                         covSlices.[col] <- slices.[col] |> Array.Parallel.map (fun s -> let f = ref 0.0f
                                                                                                                         if Single.TryParse(s, f) then !f else Single.NaN) 
                                                 )
                         isFactor |> Array.Parallel.iteri (fun col isFactor ->
-                                                                if isFactor then factorStorage.[col].SetSlice(fromObs, Array.sub slices.[col] 0 row)
-                                                                else covStorage.[col].SetSlice(fromObs, Array.sub (covSlices.[col]) 0 row))
+                                                                if not isDropped.[col] then
+                                                                    if isFactor then factorStorage.[col].SetSlice(fromObs, Array.sub slices.[col] 0 row)
+                                                                    else covStorage.[col].SetSlice(fromObs, Array.sub (covSlices.[col]) 0 row))
                     else ()
 
-            processLine (int64(firstN)) N 0 isFactor delimiter 
+            processLine (int64(firstN)) N 0 isFactor isDropped delimiter 
 
         isFactor |> Array.zip headers |> Array.mapi (fun col (name, isFactor) ->
-                                                         if isFactor then 
-                                                             StatVariable.Factor(new Factor(name, factorStorage.[col]))
-                                                         else
-                                                             Covariate(new Covariate(name, covStorage.[col]))
-                                                    ) |> Array.toList
+                                                         if not isDropped.[col] then
+                                                             if isFactor then 
+                                                                 StatVariable.Factor(new Factor(name, factorStorage.[col])) |> Some
+                                                             else
+                                                                 Covariate(new Covariate(name, covStorage.[col])) |> Some
+                                                         else None)
+                                      |> Array.choose (id) |> Array.toList
 
     let lnGamma (x : float) =
         let mutable res = x
@@ -1108,27 +1125,6 @@ module Glm =
          MLPhi = phi
         }
 
-//    let getInitBeta' (link : GlmLink) (meanResponseEstimate : float) =
-//        match link with
-//            | Id ->
-//                meanResponseEstimate
-//            | Ln ->
-//                Math.Log(meanResponseEstimate)
-//            | Log(d) ->
-//                Math.Log(meanResponseEstimate) / Math.Log(d)
-//            | Power(d) ->
-//                Math.Pow(meanResponseEstimate, 1.0 / d)
-//            | Logit ->
-//                Math.Log(meanResponseEstimate / (1.0 - meanResponseEstimate))
-//            | LogLog ->
-//                -Math.Log(-Math.Log(meanResponseEstimate))
-//            | CLogLog ->
-//                Math.Log(-Math.Log(1.0 - meanResponseEstimate))
-//            | Probit ->
-//                let mutable res = meanResponseEstimate
-//                MklFunctions.D_CdfNormInv_Array(1L, &&res, &&res)
-//                res
-
     let getInitBeta (cumEstCount : int[]) (link : GlmLink) (includeIntercept : bool) (predictors : Predictor list) (meanResponseEstimate : float) =
         let estimateCount = cumEstCount.[cumEstCount.Length - 1]
         let beta = new Vector(estimateCount, 0.0)
@@ -1275,18 +1271,24 @@ module Glm =
                 (getPermutedFactor f factorToPermute).AsFactor |> (!!)
             | StatVariable.Covariate(c) -> data.[c.Name]
 
-    let fitted (model : GlmModel) (data : DataFrame) : Covariate =
-        let predictors = model.Predictors |> List.map (Predictor.Substitute (substituteVar data))
+type GlmModel with
+
+    member this.Predict() : Covariate = this.Predict(DataFrame.Empty)
+
+    member this.Predict(data : DataFrame) : Covariate =
+        let predictors =
+            if data = DataFrame.Empty then this.Predictors
+            else this.Predictors |> List.map (Predictor.Substitute (Glm.substituteVar data))
         let minLen = predictors |> List.map (fun p -> p.MinLength) |> List.min
         let maxLen = predictors |> List.map (fun p -> p.MaxLength) |> List.max
         if minLen <> maxLen then raise (new ArgumentException("Glm predictors data length mismatch"))
         let length = minLen
-        let beta = model.Beta
-        let glmLink = model.Link
-        let estimableDesign = getEstimableDesign predictors model.HasIntercept
-        let cumEstimateCounts = model.CumEstimateCount
-        let design = estimableDesign |> List.map (fun (factors, cov) -> (getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
-        let estimateMaps = model.EstimateMaps
+        let beta = this.Beta
+        let glmLink = this.Link
+        let estimableDesign = Glm.getEstimableDesign predictors this.HasIntercept
+        let cumEstimateCounts = this.CumEstimateCount
+        let design = estimableDesign |> List.map (fun (factors, cov) -> (Glm.getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
+        let estimateMaps = this.EstimateMaps
 
         let covariateStorage = 
              {
@@ -1298,18 +1300,25 @@ module Glm =
                                                         factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
                                                                    |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
                             |> List.map (fun ((x,y),z) -> x,y,z)
-                            |> zipDesign
+                            |> Glm.zipDesign
                             |> Seq.map (fun slice ->
                                             let sliceLen = 
                                                 match slice with
                                                     | (Some(v::_, _), _, _)::_ -> v.Length
                                                     | (_, Some(v), _)::_ -> v.Length
                                                     | _ -> 0
-                                            use xbeta = getXBeta slice beta sliceLen cumEstimateCounts
-                                            getPred xbeta glmLink                               
+                                            use xbeta = Glm.getXBeta slice beta sliceLen cumEstimateCounts
+                                            Glm.getPred xbeta glmLink                               
                                         )
              }
-        new Covariate("Fitted", covariateStorage)        
+        new Covariate("Fitted", covariateStorage)     
+        
+
+
+
+
+
+       
         
         
         

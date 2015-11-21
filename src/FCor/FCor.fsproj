@@ -68,6 +68,7 @@
     <Compile Include="Glm.fs" />
     <Compile Include="CsvTypeProvider.fs" />
     <Compile Include="Overloading.fs" />
+    <Compile Include="StatModels.fs" />
     <Compile Include="MklRng.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="BasicStats.fs" />

@@ -20,8 +20,8 @@ module CsvTypeProviderUtil =
             | StatVariable.Factor(f) -> f:>obj
             | Covariate(c) -> c:>obj
 
-    let getCsvVars (path : string) (sampleOnly : bool) =
-        let svars = Glm.importCsv path sampleOnly
+    let getCsvVars (path : string) (delimiter : char[]) (dropVars : string[]) (hasHeaders : bool) (sampleOnly : bool) =
+        let svars = Glm.importCsv path delimiter dropVars hasHeaders sampleOnly
         new DataFrame(svars):>obj
 
 [<TypeProvider>]
@@ -31,15 +31,23 @@ type public CsvTypeProvider(cfg:TypeProviderConfig) as this =
     let asm = System.Reflection.Assembly.GetExecutingAssembly()
     let ns = "FCor.CsvProvider"
     let csvTy = ProvidedTypeDefinition(asm, ns, "CsvDataFrame", Some(typeof<obj>))
-    let filename = ProvidedStaticParameter("filename", typeof<string>)
-    do csvTy.DefineStaticParameters([filename], fun tyName [| :? string as filename |] ->
+    let filename = ProvidedStaticParameter("Filename", typeof<string>)
+    let separator = ProvidedStaticParameter("Separator", typeof<string>, ",")
+    let dropColumns = ProvidedStaticParameter("DropColumns", typeof<string>, "")
+    let hasHeaders = ProvidedStaticParameter("HasHeaders", typeof<bool>, true)
+
+    do csvTy.DefineStaticParameters([filename;separator;dropColumns;hasHeaders], fun tyName paramValues ->
+        let filename = paramValues.[0]:?>string
+        let delimiter = (paramValues.[1]:?>string).ToCharArray()
+        let dropCols = (paramValues.[2]:?>string).Split(delimiter) |> Array.map (fun s -> s.Trim())
+        let hasHeaders = paramValues.[3]:?>bool
         let resolvedFilename = Path.Combine(cfg.ResolutionFolder, filename)
-        let dataFrame = new DataFrame(Glm.importCsv resolvedFilename true)
+        let dataFrame = new DataFrame(Glm.importCsv resolvedFilename delimiter dropCols hasHeaders true)
         let ty = ProvidedTypeDefinition(asm, ns, tyName, Some(typeof<obj>))
         ty.HideObjectMethods <- true
-        let ctor0 = ProvidedConstructor([], InvokeCode = fun [] -> <@@ CsvTypeProviderUtil.getCsvVars resolvedFilename false @@>)
+        let ctor0 = ProvidedConstructor([], InvokeCode = fun [] -> <@@ CsvTypeProviderUtil.getCsvVars resolvedFilename delimiter dropCols hasHeaders false @@>)
         ty.AddMember ctor0
-        let ctor1 = ProvidedConstructor([ProvidedParameter("csvPath", typeof<string>)], InvokeCode = fun [csvPath] -> <@@ CsvTypeProviderUtil.getCsvVars (%%csvPath:string) false @@>)
+        let ctor1 = ProvidedConstructor([ProvidedParameter("csvPath", typeof<string>)], InvokeCode = fun [csvPath] -> <@@ CsvTypeProviderUtil.getCsvVars (%%csvPath:string) delimiter dropCols hasHeaders false @@>)
         ty.AddMember ctor1
 
         dataFrame.Factors |> List.iter (fun factor ->

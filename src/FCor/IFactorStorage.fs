@@ -23,7 +23,8 @@ type FactorStorage () =
     let mutable nativeArray : Choice<nativeptr<uint8>, nativeptr<uint16>> = IntPtr.Zero |> NativePtr.ofNativeInt<uint8> |> Choice1Of2
 
     member this.SetSlice(fromObs : int64, levels : string[]) =
-        levels |> Array.iter (fun level -> if not <| levelIndexMap.ContainsKey(level) then
+        levels |> Array.iter (fun level -> let level = level.Trim()
+                                           if not <| levelIndexMap.ContainsKey(level) then
                                                let levelIndex' = levelIndexMap.Count |>  Checked.uint16
                                                levelIndexMap.Add(level, levelIndex')
                                                levelMap.Add(levelIndex', level))
@@ -42,6 +43,7 @@ type FactorStorage () =
                         MklFunctions.UI8_UI16_Convert_Array(length, natArr, nativeArrayUInt16)
                         MklFunctions.Free_Array(natArr |> NativePtr.toNativeInt)
                     levels |> Array.iteri (fun i level -> 
+                                               let level = level.Trim()
                                                let levelIndex = levelIndexMap.[level]
                                                MklFunctions.UI16_Set_Item(fromObs + int64(i), nativeArrayUInt16, levelIndex)
                                           )
@@ -52,6 +54,7 @@ type FactorStorage () =
                     MklFunctions.UI16_Resize_Array(newLength, nativeArrayUInt16Ptr)
                     let nativeArrayUInt16 = NativePtr.read nativeArrayUInt16Ptr
                     levels |> Array.iteri (fun i level -> 
+                                               let level = level.Trim()
                                                let levelIndex = levelIndexMap.[level]
                                                MklFunctions.UI16_Set_Item(fromObs + int64(i), nativeArrayUInt16, levelIndex)
                                           )
@@ -65,12 +68,14 @@ type FactorStorage () =
                         MklFunctions.UI8_Resize_Array(newBufferSize, nativeArrayUInt8Ptr)
                         let nativeArrayUInt8 = NativePtr.read nativeArrayUInt8Ptr
                         levels |> Array.iteri (fun i level -> 
+                                                   let level = level.Trim()
                                                    let levelIndex = levelIndexMap.[level]
                                                    MklFunctions.UI8_Set_Item(fromObs + int64(i), nativeArrayUInt8, levelIndex |> uint8)
                                               )
                         nativeArray <- Choice1Of2(nativeArrayUInt8)
                     else
                         levels |> Array.iteri (fun i level -> 
+                                                   let level = level.Trim()
                                                    let levelIndex = levelIndexMap.[level]
                                                    MklFunctions.UI8_Set_Item(fromObs + int64(i), natArr, levelIndex |> uint8)
                                               )
