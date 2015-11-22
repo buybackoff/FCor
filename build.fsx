@@ -128,6 +128,8 @@ Target "CleanDocs" (fun _ ->
 Target "ZipMKL" (fun _ ->
     compressFile "./bin/FCor.MKL/FCor.MKL.x86.dll"
     compressFile "./bin/FCor.MKL/FCor.MKL.x64.dll"
+    compressFile "./bin/FCor.MKL/libiomp5md.x86.dll"
+    compressFile "./bin/FCor.MKL/libiomp5md.x64.dll"
 )
 
 // --------------------------------------------------------------------------------------

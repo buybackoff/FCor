@@ -37,10 +37,19 @@ type internal MklFunctions() =
     static let dllName = "FCor.MKL.dll"
 
     [<Literal>]
+    static let ompDllName = "libiomp5md.dll"
+
+    [<Literal>]
     static let x86Zip = "FCor.MKL.x86.zip"
 
     [<Literal>]
     static let x64Zip = "FCor.MKL.x64.zip"
+
+    [<Literal>]
+    static let ompX86Zip = "libiomp5md.x86.zip"
+
+    [<Literal>]
+    static let ompX64Zip = "libiomp5md.x64.zip"
     
     static do
         try
@@ -70,11 +79,12 @@ type internal MklFunctions() =
                 else
                     Path.Combine(tempFolder, "FCor", "x86", sprintf "v%d_%d_%d" version.Major version.Minor version.Build)
             let mklPath = Path.Combine(mklFolder, dllName)
-            let zipFile =
+            let ompPath = Path.Combine(mklFolder, ompDllName)
+            let zipFile, ompZipFile =
                 if Environment.Is64BitProcess then
-                    x64Zip
+                    x64Zip, ompX64Zip
                 else
-                    x86Zip
+                    x86Zip, ompX86Zip
             if not <| Directory.Exists(mklFolder) then Directory.CreateDirectory(mklFolder) |> ignore
             if not <| File.Exists(mklPath) then
                 if asm.GetManifestResourceNames() |> Array.exists (fun x -> x = zipFile) then
@@ -85,8 +95,20 @@ type internal MklFunctions() =
                     let bytes = decompress buffer
                     File.WriteAllBytes(mklPath, bytes) 
 
+            if not <| File.Exists(ompPath) then
+                if asm.GetManifestResourceNames() |> Array.exists (fun x -> x = ompZipFile) then
+                    use stream = asm.GetManifestResourceStream(ompZipFile)
+                    let n = stream.Length |> int
+                    let buffer = Array.zeroCreate<byte> n
+                    stream.Read(buffer, 0, n) |> ignore
+                    let bytes = decompress buffer
+                    File.WriteAllBytes(ompPath, bytes) 
+
             if File.Exists(mklPath) then
                 MklFunctions.LoadLibrary_(mklPath) |> ignore
+
+            if File.Exists(ompPath) then
+                MklFunctions.LoadLibrary_(ompPath) |> ignore
 
         with ex -> System.Windows.Forms.MessageBox.Show(ex.Message) |> ignore
 

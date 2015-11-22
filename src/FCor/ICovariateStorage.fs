@@ -41,7 +41,7 @@ type CovariateStorageFloat32 () =
                         let sliceLength = int64 sliceLength
                         let m = length / sliceLength |> int
                         let k = length % sliceLength 
-                        use buffer = new Vector(sliceLength, 0.0)
+                        use buffer = new Vector((if m > 0 then sliceLength else k), 0.0)
                         for i in 0..m-1 do
                             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<float32>
                             MklFunctions.S_D_Convert_Array(sliceLength, offsetAddr, buffer.NativeArray)

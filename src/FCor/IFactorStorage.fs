@@ -9,10 +9,10 @@ open FCor.ExplicitConversion
 open System.Collections.Generic
 
 type IFactorStorage =
-   abstract member GetLevel : int -> string
+   abstract member Level : int -> string with get
    abstract member GetSlices : int64 * int64 * int -> seq<UInt16Vector>
    abstract member Length : int64
-   abstract member LevelCount : int
+   abstract member Cardinality : int
 
 type FactorStorage () =
     let levelMap = Dictionary<uint16, string>()
@@ -85,8 +85,8 @@ type FactorStorage () =
 
     interface IFactorStorage with
         member __.Length = length |> int64
-        member __.GetLevel(levelIndex) = levelMap.[levelIndex |> uint16]
-        member __.LevelCount = levelMap.Count
+        member __.Level with get(levelIndex) = levelMap.[levelIndex |> uint16]
+        member __.Cardinality = levelMap.Count
         member __.GetSlices (fromObs : int64, toObs : int64, sliceLength : int) =
             match nativeArray with
                 | Choice1Of2(nativeArray) ->
@@ -97,7 +97,7 @@ type FactorStorage () =
                         let sliceLength = int64 sliceLength
                         let m = length / sliceLength |> int
                         let k = length % sliceLength 
-                        use buffer = new UInt16Vector(sliceLength, 0us)
+                        use buffer = new UInt16Vector((if m > 0 then sliceLength else k), 0us)
                         for i in 0..m-1 do
                             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint8>
                             MklFunctions.UI8_UI16_Convert_Array(sliceLength, offsetAddr, buffer.NativeArray)

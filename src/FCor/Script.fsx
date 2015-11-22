@@ -59,9 +59,9 @@ let Y = statVars.[3].AsCovariate
 
 open StatModels
 
-let model = fitGLM (Y <~> (A + B + X)) true Gamma Ln 50 1e-8
+let model = glm (Y <~> (A + B + X)) true Gamma Ln 50 1e-8
 
-let fitted = model.Predict (new DataFrame(statVars))
+let fitted = model.Predict(new DataFrame(statVars))
 let resStats = fitted.GetStats()
 
 //let X = rand rng 1000000 : Vector

@@ -65,9 +65,9 @@ type Factor(name : string, factorStorage : IFactorStorage) =
         let factorStorage = 
              {
               new IFactorStorage with
-                  member __.GetLevel(index) = "<Intercept>"
+                  member __.Level with get(index) = "<Intercept>"
                   member __.Length = 1L
-                  member __.LevelCount = 1
+                  member __.Cardinality = 1
                   member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
                     seq
                       {
@@ -75,7 +75,7 @@ type Factor(name : string, factorStorage : IFactorStorage) =
                         let sliceLength = int64 sliceLength
                         let m = length / sliceLength |> int
                         let k = length % sliceLength 
-                        use buffer = new UInt16Vector(sliceLength, 0us)
+                        use buffer = new UInt16Vector((if m > 0 then sliceLength else k), 0us)
                         for i in 0..m-1 do
                             yield buffer
                         if k > 0L then
@@ -88,11 +88,11 @@ type Factor(name : string, factorStorage : IFactorStorage) =
 
     member this.Name = name
     member this.Length = factorStorage.Length
-    member this.LevelCount = factorStorage.LevelCount
+    member this.Cardinality = factorStorage.Cardinality
 
     member this.GetSlices(fromObs : int64, toObs : int64, sliceLen : int) = factorStorage.GetSlices(fromObs, toObs, sliceLen)
 
-    member this.GetLevel(levelIndex) = factorStorage.GetLevel(levelIndex)
+    member this.Level with get(levelIndex) = factorStorage.Level(levelIndex)
 
     member this.GetStats() = this.GetStats(10000)
 
@@ -108,20 +108,20 @@ type Factor(name : string, factorStorage : IFactorStorage) =
                                                 |> Seq.fold (fun freq slice -> 
                                                                 MklFunctions.Update_Factor_Freq(slice.Length, slice.NativeArray, freq)
                                                                 freq
-                                                            ) (Array.create factorStorage.LevelCount 0L)
+                                                            ) (Array.create factorStorage.Cardinality 0L)
                                         )
                 |> Array.reduce (fun freq1 freq2 -> freq2 |> Array.zip freq1 |> Array.map (fun (x,y) -> x + y))
 
         let nans = new Set<_>(Factor.NAs)
         let missingFreq =
-            [|0..this.LevelCount - 1|] |> Array.fold (fun freq levelIndex -> 
-                                                        if nans.Contains(this.GetLevel(levelIndex)) then
+            [|0..this.Cardinality - 1|] |> Array.fold (fun freq levelIndex -> 
+                                                        if nans.Contains(this.Level(levelIndex)) then
                                                             freq + levelFreq.[levelIndex]
                                                         else freq) 0L
         let levelStats = 
-            Array.init this.LevelCount (fun i -> 
+            Array.init this.Cardinality (fun i -> 
                                             {
-                                             Level = this.GetLevel(i)
+                                             Level = this.Level(i)
                                              Freq = levelFreq.[i]
                                              ``Freq%`` = float(levelFreq.[i]) / float(factorStorage.Length)
                                             }            
@@ -137,7 +137,7 @@ type Factor(name : string, factorStorage : IFactorStorage) =
         let slices = this.GetSlices(0L, factorStorage.Length - 1L, 10000)
         slices |> Seq.map (fun slice -> 
                                seq{0L..slice.LongLength - 1L} 
-                               |> Seq.map (fun index -> let levelIndex = slice.[index] in levelIndex, this.GetLevel(int levelIndex)))
+                               |> Seq.map (fun index -> let levelIndex = slice.[index] in levelIndex, this.Level(int levelIndex)))
                                |> Seq.concat
 
 
@@ -147,7 +147,7 @@ type Factor(name : string, factorStorage : IFactorStorage) =
             let slice = this.AsSeq |> Seq.take (min n factorStorage.Length |> int) |> Seq.map snd |> Seq.toArray
             let more = if int64(slice.Length) < factorStorage.Length then "..." else ""
             let data = slice |> String.concat " "
-            sprintf "Factor '%s' with %d obs and %d levels: %s %s" name factorStorage.Length factorStorage.LevelCount data more
+            sprintf "Factor '%s' with %d obs and %d levels: %s %s" name factorStorage.Length factorStorage.Cardinality data more
 
     override this.ToString() =
         (this:>IFormattable).ToString("", null)
@@ -282,19 +282,19 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                 let factor = factor.AsFactor
                 let dict1 = new Dictionary<string, int>()
                 let dict2 = new Dictionary<int, string>()
-                [|0..factor.LevelCount - 1|] |> Array.iter (fun index -> let newLevel = index |> factor.GetLevel |> renameFun
-                                                                         if not <| dict1.ContainsKey(newLevel) then
-                                                                             let levelIndex = dict1.Count
-                                                                             dict1.Add(newLevel, levelIndex)
-                                                                             dict2.Add(levelIndex, newLevel)
+                [|0..factor.Cardinality - 1|] |> Array.iter (fun index -> let newLevel = index |> factor.get_Level |> renameFun
+                                                                          if not <| dict1.ContainsKey(newLevel) then
+                                                                                let levelIndex = dict1.Count
+                                                                                dict1.Add(newLevel, levelIndex)
+                                                                                dict2.Add(levelIndex, newLevel)
                                                            )
-                let levelMap = Array.init factor.LevelCount (fun index -> dict1.[factor.GetLevel(index) |> renameFun] |> uint16)
+                let levelMap = Array.init factor.Cardinality (fun index -> dict1.[factor.Level(index) |> renameFun] |> uint16)
                 let factorStorage = 
                      {
                       new IFactorStorage with
-                          member __.GetLevel(index) = dict2.[index]
+                          member __.Level with get(index) = dict2.[index]
                           member __.Length = factor.Length
-                          member __.LevelCount = dict1.Count
+                          member __.Cardinality = dict1.Count
                           member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
                               factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
                                                                                                  v)
@@ -305,20 +305,21 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                 let factor = factor.AsFactor
                 let mergedLevel = String.Join("|", mergedLevels)
                 let mergedLevels = new Set<_>(mergedLevels)
-                let isMerged = Array.init factor.LevelCount (fun i -> mergedLevels.Contains(factor.GetLevel i))
+                let isMerged = Array.init factor.Cardinality (fun i -> mergedLevels.Contains(factor.Level i))
                 let cumMergedCount = Array.sub (isMerged |> Array.scan (fun cum isMerged -> if isMerged then cum + 1 else cum) 0) 1 isMerged.Length
                                      |> Array.map (fun cum -> if cum = 0 then cum else cum - 1)
-                let levelMap = Array.init factor.LevelCount (fun i -> (i - cumMergedCount.[i]) |> uint16)
+                let levelMap = Array.init factor.Cardinality (fun i -> (i - cumMergedCount.[i]) |> uint16)
                 let factorStorage = 
                      {
                       new IFactorStorage with
-                          member __.GetLevel(index) =
-                              if isMerged.[index] && cumMergedCount.[index] = 0 then
-                                  mergedLevel
-                              else 
-                                  factor.GetLevel(index + cumMergedCount.[index])
+                          member __.Level
+                              with get(index) =
+                                  if isMerged.[index] && cumMergedCount.[index] = 0 then
+                                      mergedLevel
+                                  else 
+                                      factor.Level(index + cumMergedCount.[index])
                           member __.Length = factor.Length
-                          member __.LevelCount = factor.LevelCount - cumMergedCount.[factor.LevelCount - 1]
+                          member __.Cardinality = factor.Cardinality - cumMergedCount.[factor.Cardinality - 1]
                           member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
                               factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
                                                                                                  v)
@@ -327,21 +328,22 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | Cross(f1, f2) -> 
                 let factor1 = f1.AsFactor
                 let factor2 = f2.AsFactor
-                let levelCount = factor1.LevelCount * factor2.LevelCount
+                let levelCount = factor1.Cardinality * factor2.Cardinality
                 if levelCount > int UInt16.MaxValue then raise (new ArgumentException("Too many levels in cross factor"))
                 let factorStorage = 
                      {
                       new IFactorStorage with
-                          member __.GetLevel(index) =
-                              let index1 = index % factor1.LevelCount
-                              let index2 = index / factor1.LevelCount
-                              sprintf "%s*%s" (factor1.GetLevel(index1)) (factor2.GetLevel(index2))
+                          member __.Level
+                              with get(index) =
+                                  let index1 = index % factor1.Cardinality
+                                  let index2 = index / factor1.Cardinality
+                                  sprintf "%s*%s" (factor1.Level(index1)) (factor2.Level(index2))
                           member __.Length = if factor1.Length <> factor2.Length then raise (new ArgumentException("Factor length mismatch")) else factor1.Length
-                          member __.LevelCount = levelCount
+                          member __.Cardinality = levelCount
                           member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
                               factor2.GetSlices(fromObs, toObs, sliceLength) |> Seq.zip (factor1.GetSlices(fromObs, toObs, sliceLength))
                                   |> Seq.map (fun (slice1, slice2) -> let v = new UInt16Vector(slice1.Length, 0us)
-                                                                      MklFunctions.Get_Cross_Level_Index(slice1.Length, uint16 factor1.LevelCount, slice1.NativeArray, slice2.NativeArray, v.NativeArray)
+                                                                      MklFunctions.Get_Cross_Level_Index(slice1.Length, uint16 factor1.Cardinality, slice1.NativeArray, slice2.NativeArray, v.NativeArray)
                                                                       v)
                           
                      }
@@ -354,15 +356,16 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                 let factorStorage = 
                      {
                       new IFactorStorage with
-                          member __.GetLevel(index) =
-                              if index = breaks.Length - 1 then
-                                  String.Empty
-                              elif index = breaks.Length - 2 then
-                                  sprintf "[%G,%G]" breaks.[index] breaks.[index + 1]
-                              else
-                                  sprintf "[%G,%G)" breaks.[index] breaks.[index + 1]
+                          member __.Level
+                              with get(index) =
+                                  if index = breaks.Length - 1 then
+                                      String.Empty
+                                  elif index = breaks.Length - 2 then
+                                      sprintf "[%G,%G]" breaks.[index] breaks.[index + 1]
+                                  else
+                                      sprintf "[%G,%G)" breaks.[index] breaks.[index + 1]
                           member __.Length = covariate.Length
-                          member __.LevelCount = breaks.Length
+                          member __.Cardinality = breaks.Length
                           member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
                               covariate.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun (slice : Vector) -> let v = new UInt16Vector(slice.Length, 0us)
                                                                                                                    MklFunctions.Get_Cut_Level_Index(slice.Length, breaks, slice.NativeArray, v.NativeArray)
@@ -379,13 +382,14 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                 let factorStorage = 
                      {
                       new IFactorStorage with
-                          member __.GetLevel(index) =
-                              if index = knots.Length then
-                                  String.Empty
-                              else
-                                  sprintf "%d" knots.[index]
+                          member __.Level
+                              with get(index) =
+                                  if index = knots.Length then
+                                      String.Empty
+                                  else
+                                      sprintf "%d" knots.[index]
                           member __.Length = covariate.Length
-                          member __.LevelCount = knots.Length + 1 // if outside then ""
+                          member __.Cardinality = knots.Length + 1 // if outside then ""
                           member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
                               covariate.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun (slice : Vector) -> let v = new UInt16Vector(slice.Length, 0us)
                                                                                                                    MklFunctions.Get_Knot_Level_Index(slice.Length, knots, slice.NativeArray, v.NativeArray)
@@ -402,16 +406,16 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                 let levelSet = permutation |> Array.map snd |> Set.ofArray
                 if levelSet.Count <> permutation.Length then 
                    raise (new ArgumentException("Duplicate level in factor level permutation"))
-                if permutation.Length < factor.LevelCount then
+                if permutation.Length < factor.Cardinality then
                     raise (new ArgumentException("Incomplete permutation of factor levels"))
                 let levelMap = permutation |> Array.map fst |> Array.map Checked.uint16
                 let permutationMap = permutation |> Map.ofArray
                 let factorStorage = 
                      {
                       new IFactorStorage with
-                          member __.GetLevel(index) = permutationMap.[index]
+                          member __.Level with get(index) = permutationMap.[index]
                           member __.Length = factor.Length
-                          member __.LevelCount = permutation.Length
+                          member __.Cardinality = permutation.Length
                           member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
                               factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
                                                                                                  v)
@@ -560,6 +564,13 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
                       }
              }
         new Covariate(name, covariateStorage)
+
+    static member op_Explicit(x : Covariate) : Vector =
+        let v = new Vector(x.Length, 0.0)
+        let sliceLen = Int32.MaxValue
+        x.GetSlices(0L, x.Length - 1L, Int32.MaxValue)
+            |> Seq.iteri (fun i slice -> let fromObs = int64(i) * int64(sliceLen) in v. SetSlice(Some(fromObs), Some(fromObs + slice.LongLength - 1L), slice))
+        v
 
 
     static member (*) (x : Covariate, y : Factor) : Predictor = !!x * !!y
@@ -744,7 +755,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
                                                               |> Seq.map f
             | FromFactor(factor, parse) ->
                 let factor = factor.AsFactor
-                let map = Array.init factor.LevelCount (factor.GetLevel >> parse)
+                let map = Array.init factor.Cardinality (factor.get_Level >> parse)
                 factor.GetSlices(fromObs, toObs, sliceLen) |> Seq.map (fun slice -> let v = new Vector(slice.LongLength, 0.0)
                                                                                     MklFunctions.Level_Index_To_Numeric(v.Length, slice.NativeArray, v.NativeArray, map)
                                                                                     v.AsExpr)
@@ -767,7 +778,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
                   member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
                     seq
                       {
-                        let buffer = new Vector(sliceLength, 0.0)
+                        let buffer = new Vector((min (int64(sliceLength)) (toObs - fromObs + 1L)), 0.0)
                         for sliceExpr in this.GetSlicesExpr(fromObs, toObs, sliceLength) do
                             yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
                       }

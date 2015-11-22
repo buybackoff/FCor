@@ -80,6 +80,12 @@
     <EmbeddedResource Include="..\..\bin\FCor.MKL\FCor.MKL.x64.zip">
       <Link>FCor.MKL.x64.zip</Link>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\..\bin\FCor.MKL\libiomp5md.x86.zip">
+      <Link>libiomp5md.x86.zip</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\bin\FCor.MKL\libiomp5md.x64.zip">
+      <Link>libiomp5md.x64.zip</Link>
+    </EmbeddedResource>
     <None Include="Script.fsx" />
     <None Include="paket.references" />
     <None Include="paket.template" />

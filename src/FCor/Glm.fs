@@ -333,11 +333,11 @@ module Glm =
 
     let getNACount (factor : Factor) =
         let nas = new Set<string>(Factor.NAs)
-        [0..factor.LevelCount - 1] |> List.filter (fun index -> nas.Contains(factor.GetLevel(index))) |> List.length
+        [0..factor.Cardinality - 1] |> List.filter (fun index -> nas.Contains(factor.Level(index))) |> List.length
 
     let getIndexOfMaxLevel (factor : Factor) =
         let nas = new Set<string>(Factor.NAs)
-        let validlevels = Array.init (factor.LevelCount) (fun i -> i, factor.GetLevel(i)) |> Array.sortBy snd
+        let validlevels = Array.init (factor.Cardinality) (fun i -> i, factor.Level(i)) |> Array.sortBy snd
                           |> Array.filter (fun (_, level) -> not <| nas.Contains(level))
         if validlevels.Length = 0 then -1
         else
@@ -354,22 +354,22 @@ module Glm =
                                                 if indexOfMaxLevel >= 0 then [indexOfMaxLevel]
                                                 else []
                                             | DisableAllLevels ->
-                                                [0..factor.LevelCount - 1] |> List.filter (fun index -> not <| nas.Contains(factor.GetLevel(index)))
+                                                [0..factor.Cardinality - 1] |> List.filter (fun index -> not <| nas.Contains(factor.Level(index)))
                                     )
                       |> cartesian
 
     let getNASubscripts (maskedFactors : (Factor * FactorMask) list) =
         let nas = new Set<string>(Factor.NAs)
         maskedFactors |> List.map (fun (factor, _) -> 
-                                       [0..factor.LevelCount - 1] |> List.filter (fun index -> nas.Contains(factor.GetLevel(index)))
+                                       [0..factor.Cardinality - 1] |> List.filter (fun index -> nas.Contains(factor.Level(index)))
                                     )
                       |> cartesian
 
     let getDisabled (maskedFactors : (Factor * FactorMask) list) =
         let factors = maskedFactors |> List.map fst |> List.toArray
-        let allLevelCount = factors |> Array.fold (fun count f -> count * f.LevelCount) 1
+        let allLevelCount = factors |> Array.fold (fun count f -> count * f.Cardinality) 1
         let isDisabled = Array.create allLevelCount false
-        let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.LevelCount) |> getDimProd |> List.toArray
+        let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.Cardinality) |> getDimProd |> List.toArray
         maskedFactors |> getDisabledSubscripts
                       |> List.iter (fun subscripts -> 
                                         let disabledIndex = subscripts |> List.toArray |> sub2ind dimProd
@@ -379,9 +379,9 @@ module Glm =
 
     let getIsNA (maskedFactors : (Factor * FactorMask) list) =
         let factors = maskedFactors |> List.map fst |> List.toArray
-        let allLevelCount = factors |> Array.fold (fun count f -> count * f.LevelCount) 1
+        let allLevelCount = factors |> Array.fold (fun count f -> count * f.Cardinality) 1
         let isNA = Array.create allLevelCount false
-        let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.LevelCount) |> getDimProd |> List.toArray
+        let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.Cardinality) |> getDimProd |> List.toArray
         maskedFactors |> getNASubscripts
                       |> List.iter (fun subscripts -> 
                                         let naIndex = subscripts |> List.toArray |> sub2ind dimProd
@@ -407,7 +407,7 @@ module Glm =
         match maskedFactors with
             | h::t ->
                 let factors = maskedFactors |> List.map fst 
-                let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.LevelCount) |> getDimProd |> List.toArray
+                let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.Cardinality) |> getDimProd |> List.toArray
                 let slicerFun =
                     fun (fromObs : int64, toObs : int64, sliceLen : int) ->
                         let slices = factors |> List.map (fun f -> f.GetSlices(fromObs, toObs, sliceLen)) |> zipN
@@ -425,11 +425,11 @@ module Glm =
             maskedFactors |> List.fold (fun count (factor, mask) -> 
                                             let naCount = getNACount factor
                                             count * match mask with
-                                                        | EnableAllLevels -> factor.LevelCount - naCount
+                                                        | EnableAllLevels -> factor.Cardinality - naCount
                                                         | DisableOneLevel ->
                                                             let maxLevelIndex = getIndexOfMaxLevel factor
                                                             if maxLevelIndex >= 0 then 
-                                                                factor.LevelCount - 1 - naCount
+                                                                factor.Cardinality - 1 - naCount
                                                             else naCount
                                                         | DisableAllLevels -> 0) 1
         match maskedFactors with
@@ -439,13 +439,13 @@ module Glm =
     let updateFactorMask (currMaskedFactors : (Factor * FactorMask) list) (earlierMaskedFactor : Factor * FactorMask) =
         let earlierFactor = fst earlierMaskedFactor
         let earlierMask = snd earlierMaskedFactor
-        if currMaskedFactors |> List.exists (fun (f, _) -> f = earlierFactor || earlierFactor.LevelCount = 1 || earlierMask = EnableAllLevels) then
+        if currMaskedFactors |> List.exists (fun (f, _) -> f = earlierFactor || earlierFactor.Cardinality = 1 || earlierMask = EnableAllLevels) then
             match currMaskedFactors with
                 | [] -> []
                 | (f, m) :: [] ->
                     if f = earlierFactor then
                         [f, DisableAllLevels]
-                    elif earlierFactor.LevelCount = 1 || earlierMask = EnableAllLevels then
+                    elif earlierFactor.Cardinality = 1 || earlierMask = EnableAllLevels then
                         match m with
                             | EnableAllLevels -> [f, DisableOneLevel]
                             | DisableOneLevel -> [f, DisableOneLevel]
@@ -454,7 +454,7 @@ module Glm =
                         currMaskedFactors
                 | _ ->
                     currMaskedFactors |> List.map (fun (f, mask) -> 
-                                                       if f <> earlierFactor && earlierFactor.LevelCount > 1 && earlierMask <> EnableAllLevels then f, mask 
+                                                       if f <> earlierFactor && earlierFactor.Cardinality > 1 && earlierMask <> EnableAllLevels then f, mask 
                                                        else
                                                            match mask with
                                                                | EnableAllLevels -> f, DisableOneLevel
@@ -915,10 +915,10 @@ module Glm =
                                  match maskedFactors, cov with
                                      | (h::t), None ->
                                          let factors = maskedFactors |> List.map fst
-                                         let dimProd = factors |> List.map (fun f -> f.LevelCount) |> getDimProd
+                                         let dimProd = factors |> List.map (fun f -> f.Cardinality) |> getDimProd
                                          estimateMap |> List.mapi (fun index estimateIndex -> 
                                                                           let subscripts = ind2sub index dimProd
-                                                                          let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.GetLevel(s))
+                                                                          let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.Level(s))
                                                                           if estimateIndex < 0 then
                                                                               {
                                                                                Predictor = CategoricalPredictor(!!factors)
@@ -964,10 +964,10 @@ module Glm =
                                              }]                                           
                                      | (h::t), Some cov ->
                                          let factors = maskedFactors |> List.map fst
-                                         let dimProd = factors |> List.map (fun f -> f.LevelCount) |> getDimProd
+                                         let dimProd = factors |> List.map (fun f -> f.Cardinality) |> getDimProd
                                          estimateMap |> List.mapi (fun index estimateIndex -> 
                                                                       let subscripts = ind2sub index dimProd
-                                                                      let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.GetLevel(s))
+                                                                      let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.Level(s))
                                                                       if estimateIndex < 0 then
                                                                           {
                                                                            Predictor = MixedInteraction(!!factors, cov)
@@ -1237,23 +1237,23 @@ module Glm =
         let baseLevelMap = new Dictionary<string, int>()
         let permuteFactorMap = new Dictionary<int, string>()
         let permuteFactorMapRev = new Dictionary<string, int>()
-        [|0..baseFactor.LevelCount - 1|] |> Array.iter (fun index -> baseLevelMap.Add(baseFactor.GetLevel(index), index))
-        [|0..factorToPermute.LevelCount - 1|] |> Array.iter (fun index -> permuteFactorMap.Add(index, factorToPermute.GetLevel(index))
-                                                                          permuteFactorMapRev.Add(factorToPermute.GetLevel(index), index))
+        [|0..baseFactor.Cardinality - 1|] |> Array.iter (fun index -> baseLevelMap.Add(baseFactor.Level(index), index))
+        [|0..factorToPermute.Cardinality - 1|] |> Array.iter (fun index -> permuteFactorMap.Add(index, factorToPermute.Level(index))
+                                                                           permuteFactorMapRev.Add(factorToPermute.Level(index), index))
         let naSet = Factor.NAs |> Set.ofArray
         let allLevelsInBase = 
-            [|0..factorToPermute.LevelCount - 1|] |> Array.map (fun index ->
-                                                                   let level = factorToPermute.GetLevel(index) in baseLevelMap.ContainsKey(level) || naSet.Contains(level))
+            [|0..factorToPermute.Cardinality - 1|] |> Array.map (fun index ->
+                                                                   let level = factorToPermute.Level(index) in baseLevelMap.ContainsKey(level) || naSet.Contains(level))
                                                   |> Array.reduce (&&)
         if not allLevelsInBase then raise (new ArgumentException("Permuted factor: all not NA levels must be in base factor"))
 
         //add NAs if not there
-        [|0..factorToPermute.LevelCount - 1|] |> Array.iter (fun index -> if not <| baseLevelMap.ContainsKey(factorToPermute.GetLevel(index)) then
+        [|0..factorToPermute.Cardinality - 1|] |> Array.iter (fun index -> if not <| baseLevelMap.ContainsKey(factorToPermute.Level(index)) then
                                                                               let count = baseLevelMap.Count
-                                                                              baseLevelMap.Add(factorToPermute.GetLevel(index), count))
+                                                                              baseLevelMap.Add(factorToPermute.Level(index), count))
 
-        [|0..baseFactor.LevelCount - 1|] |> Array.iter (fun index -> 
-                                                            let level = baseFactor.GetLevel(index)
+        [|0..baseFactor.Cardinality - 1|] |> Array.iter (fun index -> 
+                                                            let level = baseFactor.Level(index)
                                                             if not <| permuteFactorMapRev.ContainsKey(level) then
                                                                 let count = permuteFactorMapRev.Count 
                                                                 permuteFactorMapRev.Add(level, count)
