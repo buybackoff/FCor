@@ -441,7 +441,6 @@ module Glm =
 
     let updateFactorMask (currMaskedFactors : ((Factor * FactorMask) list) * FactorMask) (earlierMaskedFactor : (Factor * FactorMask) * FactorMask) =
         let earlierFactor = earlierMaskedFactor |> fst |> fst
-        let earlierFactorMask = earlierMaskedFactor |> fst |> snd
         let earlierPredictorMask = earlierMaskedFactor|> snd
         let currMaskedFactors' = currMaskedFactors |> fst |> List.map (fun (f, mask) -> if f = earlierFactor then f, DisableOneLevel else f, mask)
         let currPredMask' =
@@ -452,7 +451,7 @@ module Glm =
 
     let updatePredictorMask (currMaskedPred : ((Factor * FactorMask) list * FactorMask) * CovariateExpr option) (earlierMaskedPred : ((Factor * FactorMask) list * FactorMask) * CovariateExpr option) =
         match currMaskedPred, earlierMaskedPred with
-            | ((currMaskedFactors, currMask), Some(currMaskedCovExpr)), ((earlierMaskedFactors, earlierMask), Some(earlierCovExpr)) when currMaskedCovExpr.Vars = earlierCovExpr.Vars && currMaskedCovExpr.Name = earlierCovExpr.Name ->
+            | ((currMaskedFactors, currMask), Some(currMaskedCovExpr)), ((earlierMaskedFactors, earlierMask), Some(earlierCovExpr)) when currMaskedCovExpr.AsCovariate = earlierCovExpr.AsCovariate  ->
                 earlierMaskedFactors |> List.map (fun x -> x, earlierMask) |> List.fold updateFactorMask (currMaskedFactors, currMask), Some(currMaskedCovExpr)
             | ((currMaskedFactors, currMask), None), ((earlierMaskedFactors, earlierMask), None) ->
                 earlierMaskedFactors |> List.map (fun x -> x, earlierMask) |> List.fold updateFactorMask (currMaskedFactors, currMask), None

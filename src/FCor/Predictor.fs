@@ -4,7 +4,7 @@
 open System
 open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
-open System.Collections.Generic
+open System.Collections.Generic 
 open FCor.ExplicitConversion
 open System.Text
 
@@ -61,6 +61,8 @@ type FactorStats =
 
 type Factor(name : string, factorStorage : IFactorStorage) =
 
+    static let factorExprCache = new Dictionary<obj, Factor>()
+
     static let intercept = 
         let factorStorage = 
              {
@@ -83,6 +85,8 @@ type Factor(name : string, factorStorage : IFactorStorage) =
                       }
              }
         new Factor("<INTERCEPT>", factorStorage)
+
+    static member internal FactorExprCache = factorExprCache
 
     static member NAs = [|String.Empty;"#N/A";"N/A";"#n/a";"n/a";"."|]
 
@@ -216,6 +220,7 @@ type Factor(name : string, factorStorage : IFactorStorage) =
     override this.Finalize() = try this.DoDispose(false) with _ -> ()
 
 and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
+
     | Var of Factor
     | Rename of FactorExpr * (string -> string)
     | MergeLevels of FactorExpr * (string seq)
@@ -223,6 +228,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
     | Cut of CovariateExpr * float[]
     | Int of CovariateExpr * int[]
     | Permute of FactorExpr * ((int * string)[])
+
 
     member this.Vars =
         match this with
@@ -275,152 +281,156 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | Permute(f, permutation) -> Permute(FactorExpr.Substitute mapF f, permutation)
 
     member this.AsFactor =
-        match this with
-            | Var(factor) -> factor
-            | Rename(factor, renameFun) ->
-                let factor = factor.AsFactor
-                let dict1 = new Dictionary<string, int>()
-                let dict2 = new Dictionary<int, string>()
-                [|0..factor.Cardinality - 1|] |> Array.iter (fun index -> let newLevel = index |> factor.get_Level |> renameFun
-                                                                          if not <| dict1.ContainsKey(newLevel) then
-                                                                                let levelIndex = dict1.Count
-                                                                                dict1.Add(newLevel, levelIndex)
-                                                                                dict2.Add(levelIndex, newLevel)
-                                                           )
-                let levelMap = Array.init factor.Cardinality (fun index -> dict1.[factor.Level(index) |> renameFun] |> uint16)
-                let factorStorage = 
-                     {
-                      new IFactorStorage with
-                          member __.Level with get(index) = dict2.[index]
-                          member __.Length = factor.Length
-                          member __.Cardinality = dict1.Count
-                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
-                              factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
-                                                                                                 v)
-                     }
-                new Factor(factor.Name, factorStorage)
+        if Factor.FactorExprCache.ContainsKey(this:>obj) then Factor.FactorExprCache.[this:>obj]
+        else
+        let factor = 
+            match this with
+                | Var(factor) -> factor
+                | Rename(factor, renameFun) ->
+                    let factor = factor.AsFactor
+                    let dict1 = new Dictionary<string, int>()
+                    let dict2 = new Dictionary<int, string>()
+                    [|0..factor.Cardinality - 1|] |> Array.iter (fun index -> let newLevel = index |> factor.get_Level |> renameFun
+                                                                              if not <| dict1.ContainsKey(newLevel) then
+                                                                                    let levelIndex = dict1.Count
+                                                                                    dict1.Add(newLevel, levelIndex)
+                                                                                    dict2.Add(levelIndex, newLevel)
+                                                               )
+                    let levelMap = Array.init factor.Cardinality (fun index -> dict1.[factor.Level(index) |> renameFun] |> uint16)
+                    let factorStorage = 
+                         {
+                          new IFactorStorage with
+                              member __.Level with get(index) = dict2.[index]
+                              member __.Length = factor.Length
+                              member __.Cardinality = dict1.Count
+                              member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
+                                  factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
+                                                                                                     v)
+                         }
+                    new Factor(factor.Name, factorStorage)
 
-            | MergeLevels(factor, mergedLevels) ->
-                let factor = factor.AsFactor
-                let mergedLevel = String.Join("|", mergedLevels)
-                let mergedLevels = new Set<_>(mergedLevels)
-                let isMerged = Array.init factor.Cardinality (fun i -> mergedLevels.Contains(factor.Level i))
-                let cumMergedCount = Array.sub (isMerged |> Array.scan (fun cum isMerged -> if isMerged then cum + 1 else cum) 0) 1 isMerged.Length
-                                     |> Array.map (fun cum -> if cum = 0 then cum else cum - 1)
-                let levelMap = Array.init factor.Cardinality (fun i -> (i - cumMergedCount.[i]) |> uint16)
-                let factorStorage = 
-                     {
-                      new IFactorStorage with
-                          member __.Level
-                              with get(index) =
-                                  if isMerged.[index] && cumMergedCount.[index] = 0 then
-                                      mergedLevel
-                                  else 
-                                      factor.Level(index + cumMergedCount.[index])
-                          member __.Length = factor.Length
-                          member __.Cardinality = factor.Cardinality - cumMergedCount.[factor.Cardinality - 1]
-                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
-                              factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
-                                                                                                 v)
-                     }
-                new Factor(factor.Name, factorStorage)
-            | Cross(f1, f2) -> 
-                let factor1 = f1.AsFactor
-                let factor2 = f2.AsFactor
-                let levelCount = factor1.Cardinality * factor2.Cardinality
-                if levelCount > int UInt16.MaxValue then raise (new ArgumentException("Too many levels in cross factor"))
-                let factorStorage = 
-                     {
-                      new IFactorStorage with
-                          member __.Level
-                              with get(index) =
-                                  let index1 = index % factor1.Cardinality
-                                  let index2 = index / factor1.Cardinality
-                                  sprintf "%s*%s" (factor1.Level(index1)) (factor2.Level(index2))
-                          member __.Length = if factor1.Length <> factor2.Length then raise (new ArgumentException("Factor length mismatch")) else factor1.Length
-                          member __.Cardinality = levelCount
-                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
-                              factor2.GetSlices(fromObs, toObs, sliceLength) |> Seq.zip (factor1.GetSlices(fromObs, toObs, sliceLength))
-                                  |> Seq.map (fun (slice1, slice2) -> let v = new UInt16Vector(slice1.Length, 0us)
-                                                                      MklFunctions.Get_Cross_Level_Index(slice1.Length, uint16 factor1.Cardinality, slice1.NativeArray, slice2.NativeArray, v.NativeArray)
-                                                                      v)
+                | MergeLevels(factor, mergedLevels) ->
+                    let factor = factor.AsFactor
+                    let mergedLevel = String.Join("|", mergedLevels)
+                    let mergedLevels = new Set<_>(mergedLevels)
+                    let isMerged = Array.init factor.Cardinality (fun i -> mergedLevels.Contains(factor.Level i))
+                    let cumMergedCount = Array.sub (isMerged |> Array.scan (fun cum isMerged -> if isMerged then cum + 1 else cum) 0) 1 isMerged.Length
+                                         |> Array.map (fun cum -> if cum = 0 then cum else cum - 1)
+                    let levelMap = Array.init factor.Cardinality (fun i -> (i - cumMergedCount.[i]) |> uint16)
+                    let factorStorage = 
+                         {
+                          new IFactorStorage with
+                              member __.Level
+                                  with get(index) =
+                                      if isMerged.[index] && cumMergedCount.[index] = 0 then
+                                          mergedLevel
+                                      else 
+                                          factor.Level(index + cumMergedCount.[index])
+                              member __.Length = factor.Length
+                              member __.Cardinality = factor.Cardinality - cumMergedCount.[factor.Cardinality - 1]
+                              member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
+                                  factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
+                                                                                                     v)
+                         }
+                    new Factor(factor.Name, factorStorage)
+                | Cross(f1, f2) -> 
+                    let factor1 = f1.AsFactor
+                    let factor2 = f2.AsFactor
+                    let levelCount = factor1.Cardinality * factor2.Cardinality
+                    if levelCount > int UInt16.MaxValue then raise (new ArgumentException("Too many levels in cross factor"))
+                    let factorStorage = 
+                         {
+                          new IFactorStorage with
+                              member __.Level
+                                  with get(index) =
+                                      let index1 = index % factor1.Cardinality
+                                      let index2 = index / factor1.Cardinality
+                                      sprintf "%s*%s" (factor1.Level(index1)) (factor2.Level(index2))
+                              member __.Length = if factor1.Length <> factor2.Length then raise (new ArgumentException("Factor length mismatch")) else factor1.Length
+                              member __.Cardinality = levelCount
+                              member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
+                                  factor2.GetSlices(fromObs, toObs, sliceLength) |> Seq.zip (factor1.GetSlices(fromObs, toObs, sliceLength))
+                                      |> Seq.map (fun (slice1, slice2) -> let v = new UInt16Vector(slice1.Length, 0us)
+                                                                          MklFunctions.Get_Cross_Level_Index(slice1.Length, uint16 factor1.Cardinality, slice1.NativeArray, slice2.NativeArray, v.NativeArray)
+                                                                          v)
                           
-                     }
-                new Factor(Cross(f1, f2).Name, factorStorage)
-            | Cut(c, breaks) ->
-                let covariate : Covariate = c.AsCovariate
-                let breaks = breaks |> Array.filter (fun x -> not <| Double.IsNaN(x)) |> Array.sort
-                if breaks.Length > int UInt16.MaxValue then raise (new ArgumentException("Too many breaks"))
-                if breaks.Length < 3 then raise (new ArgumentException("There must be at least 3 break points"))
-                let factorStorage = 
-                     {
-                      new IFactorStorage with
-                          member __.Level
-                              with get(index) =
-                                  if index = breaks.Length - 1 then
-                                      String.Empty
-                                  elif index = breaks.Length - 2 then
-                                      sprintf "[%G,%G]" breaks.[index] breaks.[index + 1]
-                                  else
-                                      sprintf "[%G,%G)" breaks.[index] breaks.[index + 1]
-                          member __.Length = covariate.Length
-                          member __.Cardinality = breaks.Length
-                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
-                              covariate.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun (slice : Vector) -> let v = new UInt16Vector(slice.Length, 0us)
-                                                                                                                   MklFunctions.Get_Cut_Level_Index(slice.Length, breaks, slice.NativeArray, v.NativeArray)
-                                                                                                                   v
-                                                                                          )
+                         }
+                    new Factor(Cross(f1, f2).Name, factorStorage)
+                | Cut(c, breaks) ->
+                    let covariate : Covariate = c.AsCovariate
+                    let breaks = breaks |> Array.filter (fun x -> not <| Double.IsNaN(x)) |> Array.sort
+                    if breaks.Length > int UInt16.MaxValue then raise (new ArgumentException("Too many breaks"))
+                    if breaks.Length < 3 then raise (new ArgumentException("There must be at least 3 break points"))
+                    let factorStorage = 
+                         {
+                          new IFactorStorage with
+                              member __.Level
+                                  with get(index) =
+                                      if index = breaks.Length - 1 then
+                                          String.Empty
+                                      elif index = breaks.Length - 2 then
+                                          sprintf "[%G,%G]" breaks.[index] breaks.[index + 1]
+                                      else
+                                          sprintf "[%G,%G)" breaks.[index] breaks.[index + 1]
+                              member __.Length = covariate.Length
+                              member __.Cardinality = breaks.Length
+                              member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
+                                  covariate.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun (slice : Vector) -> let v = new UInt16Vector(slice.Length, 0us)
+                                                                                                                       MklFunctions.Get_Cut_Level_Index(slice.Length, breaks, slice.NativeArray, v.NativeArray)
+                                                                                                                       v
+                                                                                              )
                           
-                     }
-                new Factor(Cut(c, breaks).Name, factorStorage)
-            | Int(c, knots) ->
-                let covariate : Covariate = c.AsCovariate
-                let knots = knots |> Array.sort
-                if knots.Length - 1 > int UInt16.MaxValue then raise (new ArgumentException("Too many knots"))
-                if knots.Length < 2 then raise (new ArgumentException("There must be at least 2 knots"))
-                let factorStorage = 
-                     {
-                      new IFactorStorage with
-                          member __.Level
-                              with get(index) =
-                                  if index = knots.Length then
-                                      String.Empty
-                                  else
-                                      sprintf "%d" knots.[index]
-                          member __.Length = covariate.Length
-                          member __.Cardinality = knots.Length + 1 // if outside then ""
-                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
-                              covariate.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun (slice : Vector) -> let v = new UInt16Vector(slice.Length, 0us)
-                                                                                                                   MklFunctions.Get_Knot_Level_Index(slice.Length, knots, slice.NativeArray, v.NativeArray)
-                                                                                                                   v
-                                                                                          )
+                         }
+                    new Factor(Cut(c, breaks).Name, factorStorage)
+                | Int(c, knots) ->
+                    let covariate : Covariate = c.AsCovariate
+                    let knots = knots |> Array.sort
+                    if knots.Length - 1 > int UInt16.MaxValue then raise (new ArgumentException("Too many knots"))
+                    if knots.Length < 2 then raise (new ArgumentException("There must be at least 2 knots"))
+                    let factorStorage = 
+                         {
+                          new IFactorStorage with
+                              member __.Level
+                                  with get(index) =
+                                      if index = knots.Length then
+                                          String.Empty
+                                      else
+                                          sprintf "%d" knots.[index]
+                              member __.Length = covariate.Length
+                              member __.Cardinality = knots.Length + 1 // if outside then ""
+                              member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
+                                  covariate.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun (slice : Vector) -> let v = new UInt16Vector(slice.Length, 0us)
+                                                                                                                       MklFunctions.Get_Knot_Level_Index(slice.Length, knots, slice.NativeArray, v.NativeArray)
+                                                                                                                       v
+                                                                                              )
                           
-                     }
-                new Factor(Int(c, knots).Name, factorStorage)
+                         }
+                    new Factor(Int(c, knots).Name, factorStorage)
 
-            | Permute(factor, permutation) ->
-                let factor = factor.AsFactor
-                if (permutation |> Array.map fst |> Array.sort <> [|0..permutation.Length - 1|]) then
-                    raise (new ArgumentException("Invalid factor level permutation"))
-                let levelSet = permutation |> Array.map snd |> Set.ofArray
-                if levelSet.Count <> permutation.Length then 
-                   raise (new ArgumentException("Duplicate level in factor level permutation"))
-                if permutation.Length < factor.Cardinality then
-                    raise (new ArgumentException("Incomplete permutation of factor levels"))
-                let levelMap = permutation |> Array.map fst |> Array.map Checked.uint16
-                let permutationMap = permutation |> Map.ofArray
-                let factorStorage = 
-                     {
-                      new IFactorStorage with
-                          member __.Level with get(index) = permutationMap.[index]
-                          member __.Length = factor.Length
-                          member __.Cardinality = permutation.Length
-                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
-                              factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
-                                                                                                 v)
-                     }
-                new Factor(factor.Name, factorStorage)
-
+                | Permute(factor, permutation) ->
+                    let factor = factor.AsFactor
+                    if (permutation |> Array.map fst |> Array.sort <> [|0..permutation.Length - 1|]) then
+                        raise (new ArgumentException("Invalid factor level permutation"))
+                    let levelSet = permutation |> Array.map snd |> Set.ofArray
+                    if levelSet.Count <> permutation.Length then 
+                       raise (new ArgumentException("Duplicate level in factor level permutation"))
+                    if permutation.Length < factor.Cardinality then
+                        raise (new ArgumentException("Incomplete permutation of factor levels"))
+                    let levelMap = permutation |> Array.map fst |> Array.map Checked.uint16
+                    let permutationMap = permutation |> Map.ofArray
+                    let factorStorage = 
+                         {
+                          new IFactorStorage with
+                              member __.Level with get(index) = permutationMap.[index]
+                              member __.Length = factor.Length
+                              member __.Cardinality = permutation.Length
+                              member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
+                                  factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
+                                                                                                     v)
+                         }
+                    new Factor(factor.Name, factorStorage)
+        Factor.FactorExprCache.Add(this:>obj, factor)
+        factor
 
     static member op_Explicit(x : FactorExpr) : Predictor = Predictor.CategoricalPredictor(!!x)
 
@@ -470,6 +480,10 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
 
 
 and Covariate(name : string, covariateStorage : ICovariateStorage) =
+
+    static let covariateExprCache = new Dictionary<obj, Covariate>()
+
+    static member internal CovariateExprCache = covariateExprCache
 
     member this.Name = name
     member this.Length = covariateStorage.Length
@@ -856,23 +870,28 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
             | BinomialFactor(f, _) -> sprintf "%s.AsCovariate" f.Name
 
     member this.AsCovariate =
-        let minLen = this.MinLength
-        let maxLen = this.MaxLength
-        if minLen <> maxLen then raise (new ArgumentException("Covariate length mismatch"))
-        let covariateStorage = 
-             {
-              new ICovariateStorage with
-                  member __.Length = this.MinLength
-                  member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
-                    seq
-                      {
-                        let buffer = new Vector((min (int64(sliceLength)) (toObs - fromObs + 1L)), 0.0)
-                        for sliceExpr in this.GetSlicesExpr(fromObs, toObs, sliceLength) do
-                            yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
-                      }
-             }
-        let name = this.Name // remove ()
-        new Covariate(name, covariateStorage)
+        if Covariate.CovariateExprCache.ContainsKey(this:>obj) then Covariate.CovariateExprCache.[this:>obj]
+        else
+        let covariate = 
+            let minLen = this.MinLength
+            let maxLen = this.MaxLength
+            if minLen <> maxLen then raise (new ArgumentException("Covariate length mismatch"))
+            let covariateStorage = 
+                 {
+                  new ICovariateStorage with
+                      member __.Length = this.MinLength
+                      member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
+                        seq
+                          {
+                            let buffer = new Vector((min (int64(sliceLength)) (toObs - fromObs + 1L)), 0.0)
+                            for sliceExpr in this.GetSlicesExpr(fromObs, toObs, sliceLength) do
+                                yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
+                          }
+                 }
+            let name = this.Name // remove ()
+            new Covariate(name, covariateStorage)
+        Covariate.CovariateExprCache.Add(this:>obj, covariate)
+        covariate
 
     static member op_Explicit(x : CovariateExpr) : Predictor = Predictor.NumericalPredictor(x)
 

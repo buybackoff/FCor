@@ -33,6 +33,6 @@ module Glm =
         let Y = statVars.[3].AsCovariate
         let A' = A |>> (fun (level : string) -> let d = int <| level.Substring(1) in sprintf "A%d" (d % 3))
         let B' = B |>> (fun (level : string) -> let d = int <| level.Substring(1) in sprintf "B%d" (d % 4))
-        let glm = glm (Y <~> A' * B') false Gamma Ln 50 1e-6
+        let glm = glm (Y <~> A' + A' * B') false Gamma Ln 50 1e-6
         ()
 
