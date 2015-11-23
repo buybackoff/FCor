@@ -176,7 +176,7 @@ extern "C" __declspec(dllexport) void update_xbeta(int n, double* xbeta, int k, 
 	unsigned short* subscripts = (unsigned short*)mkl_malloc(k*sizeof(unsigned short), 64);
 	if (covariate == nullptr)
 	{
-		if (k = 1)
+		if (k == 1)
 		{
 			for (int i = 0; i < n; i++)
 			{
@@ -213,7 +213,7 @@ extern "C" __declspec(dllexport) void update_xbeta(int n, double* xbeta, int k, 
 	}
 	else
 	{
-		if (k = 1)
+		if (k == 1)
 		{
 			for (int i = 0; i < n; i++)
 			{
@@ -275,7 +275,7 @@ extern "C" __declspec(dllexport) void update_U(int n, double* U, double* u, int 
 	unsigned short* subscripts = (unsigned short*)mkl_malloc(k*sizeof(unsigned short), 64);
 	if (covariate == nullptr)
 	{
-		if (k = 1)
+		if (k == 1)
 		{
 			for (int i = 0; i < n; i++)
 			{
@@ -312,7 +312,7 @@ extern "C" __declspec(dllexport) void update_U(int n, double* U, double* u, int 
 	}
 	else
 	{
-		if (k = 1)
+		if (k == 1)
 		{
 			for (int i = 0; i < n; i++)
 			{

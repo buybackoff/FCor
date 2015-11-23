@@ -606,9 +606,13 @@ module Overloading =
 
         static member ConvertStatVar (DummyType, x : CovariateExpr, f : int[]) = Int(x, f)
 
-        static member ConvertStatVar (DummyType, x : Factor, f) = FromFactor(x.AsExpr, f)
+        static member ConvertStatVar (DummyType, x : Factor, f) = ParseFactor(x.AsExpr, f)
 
-        static member ConvertStatVar (DummyType, x : FactorExpr, f) = FromFactor(x, f)
+        static member ConvertStatVar (DummyType, x : FactorExpr, f) = ParseFactor(x, f)
+
+        static member ConvertStatVar (DummyType, x : Factor, f) = BinomialFactor(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : FactorExpr, f) = BinomialFactor(x, f)
 
 
 

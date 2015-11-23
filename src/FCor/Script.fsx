@@ -58,8 +58,11 @@ let X = statVars.[2].AsCovariate
 let Y = statVars.[3].AsCovariate
 
 open StatModels
+let A' = A |>> (fun (level : string) -> let d = int <| level.Substring(1) in sprintf "A%d" (d % 3))
+let B' = B |>> (fun (level : string) -> let d = int <| level.Substring(1) in sprintf "B%d" (d % 4))
 
-let model = glm (Y <~> (A + B + X)) true Gamma Ln 50 1e-8
+let model = glm (Y <~> A' * B') true Gamma Ln 50 1e-8
+
 
 let fitted = model.Predict(new DataFrame(statVars))
 let resStats = fitted.GetStats()

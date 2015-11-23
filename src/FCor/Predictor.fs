@@ -234,7 +234,6 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | Int(c, _) -> c.Vars
             | Permute(f, _) -> f.Vars
 
-
     member this.MinLength =
         match this with
             | Var(f) ->  f.Length
@@ -260,7 +259,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
             | Var(f) ->  f.Name
             | Rename(f, _) -> f.Name 
             | MergeLevels(f, _) -> f.Name
-            | Cross(f1, f2) -> sprintf "%s*%s" f1.Name f2.Name
+            | Cross(f1, f2) -> sprintf "%s.*%s" f1.Name f2.Name
             | Cut(c, _) -> sprintf "%s.AsFactor" c.Name 
             | Int(c, _) -> sprintf "%s.AsFactor" c.Name 
             | Permute(f, _) -> f.Name
@@ -607,23 +606,99 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
     static member (+) (x : Covariate, y : Predictor list) : Predictor list = (!!x:Predictor) + y
 
 
+    static member (.<) (x : Covariate, y : Covariate) = x.AsExpr .< y.AsExpr
+
+    static member (.<) (x : CovariateExpr, y : Covariate) = x .< y.AsExpr
+
+    static member (.<) (x : Covariate, y : CovariateExpr) = x.AsExpr .< y
+
+    static member (.<) (x : Covariate, y : float) = x.AsExpr .< y
+
+    static member (.<) (x : float, y : Covariate) = x .< y.AsExpr
+
+    static member (.<=) (x : Covariate, y : Covariate) = x.AsExpr .<= y.AsExpr
+
+    static member (.<=) (x : CovariateExpr, y : Covariate) = x .<= y.AsExpr
+
+    static member (.<=) (x : Covariate, y : CovariateExpr) = x.AsExpr .<= y
+
+    static member (.<=) (x : Covariate, y : float) = x.AsExpr .<= y
+
+    static member (.<=) (x : float, y : Covariate) = x .<= y.AsExpr
 
 
-    static member (/) (covariate1 : Covariate, covariate2 : Covariate) =
-        covariate1.AsExpr / covariate2.AsExpr
+    static member (.>) (x : Covariate, y : Covariate) = x.AsExpr .> y.AsExpr
 
-    static member (.+) (covariate1 : Covariate, covariate2 : Covariate) =
-        covariate1.AsExpr .+ covariate2.AsExpr
+    static member (.>) (x : CovariateExpr, y : Covariate) = x .> y.AsExpr
 
-    static member (-) (covariate1 : Covariate, covariate2 : Covariate) =
-        covariate1.AsExpr - covariate2.AsExpr
+    static member (.>) (x : Covariate, y : CovariateExpr) = x.AsExpr .> y
 
-    static member Min (covariate1 : Covariate, covariate2 : Covariate) =
-        CovariateExpr.Min(covariate1.AsExpr, covariate2.AsExpr)
+    static member (.>) (x : Covariate, y : float) = x.AsExpr .> y
 
-    static member Max (covariate1 : Covariate, covariate2 : Covariate) =
-        CovariateExpr.Max(covariate1.AsExpr, covariate2.AsExpr)
+    static member (.>) (x : float, y : Covariate) = x .> y.AsExpr
 
+    static member (.>=) (x : Covariate, y : Covariate) = x.AsExpr .>= y.AsExpr
+
+    static member (.>=) (x : CovariateExpr, y : Covariate) = x .>= y.AsExpr
+
+    static member (.>=) (x : Covariate, y : CovariateExpr) = x.AsExpr .>= y
+
+    static member (.>=) (x : Covariate, y : float) = x.AsExpr .>= y
+
+    static member (.>=) (x : float, y : Covariate) = x .>= y.AsExpr
+
+
+    static member (.<>) (x : Covariate, y : Covariate) = x.AsExpr .<> y.AsExpr
+
+    static member (.<>) (x : CovariateExpr, y : Covariate) = x .<> y.AsExpr
+
+    static member (.<>) (x : Covariate, y : CovariateExpr) = x.AsExpr .<> y
+
+    static member (.<>) (x : Covariate, y : float) = x.AsExpr .<> y
+
+    static member (.<>) (x : float, y : Covariate) = x .<> y.AsExpr
+
+    static member (.=) (x : Covariate, y : Covariate) = x.AsExpr .= y.AsExpr
+
+    static member (.=) (x : CovariateExpr, y : Covariate) = x .= y.AsExpr
+
+    static member (.=) (x : Covariate, y : CovariateExpr) = x.AsExpr .= y
+
+    static member (.=) (x : Covariate, y : float) = x.AsExpr .= y
+
+    static member (.=) (x : float, y : Covariate) = x .= y.AsExpr
+
+
+    static member (/) (x : Covariate, y : Covariate) = x.AsExpr / y.AsExpr
+
+    static member (/) (x : CovariateExpr, y : Covariate) = x / y.AsExpr
+
+    static member (/) (x : Covariate, y : CovariateExpr) = x.AsExpr / y
+
+    static member (.+) (x : Covariate, y : Covariate) = x.AsExpr .+ y.AsExpr
+
+    static member (.+) (x : CovariateExpr, y : Covariate) = x .+ y.AsExpr
+
+    static member (.+) (x : Covariate, y : CovariateExpr) = x.AsExpr .+ y
+
+    static member (-) (x : Covariate, y : Covariate) = x.AsExpr - y.AsExpr
+
+    static member (-) (x : CovariateExpr, y : Covariate) = x - y.AsExpr
+
+    static member (-) (x : Covariate, y : CovariateExpr) = x.AsExpr - y
+
+
+    static member Min (x : Covariate, y : Covariate) = CovariateExpr.Min(x.AsExpr, y.AsExpr)
+
+    static member Min (x : Covariate, y : CovariateExpr) = CovariateExpr.Min(x.AsExpr, y)
+
+    static member Min (x : CovariateExpr, y : Covariate) = CovariateExpr.Min(x, y.AsExpr)
+
+    static member Max (x : Covariate, y : Covariate) = CovariateExpr.Max(x.AsExpr, y.AsExpr)
+
+    static member Max (x : Covariate, y : CovariateExpr) = CovariateExpr.Max(x.AsExpr, y)
+
+    static member Max (x : CovariateExpr, y : Covariate) = CovariateExpr.Max(x, y.AsExpr)
 
     static member (*) (covariate : Covariate, a : float) =
         covariate.AsExpr * a
@@ -712,14 +787,16 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     | Var of Covariate
     | UnaryFunction of CovariateExpr * (VectorExpr -> VectorExpr)  * string
     | BinaryFunction of CovariateExpr * CovariateExpr * (VectorExpr * VectorExpr -> VectorExpr) * string
-    | FromFactor of FactorExpr * (string -> float)
+    | ParseFactor of FactorExpr * (string -> float)
+    | BinomialFactor of FactorExpr * (string -> bool)
 
     member this.Vars =
         match this with
             | Var(v) -> [StatVariable.Covariate v]
             | UnaryFunction(expr, _, _) -> expr.Vars
             | BinaryFunction(expr1, expr2, _, _) -> expr1.Vars @ expr2.Vars
-            | FromFactor(f, _) -> f.Vars
+            | ParseFactor(f, _) -> f.Vars
+            | BinomialFactor(f, _) -> f.Vars
                 
     member this.MinLength =
         match this with
@@ -727,7 +804,8 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
             | UnaryFunction(expr, _, _) -> expr.MinLength 
             | BinaryFunction(expr1, expr2, _, _) ->  
                 min expr1.MinLength expr2.MinLength
-            | FromFactor(f, _) -> f.MinLength
+            | ParseFactor(f, _) -> f.MinLength
+            | BinomialFactor(f, _) -> f.MinLength
 
     member this.MaxLength =
         match this with
@@ -735,14 +813,16 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
             | UnaryFunction(expr, _, _) -> expr.MaxLength 
             | BinaryFunction(expr1, expr2, _, _) ->  
                 max expr1.MaxLength expr2.MaxLength
-            | FromFactor(f, _) -> f.MaxLength
+            | ParseFactor(f, _) -> f.MaxLength
+            | BinomialFactor(f, _) -> f.MaxLength
 
     static member Substitute (mapF :  StatVariable -> StatVariable) (covExpr : CovariateExpr) =
         match covExpr with
             | Var(c) -> Var(mapF !!c |> (!!))
             | UnaryFunction(cov, f, label) -> UnaryFunction(CovariateExpr.Substitute mapF cov, f, label)
             | BinaryFunction(cov1, cov2, f, label) -> BinaryFunction(CovariateExpr.Substitute mapF cov1, CovariateExpr.Substitute mapF cov2, f, label)
-            | FromFactor(f, parse) -> FromFactor(FactorExpr.Substitute mapF f, parse)
+            | ParseFactor(f, parse) -> ParseFactor(FactorExpr.Substitute mapF f, parse)
+            | BinomialFactor(f, parse) -> BinomialFactor(FactorExpr.Substitute mapF f, parse)
 
     member this.GetSlicesExpr(fromObs : int64, toObs : int64, sliceLen : int) =
         match this with
@@ -753,9 +833,16 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
             | BinaryFunction(expr1, expr2, f, _) -> 
                 expr2.GetSlicesExpr(fromObs, toObs, sliceLen) |> Seq.zip (expr1.GetSlicesExpr(fromObs, toObs, sliceLen))
                                                               |> Seq.map f
-            | FromFactor(factor, parse) ->
+            | ParseFactor(factor, parse) ->
                 let factor = factor.AsFactor
                 let map = Array.init factor.Cardinality (factor.get_Level >> parse)
+                factor.GetSlices(fromObs, toObs, sliceLen) |> Seq.map (fun slice -> let v = new Vector(slice.LongLength, 0.0)
+                                                                                    MklFunctions.Level_Index_To_Numeric(v.Length, slice.NativeArray, v.NativeArray, map)
+                                                                                    v.AsExpr)
+
+            | BinomialFactor(factor, parse) ->
+                let factor = factor.AsFactor
+                let map = Array.init factor.Cardinality (factor.get_Level >> parse >> (fun b -> if b then 1.0 else 0.0))
                 factor.GetSlices(fromObs, toObs, sliceLen) |> Seq.map (fun slice -> let v = new Vector(slice.LongLength, 0.0)
                                                                                     MklFunctions.Level_Index_To_Numeric(v.Length, slice.NativeArray, v.NativeArray, map)
                                                                                     v.AsExpr)
@@ -765,7 +852,8 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
             | Var(c) -> c.Name
             | UnaryFunction(expr, _, format) -> String.Format(format, expr.Name)
             | BinaryFunction(expr1, expr2, _, format) -> String.Format(format, expr1.Name, expr2.Name)
-            | FromFactor(f, _) -> sprintf "%s.AsCovariate" f.Name
+            | ParseFactor(f, _) -> sprintf "%s.AsCovariate" f.Name
+            | BinomialFactor(f, _) -> sprintf "%s.AsCovariate" f.Name
 
     member this.AsCovariate =
         let minLen = this.MinLength
@@ -818,6 +906,61 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     static member (+) (x : Predictor list, y : CovariateExpr) : Predictor list = x + !!y
 
     static member (+) (x : CovariateExpr, y : Predictor list) : Predictor list = !!x + y
+
+
+    static member (.<) (x : CovariateExpr, y : CovariateExpr) =
+        BinaryFunction(x, y, (fun (x,y) -> VectorExpr.IfFunction(x .< y, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), "({0:G}<{1:G})")
+
+    static member (.<) (x : CovariateExpr, a : float) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(x .< a, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "({0:G}<%G)" a)
+
+    static member (.<) (a : float, x : CovariateExpr) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(a .< x, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "(%G<{0:G})" a)
+
+    static member (.>) (x : CovariateExpr, y : CovariateExpr) =
+        BinaryFunction(x, y, (fun (x,y) -> VectorExpr.IfFunction(x .> y, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), "({0:G}>{1:G})")
+
+    static member (.>) (x : CovariateExpr, a : float) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(x .> a, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "({0:G}>%G)" a)
+
+    static member (.>) (a : float, x : CovariateExpr) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(a .> x, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "(%G>{0:G})" a)
+
+    static member (.<=) (x : CovariateExpr, y : CovariateExpr) =
+        BinaryFunction(x, y, (fun (x,y) -> VectorExpr.IfFunction(x .<= y, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), "({0:G}<={1:G})")
+
+    static member (.<=) (x : CovariateExpr, a : float) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(x .<= a, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "({0:G}<=%G)" a)
+
+    static member (.<=) (a : float, x : CovariateExpr) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(a .<= x, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "(%G<={0:G})" a)
+
+    static member (.>=) (x : CovariateExpr, y : CovariateExpr) =
+        BinaryFunction(x, y, (fun (x,y) -> VectorExpr.IfFunction(x .>= y, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), "({0:G}>={1:G})")
+
+    static member (.>=) (x : CovariateExpr, a : float) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(x .>= a, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "({0:G}>=%G)" a)
+
+    static member (.>=) (a : float, x : CovariateExpr) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(a .>= x, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "(%G>={0:G})" a)
+
+    static member (.=) (x : CovariateExpr, y : CovariateExpr) =
+        BinaryFunction(x, y, (fun (x,y) -> VectorExpr.IfFunction(x .= y, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), "({0:G}={1:G})")
+
+    static member (.=) (x : CovariateExpr, a : float) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(x .= a, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "({0:G}=%G)" a)
+
+    static member (.=) (a : float, x : CovariateExpr) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(a .= x, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "(%G={0:G})" a)
+
+    static member (.<>) (x : CovariateExpr, y : CovariateExpr) =
+        BinaryFunction(x, y, (fun (x,y) -> VectorExpr.IfFunction(x .<> y, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), "({0:G}<>{1:G})")
+
+    static member (.<>) (x : CovariateExpr, a : float) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(x .<> a, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "({0:G}<>%G)" a)
+
+    static member (.<>) (a : float, x : CovariateExpr) =
+        UnaryFunction(x, (fun x -> VectorExpr.IfFunction(a .<> x, VectorExpr.Scalar(1.0), VectorExpr.Scalar(0.0))), sprintf "(%G<>{0:G})" a)
 
 
     static member (*) (x : CovariateExpr, y : CovariateExpr) =
@@ -987,7 +1130,7 @@ and CategoricalPredictor =
     member this.AsList =
         match this with
             | Factor(f) -> [f.AsFactor]
-            | CategoricalInteraction(catPred, factor) -> factor.AsFactor :: catPred.AsList
+            | CategoricalInteraction(catPred, factor) -> catPred.AsList @ [factor.AsFactor]
 
     member this.MinLength =
         match this with
@@ -1049,13 +1192,11 @@ and CategoricalPredictor =
 
     static member (+) (x : CategoricalPredictor, y : Predictor list) : Predictor list = !!x + y
 
-
-
     static member op_Explicit(factors : FactorExpr list) = 
         let rec fromList (factors : FactorExpr list) =
             match factors with
                 | [] -> raise (new InvalidOperationException())
-                | h::[] -> Factor(h)
+                | h::[] -> Factor h
                 | h::t -> CategoricalInteraction(fromList t, h)
         factors |> (List.rev >> fromList)
 

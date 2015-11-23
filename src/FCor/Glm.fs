@@ -33,7 +33,6 @@ type GlmDispersion =
 type FactorMask =
     | EnableAllLevels
     | DisableOneLevel
-    | DisableAllLevels
 
 type GlmParameterEstimate =
     {
@@ -325,11 +324,13 @@ module Glm =
     let sub2ind (dimProd : int[]) (subscripts : int[]) =
         subscripts |> Array.mapi (fun i x -> x * dimProd.[i]) |> Array.fold (+) 0
 
-    let rec ind2sub (index : int) (dimProd : int list) =
-        match dimProd with
-            | [] -> []
-            | head::tail -> 
-                (index / head)::(ind2sub (index % head) tail)
+    let  ind2sub (index : int) (dimProd : int list) =
+        let rec ind2sub' (index : int) (dimProd : int list) =
+            match dimProd with
+                | [] -> []
+                | head::tail -> 
+                    (index / head)::(ind2sub' (index % head) tail)
+        ind2sub' index (dimProd |> List.rev) |> List.rev
 
     let getNACount (factor : Factor) =
         let nas = new Set<string>(Factor.NAs)
@@ -344,63 +345,72 @@ module Glm =
             validlevels.[validlevels.Length - 1] |> fst
 
 
-    let getDisabledSubscripts (maskedFactors : (Factor * FactorMask) list) =
+    let getDisabledSubscripts (currFactor : Factor) (maskedFactors : (Factor * FactorMask) list)  =
         let nas = new Set<string>(Factor.NAs)
         maskedFactors |> List.map (fun (factor, mask) -> 
-                                        match mask with
-                                            | EnableAllLevels -> []
-                                            | DisableOneLevel ->
-                                                let indexOfMaxLevel = getIndexOfMaxLevel factor
-                                                if indexOfMaxLevel >= 0 then [indexOfMaxLevel]
-                                                else []
-                                            | DisableAllLevels ->
-                                                [0..factor.Cardinality - 1] |> List.filter (fun index -> not <| nas.Contains(factor.Level(index)))
+                                        if factor = currFactor then 
+                                            match mask with
+                                                | EnableAllLevels -> []
+                                                | DisableOneLevel ->
+                                                    let indexOfMaxLevel = getIndexOfMaxLevel factor
+                                                    if indexOfMaxLevel >= 0 then [indexOfMaxLevel]
+                                                    else []
+                                        else [0..factor.Cardinality - 1] |> List.filter (fun index -> not <| nas.Contains(factor.Level(index)))
                                     )
                       |> cartesian
 
-    let getNASubscripts (maskedFactors : (Factor * FactorMask) list) =
+    let getNASubscripts (factors : Factor list) =
         let nas = new Set<string>(Factor.NAs)
-        maskedFactors |> List.map (fun (factor, _) -> 
-                                       [0..factor.Cardinality - 1] |> List.filter (fun index -> nas.Contains(factor.Level(index)))
-                                    )
-                      |> cartesian
+        factors |> List.map (fun factor -> 
+                                 [0..factor.Cardinality - 1] |> List.filter (fun index -> nas.Contains(factor.Level(index)))
+                            )
+                |> cartesian
 
-    let getDisabled (maskedFactors : (Factor * FactorMask) list) =
-        let factors = maskedFactors |> List.map fst |> List.toArray
+    let getDisabled (maskedFactors : ((Factor * FactorMask) list) * FactorMask) =
+        let factors = maskedFactors |> fst |> List.map fst |> List.toArray
         let allLevelCount = factors |> Array.fold (fun count f -> count * f.Cardinality) 1
         let isDisabled = Array.create allLevelCount false
-        let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.Cardinality) |> getDimProd |> List.toArray
-        maskedFactors |> getDisabledSubscripts
-                      |> List.iter (fun subscripts -> 
-                                        let disabledIndex = subscripts |> List.toArray |> sub2ind dimProd
-                                        isDisabled.[disabledIndex] <- true
-                                   )
+        let dimProd = maskedFactors |> fst |> List.map fst |> List.map (fun f -> f.Cardinality) |> getDimProd |> List.toArray
+        factors |> Array.iter (fun f ->
+                                 maskedFactors |> fst |> getDisabledSubscripts f
+                                               |> List.iter (fun subscripts -> 
+                                                                let disabledIndex = subscripts |> List.toArray |> sub2ind dimProd
+                                                                isDisabled.[disabledIndex] <- true
+                                                           )       
+                               )
+        match maskedFactors |> snd with
+            | DisableOneLevel -> 
+                let subscripts = maskedFactors |> fst |> List.map (fun (f, _) -> getIndexOfMaxLevel f)
+                if subscripts |> List.map (fun x -> x >= 0) |> List.reduce (&&) then
+                    let disabledIndex = subscripts |> List.toArray |> sub2ind dimProd
+                    isDisabled.[disabledIndex] <- true
+            | _ -> ()
         isDisabled
 
-    let getIsNA (maskedFactors : (Factor * FactorMask) list) =
-        let factors = maskedFactors |> List.map fst |> List.toArray
-        let allLevelCount = factors |> Array.fold (fun count f -> count * f.Cardinality) 1
+    let getIsNA (factors : Factor list) =
+        let allLevelCount = factors |> List.fold (fun count f -> count * f.Cardinality) 1
         let isNA = Array.create allLevelCount false
-        let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.Cardinality) |> getDimProd |> List.toArray
-        maskedFactors |> getNASubscripts
-                      |> List.iter (fun subscripts -> 
-                                        let naIndex = subscripts |> List.toArray |> sub2ind dimProd
-                                        isNA.[naIndex] <- true
-                                   )
+        let dimProd = factors |> List.map (fun f -> f.Cardinality) |> getDimProd |> List.toArray
+        factors |> getNASubscripts
+                |> List.iter (fun subscripts -> 
+                                let naIndex = subscripts |> List.toArray |> sub2ind dimProd
+                                isNA.[naIndex] <- true
+                             )
         isNA
 
-    let getPredictorEstimateMap (maskedPredictor : (Factor * FactorMask) list * CovariateExpr option) =
+    let getPredictorEstimateMap (maskedPredictor : (((Factor * FactorMask) list) * FactorMask) * CovariateExpr option) =
         match maskedPredictor with
-            | (h::t), _ ->
-                let maskedFactors = (h::t)
+            | ((h::t), factorMask), _ ->
+                let maskedFactors = (h::t), factorMask
+                let factors = maskedFactors |> fst |> List.map fst
                 let isDisabled = getDisabled maskedFactors
-                let isNA = getIsNA maskedFactors
+                let isNA = getIsNA factors
                 let cumDisabledCount = Array.sub (isDisabled |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isDisabled.Length
                 let cumNACount = Array.sub (isNA |> Array.scan (fun cum x -> if x then cum + 1 else cum) 0) 1 isNA.Length
                 Array.init isDisabled.Length (fun i -> if isDisabled.[i] then -1
                                                             elif isNA.[i] then -2
                                                             else i - cumDisabledCount.[i] - cumNACount.[i])
-            | [], Some(_) -> [|0|]
+            | ([], _), Some(_) -> [|0|]
             | _ -> [||]
 
     let getCategoricalSlicer (maskedFactors : (Factor * FactorMask) list) =
@@ -415,60 +425,37 @@ module Glm =
                 slicerFun |> Some
             | [] -> None
 
-    let getEstimateCount (maskedPred : (Factor * FactorMask) list * CovariateExpr option) =
-        let maskedFactors, covariate = maskedPred
+    let getEstimateCount (maskedPred : (((Factor * FactorMask) list) * FactorMask) * CovariateExpr option) =
+        let (maskedFactors, factorMask), covariate = maskedPred
+        let factors = maskedFactors |> List.map fst
+        let isNA = getIsNA factors
+        let isDisabled = getDisabled (maskedFactors, factorMask)
         let numCount = 
             match covariate with
                 | Some(_) -> 1
                 | None -> 0
-        let catCount = 
-            maskedFactors |> List.fold (fun count (factor, mask) -> 
-                                            let naCount = getNACount factor
-                                            count * match mask with
-                                                        | EnableAllLevels -> factor.Cardinality - naCount
-                                                        | DisableOneLevel ->
-                                                            let maxLevelIndex = getIndexOfMaxLevel factor
-                                                            if maxLevelIndex >= 0 then 
-                                                                factor.Cardinality - 1 - naCount
-                                                            else naCount
-                                                        | DisableAllLevels -> 0) 1
+        let catCount = isDisabled |> Array.zip isNA |> Array.fold (fun count (isna, isdis) -> if not isna && not isdis then count + 1 else count) 0
         match maskedFactors with
             | [] -> numCount
             | _ -> catCount
 
-    let updateFactorMask (currMaskedFactors : (Factor * FactorMask) list) (earlierMaskedFactor : Factor * FactorMask) =
-        let earlierFactor = fst earlierMaskedFactor
-        let earlierMask = snd earlierMaskedFactor
-        if currMaskedFactors |> List.exists (fun (f, _) -> f = earlierFactor || earlierFactor.Cardinality = 1 || earlierMask = EnableAllLevels) then
-            match currMaskedFactors with
-                | [] -> []
-                | (f, m) :: [] ->
-                    if f = earlierFactor then
-                        [f, DisableAllLevels]
-                    elif earlierFactor.Cardinality = 1 || earlierMask = EnableAllLevels then
-                        match m with
-                            | EnableAllLevels -> [f, DisableOneLevel]
-                            | DisableOneLevel -> [f, DisableOneLevel]
-                            | DisableAllLevels -> [f, DisableAllLevels]
-                    else
-                        currMaskedFactors
-                | _ ->
-                    currMaskedFactors |> List.map (fun (f, mask) -> 
-                                                       if f <> earlierFactor && earlierFactor.Cardinality > 1 && earlierMask <> EnableAllLevels then f, mask 
-                                                       else
-                                                           match mask with
-                                                               | EnableAllLevels -> f, DisableOneLevel
-                                                               | DisableOneLevel -> f, DisableOneLevel
-                                                               | DisableAllLevels -> f, DisableAllLevels
-                                              )
-        else currMaskedFactors
+    let updateFactorMask (currMaskedFactors : ((Factor * FactorMask) list) * FactorMask) (earlierMaskedFactor : (Factor * FactorMask) * FactorMask) =
+        let earlierFactor = earlierMaskedFactor |> fst |> fst
+        let earlierFactorMask = earlierMaskedFactor |> fst |> snd
+        let earlierPredictorMask = earlierMaskedFactor|> snd
+        let currMaskedFactors' = currMaskedFactors |> fst |> List.map (fun (f, mask) -> if f = earlierFactor then f, DisableOneLevel else f, mask)
+        let currPredMask' =
+            match earlierPredictorMask with
+                | EnableAllLevels -> DisableOneLevel
+                | DisableOneLevel -> currMaskedFactors |> snd
+        currMaskedFactors', currPredMask'
 
-    let updatePredictorMask (currMaskedPred : (Factor * FactorMask) list * CovariateExpr option) (earlierMaskedPred : (Factor * FactorMask) list * CovariateExpr option) =
+    let updatePredictorMask (currMaskedPred : ((Factor * FactorMask) list * FactorMask) * CovariateExpr option) (earlierMaskedPred : ((Factor * FactorMask) list * FactorMask) * CovariateExpr option) =
         match currMaskedPred, earlierMaskedPred with
-            | (currMaskedFactors, Some(currMaskedCovExpr)), (earlierMaskedFactors, Some(earlierCovExpr)) when currMaskedCovExpr.Vars = earlierCovExpr.Vars && currMaskedCovExpr.Name = earlierCovExpr.Name ->
-                earlierMaskedFactors |> List.fold updateFactorMask currMaskedFactors, Some(currMaskedCovExpr)
-            | (currMaskedFactors, None), (earlierMaskedFactors, None) ->
-                earlierMaskedFactors |> List.fold updateFactorMask currMaskedFactors, None
+            | ((currMaskedFactors, currMask), Some(currMaskedCovExpr)), ((earlierMaskedFactors, earlierMask), Some(earlierCovExpr)) when currMaskedCovExpr.Vars = earlierCovExpr.Vars && currMaskedCovExpr.Name = earlierCovExpr.Name ->
+                earlierMaskedFactors |> List.map (fun x -> x, earlierMask) |> List.fold updateFactorMask (currMaskedFactors, currMask), Some(currMaskedCovExpr)
+            | ((currMaskedFactors, currMask), None), ((earlierMaskedFactors, earlierMask), None) ->
+                earlierMaskedFactors |> List.map (fun x -> x, earlierMask) |> List.fold updateFactorMask (currMaskedFactors, currMask), None
             | _ -> currMaskedPred
 
     let rec getMaskedPredictors (predictors : (Factor list * CovariateExpr option) list) =
@@ -476,7 +463,7 @@ module Glm =
             | [] -> []
             | (factors, covariate) :: tail -> 
                 let t = getMaskedPredictors tail
-                let h = t |> List.fold updatePredictorMask (factors |> List.map (fun f -> f, EnableAllLevels), covariate)
+                let h = t |> List.fold updatePredictorMask ((factors |> List.map (fun f -> f, EnableAllLevels), EnableAllLevels) , covariate)
                 h :: t
 
     let getEstimableDesign (predictors : Predictor list) (includeIntercept : bool) =
@@ -839,7 +826,7 @@ module Glm =
                         seq{0..processorCount - 1} 
                            |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
                            |> Seq.toArray 
-                           |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                           |> Array.map (fun (fromObs, toObs) -> 
                                                     let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
                                                     let U = new Vector(totalEstimateCount, 0.0)
                                                     let H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
@@ -902,7 +889,7 @@ module Glm =
                     iwls response design estimateMaps glmDistribution glmLink nextBeta None maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps
 
 
-    let getParameterEstimates (design : ((Factor * FactorMask) list * CovariateExpr option) list) (beta : Vector)
+    let getParameterEstimates (design : (((Factor * FactorMask) list * FactorMask) * CovariateExpr option) list) (beta : Vector)
                               (estimateMaps :  int[] list)
                               (invHDiag : Vector) (cumEstimateCounts : int[]) =
 
@@ -913,8 +900,8 @@ module Glm =
                                  let predictorOffset = if i = 0 then 0 else cumEstimateCounts.[i - 1]
                                  let estCount = if i = 0 then cumEstimateCounts.[0] else cumEstimateCounts.[i] - cumEstimateCounts.[i - 1]
                                  match maskedFactors, cov with
-                                     | (h::t), None ->
-                                         let factors = maskedFactors |> List.map fst
+                                     | ((h::t), _), None ->
+                                         let factors = maskedFactors |> fst |> List.map fst
                                          let dimProd = factors |> List.map (fun f -> f.Cardinality) |> getDimProd
                                          estimateMap |> List.mapi (fun index estimateIndex -> 
                                                                           let subscripts = ind2sub index dimProd
@@ -941,7 +928,7 @@ module Glm =
                                                                                PValue = 1.0 - chicdf(1.0, Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0) )                                                                     
                                                                               }
                                                                       )
-                                     | [], Some cov ->
+                                     | ([], _), Some cov ->
                                          if estCount = 1 then
                                              [{
                                               Predictor = NumericalPredictor cov
@@ -962,8 +949,8 @@ module Glm =
                                                WaldChiSq = Double.NaN  
                                                PValue = Double.NaN                                                                  
                                              }]                                           
-                                     | (h::t), Some cov ->
-                                         let factors = maskedFactors |> List.map fst
+                                     | ((h::t), _), Some cov ->
+                                         let factors = maskedFactors |> fst |> List.map fst
                                          let dimProd = factors |> List.map (fun f -> f.Cardinality) |> getDimProd
                                          estimateMap |> List.mapi (fun index estimateIndex -> 
                                                                       let subscripts = ind2sub index dimProd
@@ -990,7 +977,7 @@ module Glm =
                                                                            PValue = 1.0 - chicdf(1.0, Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0) )                                                                    
                                                                           }
                                                                   )                                      
-                                     | [], None -> []                                 
+                                     | ([], _), None -> []                                 
                            ) |> List.concat
 
     let getDeviance (resp : Vector) (pred : Vector) (glmDistribution : GlmDistribution) =
@@ -1210,7 +1197,7 @@ module Glm =
         let estimateCounts = estimableDesign |> List.map getEstimateCount |> List.toArray
         let cumEstimateCounts = Array.sub (estimateCounts |> Array.scan (+) 0) 1 estimateCounts.Length
         let initBeta = getInitBeta cumEstimateCounts glmLink includeIntercept predictors meanReponseSlice
-        let design = estimableDesign |> List.map (fun (factors, cov) -> (getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
+        let design = estimableDesign |> List.map (fun ((factors, _), cov) -> (getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
         let estimateMaps = estimableDesign |> List.map getPredictorEstimateMap
         let beta, invHDiag, iter, converged, estimateMapsFinal, cumEstimateCountsFinal = iwls respCov design estimateMaps glmDistribution glmLink initBeta None maxIter 0 length sliceLength cumEstimateCounts eps
         if converged then
@@ -1287,7 +1274,7 @@ type GlmModel with
         let glmLink = this.Link
         let estimableDesign = Glm.getEstimableDesign predictors this.HasIntercept
         let cumEstimateCounts = this.CumEstimateCount
-        let design = estimableDesign |> List.map (fun (factors, cov) -> (Glm.getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
+        let design = estimableDesign |> List.map (fun ((factors, _), cov) -> (Glm.getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
         let estimateMaps = this.EstimateMaps
 
         let covariateStorage = 
@@ -1311,7 +1298,7 @@ type GlmModel with
                                             Glm.getPred xbeta glmLink                               
                                         )
              }
-        new Covariate("Fitted", covariateStorage)     
+        new Covariate("Predicted", covariateStorage)     
         
 
 
