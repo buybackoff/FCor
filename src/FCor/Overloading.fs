@@ -582,9 +582,17 @@ module Overloading =
 
 
 
-        static member ConvertStatVar (DummyType, x : Factor, f : string -> string) = Rename(x.AsExpr, f)
+        static member ConvertStatVar (DummyType, x : Factor, f : string -> string) = RenameLevels(x.AsExpr, f)
 
-        static member ConvertStatVar (DummyType, x : FactorExpr, f : string -> string) = Rename(x, f)
+        static member ConvertStatVar (DummyType, x : FactorExpr, f : string -> string) = RenameLevels(x, f)
+
+        static member ConvertStatVar (DummyType, x : Factor, f : string) = FactorExpr.Rename(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : FactorExpr, f : string) = FactorExpr.Rename(x, f)
+
+        static member ConvertStatVar (DummyType, x : Covariate, f : string) = CovariateExpr.Rename(x.AsExpr, f)
+
+        static member ConvertStatVar (DummyType, x : CovariateExpr, f : string) = CovariateExpr.Rename(x, f)
 
         static member ConvertStatVar (DummyType, x : Factor, f : string list) = MergeLevels(x.AsExpr, f)
 

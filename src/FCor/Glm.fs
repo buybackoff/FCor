@@ -825,7 +825,7 @@ module Glm =
                         seq{0..processorCount - 1} 
                            |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
                            |> Seq.toArray 
-                           |> Array.map (fun (fromObs, toObs) -> 
+                           |> Array.Parallel.map (fun (fromObs, toObs) -> 
                                                     let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
                                                     let U = new Vector(totalEstimateCount, 0.0)
                                                     let H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
@@ -1007,26 +1007,27 @@ module Glm =
         let resp = resp.AsExpr
         match glmDistribution with
             | Gaussian ->
-                VectorExpr.EvalIn((resp - pred) .^ 2, None)
+                VectorExpr.EvalIn((resp - pred) .^ 2, None), Vector.Empty
             | Poisson ->
-                VectorExpr.EvalIn((resp .* VectorExpr.Log(pred.AsExpr) - pred.AsExpr), None)
+                VectorExpr.EvalIn((resp .* VectorExpr.Log(pred.AsExpr) - pred.AsExpr), None), Vector.Empty
             | Gamma ->
-                VectorExpr.EvalIn((VectorExpr.Log(pred ./ resp) + (resp ./ pred)), None) 
+                VectorExpr.EvalIn((VectorExpr.Log(resp ./ pred) - (resp ./ pred)), None), VectorExpr.EvalIn(VectorExpr.Log(resp), None)
             | Binomial ->
                 VectorExpr.EvalIn(VectorExpr.IfFunction((resp .= 0.0), 
                                                         (VectorExpr.Log(1.0 - pred.AsExpr)),
-                                                        (VectorExpr.Log(pred.AsExpr))), None)
+                                                        (VectorExpr.Log(pred.AsExpr))), None), Vector.Empty
 
-    let getLogLikelihood (logLikelihoodPart : float) (N : int64) (phi : float) (glmDistribution : GlmDistribution) =
+    let getLogLikelihood (logLikelihoodPart : float * float) (N : int64) (phi : float) (glmDistribution : GlmDistribution) =
+        let L1, L2 = logLikelihoodPart
         match glmDistribution with
             | Gaussian ->
-                -0.5 * (logLikelihoodPart / phi + float(N) * Math.Log(2.0 * Math.PI * phi))
+                -0.5 * (L1 / phi + float(N) * Math.Log(2.0 * Math.PI * phi))
             | Poisson ->
-                logLikelihoodPart / phi
+                L1 / phi
             | Gamma ->
-                phi * logLikelihoodPart + (phi * Math.Log(phi) - lnGamma(phi)) * float(N)
+                1.0 / phi * L1 - L2 - (1.0 / phi * Math.Log(phi) + lnGamma(1.0 / phi)) * float(N)
             | Binomial -> 
-                logLikelihoodPart / phi
+                L1 / phi
 
     let getPhi (dispersion : GlmDispersion) (glmDistribution : GlmDistribution) (N : int64) (dof : int) (pearsonChi : float) (deviance : float) =
         let N_dof = float(N - int64(dof))
@@ -1065,7 +1066,7 @@ module Glm =
  
         let processorCount = Environment.ProcessorCount
         let processorChunk = obsCount / int64(processorCount)
-        let deviance, pearsonChi, likelihoodPart, validObs =
+        let deviance, pearsonChi, likelihoodPart1, likelihoodPart2, validObs =
             seq{0..processorCount - 1} 
                 |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
                 |> Seq.toArray 
@@ -1077,7 +1078,7 @@ module Glm =
                                                                                         |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
                                                    |> List.map (fun ((x,y),z) -> x,y,z)
                                                    |> zipDesign |> Seq.zip respSlices
-                                                   |> Seq.fold (fun (devSum, pearsonSum, logLSum, validObs) (resp, slice) ->
+                                                   |> Seq.fold (fun (devSum, pearsonSum, logLSum1, logLSum2, validObs) (resp, slice) ->
                                                                     let sliceLength = resp.Length
                                                                     use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
                                                                     use pred = getPred xbeta glmLink
@@ -1085,21 +1086,24 @@ module Glm =
                                                                     use isValidPred = pred.[isValid]
                                                                     use deviance = getDeviance resp pred glmDistribution
                                                                     use pearsonChi = getPearsonChi resp pred glmDistribution
-                                                                    use likelihoodPart = getLogLikelihoodPart resp pred glmDistribution 
+                                                                    let likelihoodPart1, likelihoodPart2  = getLogLikelihoodPart resp pred glmDistribution 
                                                                     let dsum = MklFunctions.Sum_Array_NotNan(sliceLength, deviance.NativeArray)
                                                                     let psum = MklFunctions.Sum_Array_NotNan(sliceLength, pearsonChi.NativeArray) 
-                                                                    let lsum = MklFunctions.Sum_Array_NotNan(sliceLength, likelihoodPart.NativeArray)                                            
+                                                                    let lsum1 = MklFunctions.Sum_Array_NotNan(sliceLength, likelihoodPart1.NativeArray) 
+                                                                    let lsum2 = if likelihoodPart2 = Vector.Empty then 0.0 else MklFunctions.Sum_Array_NotNan(sliceLength, likelihoodPart2.NativeArray)                                            
                                                                     (devSum + (if Double.IsNaN(dsum) then 0.0 else dsum)),
                                                                      (pearsonSum + (if Double.IsNaN(psum) then 0.0 else psum)),
-                                                                      (logLSum + (if Double.IsNaN(lsum) then 0.0 else lsum)), (validObs + isValidPred.LongLength)
-                                                               ) (0.0, 0.0, 0.0, 0L)
+                                                                      (logLSum1 + (if Double.IsNaN(lsum1) then 0.0 else lsum1)),
+                                                                       (logLSum2 + (if Double.IsNaN(lsum2) then 0.0 else lsum2)),
+                                                                       (validObs + isValidPred.LongLength)
+                                                               ) (0.0, 0.0, 0.0, 0.0, 0L)
                                         )
-                |> Array.reduce (fun (d1, p1, l1, N1) (d2, p2, l2, N2) -> d1 + d2, p1 + p2, l1 + l2, N1 + N2)
+                |> Array.reduce (fun (d, p, l1, l2, N) (d', p', l1', l2', N') -> d + d', p + p', l1 + l1', l2 + l2', N + N')
 
         let dof = beta.Length 
         let N = validObs
         let phi = getPhi MaxLikelihood glmDistribution N dof pearsonChi deviance
-        let logLikelihood = getLogLikelihood likelihoodPart N phi glmDistribution
+        let logLikelihood = getLogLikelihood (likelihoodPart1, likelihoodPart2) N phi glmDistribution
         {
          ValidObsCount = N
          DoF = dof

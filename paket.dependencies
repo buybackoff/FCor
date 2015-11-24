@@ -12,5 +12,8 @@ nuget FsCheck.XUnit
 nuget FAKE
 nuget SourceLink.Fake
 nuget FSharp.Core
+nuget RProvider 1.1.8
+nuget FsReveal 1.0.3
+nuget Suave
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx

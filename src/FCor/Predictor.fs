@@ -166,11 +166,10 @@ type Factor(name : string, factorStorage : IFactorStorage) =
 
     static member op_Explicit(factor : Factor) : CategoricalPredictor = CategoricalPredictor.Factor(!!factor)
 
-    static member op_Explicit(x : string * string[]) =
-        let name, data = x
+    static member op_Explicit(data : string[]) =
         let factorStorage = new FactorStorage()
         factorStorage.SetSlice(0L, data)
-        new Factor(name, factorStorage)
+        new Factor("Factor", factorStorage)
 
     static member (*) (x : Factor, y : Factor) : CategoricalPredictor = !!x * !!y
 
@@ -222,7 +221,8 @@ type Factor(name : string, factorStorage : IFactorStorage) =
 and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
 
     | Var of Factor
-    | Rename of FactorExpr * (string -> string)
+    | Rename of FactorExpr * string
+    | RenameLevels of FactorExpr * (string -> string)
     | MergeLevels of FactorExpr * (string seq)
     | Cross of FactorExpr * FactorExpr
     | Cut of CovariateExpr * float[]
@@ -234,6 +234,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
         match this with
             | Var(f) -> [StatVariable.Factor f]
             | Rename(f, _) -> f.Vars
+            | RenameLevels(f, _) -> f.Vars
             | MergeLevels(f, _) -> f.Vars
             | Cross(f1, f2) -> f1.Vars @ f2.Vars
             | Cut(c, _) -> c.Vars
@@ -243,7 +244,8 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
     member this.MinLength =
         match this with
             | Var(f) ->  f.Length
-            | Rename(f, _) -> f.MinLength 
+            | Rename(f, _) -> f.MinLength
+            | RenameLevels(f, _) -> f.MinLength 
             | MergeLevels(f, _) -> f.MinLength
             | Cross(f1, f2) -> min f1.MinLength f2.MinLength
             | Cut(c, _) -> c.MinLength
@@ -253,7 +255,8 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
     member this.MaxLength =
         match this with
             | Var(f) ->  f.Length
-            | Rename(f, _) -> f.MaxLength 
+            | Rename(f, _) -> f.MaxLength
+            | RenameLevels(f, _) -> f.MaxLength 
             | MergeLevels(f, _) -> f.MaxLength
             | Cross(f1, f2) -> max f1.MaxLength f2.MaxLength
             | Cut(c, _) -> c.MaxLength
@@ -263,7 +266,8 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
     member this.Name =
         match this with
             | Var(f) ->  f.Name
-            | Rename(f, _) -> f.Name 
+            | RenameLevels(f, _) -> f.Name 
+            | Rename(_, name) -> name 
             | MergeLevels(f, _) -> f.Name
             | Cross(f1, f2) -> sprintf "%s.*%s" f1.Name f2.Name
             | Cut(c, _) -> sprintf "%s.AsFactor" c.Name 
@@ -273,7 +277,8 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
     static member Substitute (mapF :  StatVariable -> StatVariable) (factorExpr : FactorExpr) =
         match factorExpr with
             | Var(f) -> Var(mapF !!f |> (!!))
-            | Rename(f, renameF) -> Rename(FactorExpr.Substitute mapF f, renameF)
+            | Rename(f, name) -> Rename(FactorExpr.Substitute mapF f, name)
+            | RenameLevels(f, renameF) -> RenameLevels(FactorExpr.Substitute mapF f, renameF)
             | MergeLevels(f, s) -> MergeLevels(FactorExpr.Substitute mapF f, s)
             | Cross(f1, f2) -> Cross(FactorExpr.Substitute mapF f1, FactorExpr.Substitute mapF f2) 
             | Cut(cov, breaks) -> Cut(CovariateExpr.Substitute mapF cov, breaks) 
@@ -286,7 +291,19 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
         let factor = 
             match this with
                 | Var(factor) -> factor
-                | Rename(factor, renameFun) ->
+                | Rename(factor, name) ->
+                    let factor = factor.AsFactor
+                    let factorStorage = 
+                         {
+                          new IFactorStorage with
+                              member __.Level with get(index) = factor.Level(index)
+                              member __.Length = factor.Length
+                              member __.Cardinality = factor.Cardinality
+                              member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
+                                  factor.GetSlices(fromObs, toObs, sliceLength)
+                         }
+                    new Factor(name, factorStorage)
+                | RenameLevels(factor, renameFun) ->
                     let factor = factor.AsFactor
                     let dict1 = new Dictionary<string, int>()
                     let dict2 = new Dictionary<int, string>()
@@ -557,8 +574,7 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
 
     static member op_Explicit(x : Covariate) : CovariateExpr = CovariateExpr.Var x
 
-    static member op_Explicit(x : string * Vector) =
-        let name, data = x
+    static member op_Explicit(data : Vector) =
         let covariateStorage = 
              {
               new ICovariateStorage with
@@ -576,7 +592,7 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
                             yield data.View(fromObs + int64(m) * sliceLength, fromObs + int64(m) * sliceLength + k - 1L)
                       }
              }
-        new Covariate(name, covariateStorage)
+        new Covariate("Covariate", covariateStorage)
 
     static member op_Explicit(x : Covariate) : Vector =
         let v = new Vector(x.Length, 0.0)
@@ -799,6 +815,7 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
 
 and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     | Var of Covariate
+    | Rename of CovariateExpr * string
     | UnaryFunction of CovariateExpr * (VectorExpr -> VectorExpr)  * string
     | BinaryFunction of CovariateExpr * CovariateExpr * (VectorExpr * VectorExpr -> VectorExpr) * string
     | ParseFactor of FactorExpr * (string -> float)
@@ -807,6 +824,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     member this.Vars =
         match this with
             | Var(v) -> [StatVariable.Covariate v]
+            | Rename(expr, _) -> expr.Vars 
             | UnaryFunction(expr, _, _) -> expr.Vars
             | BinaryFunction(expr1, expr2, _, _) -> expr1.Vars @ expr2.Vars
             | ParseFactor(f, _) -> f.Vars
@@ -815,6 +833,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     member this.MinLength =
         match this with
             | Var(c) ->  c.Length
+            | Rename(expr, _) -> expr.MinLength
             | UnaryFunction(expr, _, _) -> expr.MinLength 
             | BinaryFunction(expr1, expr2, _, _) ->  
                 min expr1.MinLength expr2.MinLength
@@ -824,6 +843,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     member this.MaxLength =
         match this with
             | Var(c) ->  c.Length
+            | Rename(expr, _) -> expr.MaxLength
             | UnaryFunction(expr, _, _) -> expr.MaxLength 
             | BinaryFunction(expr1, expr2, _, _) ->  
                 max expr1.MaxLength expr2.MaxLength
@@ -833,6 +853,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     static member Substitute (mapF :  StatVariable -> StatVariable) (covExpr : CovariateExpr) =
         match covExpr with
             | Var(c) -> Var(mapF !!c |> (!!))
+            | Rename(cov, name) -> Rename(CovariateExpr.Substitute mapF cov, name)
             | UnaryFunction(cov, f, label) -> UnaryFunction(CovariateExpr.Substitute mapF cov, f, label)
             | BinaryFunction(cov1, cov2, f, label) -> BinaryFunction(CovariateExpr.Substitute mapF cov1, CovariateExpr.Substitute mapF cov2, f, label)
             | ParseFactor(f, parse) -> ParseFactor(FactorExpr.Substitute mapF f, parse)
@@ -842,6 +863,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
         match this with
             | Var(c) ->
                 c.GetSlices(fromObs, toObs, sliceLen) |> Seq.map (fun x -> x.AsExpr)
+            | Rename(expr, _) -> expr.GetSlicesExpr(fromObs, toObs, sliceLen)
             | UnaryFunction(expr, f, _) -> 
                 expr.GetSlicesExpr(fromObs, toObs, sliceLen) |> Seq.map f
             | BinaryFunction(expr1, expr2, f, _) -> 
@@ -864,6 +886,7 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     member this.Name =
         match this with
             | Var(c) -> c.Name
+            | Rename(_, name) -> name
             | UnaryFunction(expr, _, format) -> String.Format(format, expr.Name)
             | BinaryFunction(expr1, expr2, _, format) -> String.Format(format, expr1.Name, expr2.Name)
             | ParseFactor(f, _) -> sprintf "%s.AsCovariate" f.Name
@@ -872,26 +895,26 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
     member this.AsCovariate =
         if Covariate.CovariateExprCache.ContainsKey(this:>obj) then Covariate.CovariateExprCache.[this:>obj]
         else
-        let covariate = 
-            let minLen = this.MinLength
-            let maxLen = this.MaxLength
-            if minLen <> maxLen then raise (new ArgumentException("Covariate length mismatch"))
-            let covariateStorage = 
-                 {
-                  new ICovariateStorage with
-                      member __.Length = this.MinLength
-                      member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
-                        seq
-                          {
-                            let buffer = new Vector((min (int64(sliceLength)) (toObs - fromObs + 1L)), 0.0)
-                            for sliceExpr in this.GetSlicesExpr(fromObs, toObs, sliceLength) do
-                                yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
-                          }
-                 }
-            let name = this.Name // remove ()
-            new Covariate(name, covariateStorage)
-        Covariate.CovariateExprCache.Add(this:>obj, covariate)
-        covariate
+            let covariate = 
+                let minLen = this.MinLength
+                let maxLen = this.MaxLength
+                if minLen <> maxLen then raise (new ArgumentException("Covariate length mismatch"))
+                let covariateStorage = 
+                     {
+                      new ICovariateStorage with
+                          member __.Length = this.MinLength
+                          member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
+                            seq
+                              {
+                                let buffer = new Vector((min (int64(sliceLength)) (toObs - fromObs + 1L)), 0.0)
+                                for sliceExpr in this.GetSlicesExpr(fromObs, toObs, sliceLength) do
+                                    yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
+                              }
+                     }
+                let name = this.Name // remove ()
+                new Covariate(name, covariateStorage)
+            Covariate.CovariateExprCache.Add(this:>obj, covariate)
+            covariate
 
     static member op_Explicit(x : CovariateExpr) : Predictor = Predictor.NumericalPredictor(x)
 

@@ -15,6 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{BF60
 		build.fsx = build.fsx
 		build1.fsx = build1.fsx
 		build_scaffold.fsx = build_scaffold.fsx
+		build_slides.fsx = build_slides.fsx
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md
@@ -54,6 +55,15 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FCor.Tests", "tests\FCor.Tests\FCor.Tests.fsproj", "{9405B5E0-05C7-4B39-AB28-8E1895B3D7E3}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FCor.MatlabTests", "tests\FCor.MatlabTests\FCor.MatlabTests.fsproj", "{A253FC86-8B61-4F7F-BB60-DCB042F8FEC8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "presentations", "presentations", "{2E4BC7E0-1C74-4AF0-8ACC-A60A7B0FEB0B}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LondonNov2015", "presentations\LondonNov2015\LondonNov2015.fsproj", "{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "slides", "slides", "{6194A475-774D-4854-AD28-557419653F11}"
+	ProjectSection(SolutionItems) = preProject
+		slides\slides.fsx = slides\slides.fsx
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -117,6 +127,18 @@ Global
 		{A253FC86-8B61-4F7F-BB60-DCB042F8FEC8}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{A253FC86-8B61-4F7F-BB60-DCB042F8FEC8}.Release|Win32.ActiveCfg = Release|Any CPU
 		{A253FC86-8B61-4F7F-BB60-DCB042F8FEC8}.Release|x64.ActiveCfg = Release|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Release|Win32.ActiveCfg = Release|Any CPU
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -126,5 +148,7 @@ Global
 		{8E6D5255-776D-4B61-85F9-73C37AA1FB9A} = {A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}
 		{9405B5E0-05C7-4B39-AB28-8E1895B3D7E3} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
 		{A253FC86-8B61-4F7F-BB60-DCB042F8FEC8} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
+		{D87FC803-AC31-4ECB-A9AE-06BB0F58D6F4} = {2E4BC7E0-1C74-4AF0-8ACC-A60A7B0FEB0B}
+		{6194A475-774D-4854-AD28-557419653F11} = {A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}
 	EndGlobalSection
 EndGlobal
