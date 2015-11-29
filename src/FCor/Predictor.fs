@@ -166,10 +166,18 @@ type Factor(name : string, factorStorage : IFactorStorage) =
 
     static member op_Explicit(factor : Factor) : CategoricalPredictor = CategoricalPredictor.Factor(!!factor)
 
-    static member op_Explicit(data : string[]) =
+    static member op_Explicit(data : string array) =
         let factorStorage = new FactorStorage()
         factorStorage.SetSlice(0L, data)
         new Factor("Factor", factorStorage)
+
+    static member op_Explicit(data : string seq) : Factor  =
+        let data = data |> Seq.toArray
+        !!data
+
+    static member op_Explicit(data : string list) : Factor  =
+        let data = data |> List.toArray
+        !!data
 
     static member (*) (x : Factor, y : Factor) : CategoricalPredictor = !!x * !!y
 
@@ -573,6 +581,15 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
     static member op_Explicit(x : Covariate) : Predictor = Predictor.NumericalPredictor(!!x)
 
     static member op_Explicit(x : Covariate) : CovariateExpr = CovariateExpr.Var x
+
+    static member op_Explicit(data : float seq) : Covariate =
+        !!(!!data : Vector)
+
+    static member op_Explicit(data : float list) : Covariate =
+        !!(!!data : Vector)
+
+    static member op_Explicit(data : float array) : Covariate =
+        !!(!!data : Vector)
 
     static member op_Explicit(data : Vector) =
         let covariateStorage = 
