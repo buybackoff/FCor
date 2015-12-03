@@ -1,4 +1,4 @@
-#r @".\bin\release\FCor.dll"
+#r @".\bin\debug\FCor.dll"
 open FCor
 open FCor.ExplicitConversion
 open FCor.Math
@@ -14,6 +14,13 @@ open Overloading
 open BasicStats
 
 //open FCor.CsvProvider
+//type GammaCsv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gamma.csv" >
+//let df = new GammaCsv()
+//let model = glm (df.lifetime <~> df.mfg) true Gamma Ln 100 1e-9
+
+
+
+//open FCor.CsvProvider
 //[<LiteralAttribute>]
 //let pathPredictedCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest250K.csv"
 //type NewDataFrame = CsvDataFrame<HasHeaders = true, Filename = pathPredictedCsv>
@@ -21,21 +28,21 @@ open BasicStats
 //let A = newDF.A
 //let stats = A.GetStats()
 
-let N = 25000000
-let rng = new MT19937Rng()
-let rnd = new Random()
-MklControl.SetMaxThreads 1
-
-let v20 = rand rng N : Vector
-let v100 = rand rng N : Vector
-let X = rand rng N : Vector
-let gamRnd = gammaRnd rng 0.0 1.0 1.0 N : Vector
-let Y = eval (gamRnd.AsExpr .* exp(2.2 + v20.AsExpr + v100 + 3.3 * X.AsExpr))
-
-let XVar = (!!X : Covariate) |>> "X"
-let YVar = (!!Y : Covariate) |>> "Y"
-let AVar : FactorExpr = (20.0 * v20) |> floor |> (!!) |>> [|0..19|] |>> (fun level -> sprintf "A%s" level) |>> "A"
-let BVar : FactorExpr = (100.0 * v100) |> floor |> (!!) |>> [|0..99|] |>> (fun level -> sprintf "B%s" level) |>> "B"
+//let N = 25000000
+//let rng = new MT19937Rng()
+//let rnd = new Random()
+//MklControl.SetMaxThreads 1
+//
+//let v20 = rand rng N : Vector
+//let v100 = rand rng N : Vector
+//let X = rand rng N : Vector
+//let gamRnd = gammaRnd rng 0.0 1.0 1.0 N : Vector
+//let Y = eval (gamRnd.AsExpr .* exp(2.2 + v20.AsExpr + v100 + 3.3 * X.AsExpr))
+//
+//let XVar = (!!X : Covariate) |>> "X"
+//let YVar = (!!Y : Covariate) |>> "Y"
+//let AVar : FactorExpr = (20.0 * v20) |> floor |> (!!) |>> [|0..19|] |>> (fun level -> sprintf "A%s" level) |>> "A"
+//let BVar : FactorExpr = (100.0 * v100) |> floor |> (!!) |>> [|0..99|] |>> (fun level -> sprintf "B%s" level) |>> "B"
 
 //let XStorage = new CovariateStorageFloat32()
 //XStorage.SetSlice(0L, X.ToArray() |> Array.map float32)
@@ -51,22 +58,19 @@ let BVar : FactorExpr = (100.0 * v100) |> floor |> (!!) |>> [|0..99|] |>> (fun l
 //YStorage.SetSlice(0L, Y.ToArray() |> Array.map float32)
 //let YVar = new Covariate("Y", YStorage)
 #time
-let pathCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest25M.csv"
+let pathCsv = @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest.csv"
 
 
-Glm.toCsv [StatVariable.Factor(AVar.AsFactor);StatVariable.Factor(BVar.AsFactor);StatVariable.Covariate(XVar.AsCovariate);StatVariable.Covariate(YVar.AsCovariate)] pathCsv
+//Glm.toCsv [StatVariable.Factor(AVar.AsFactor);StatVariable.Factor(BVar.AsFactor);StatVariable.Covariate(XVar.AsCovariate);StatVariable.Covariate(YVar.AsCovariate)] pathCsv
 
-//let statVars = Glm.importCsv pathCsv [|','|] [||] true false
-//let A = statVars.[0].AsFactor
-//let B = statVars.[1].AsFactor
-//let X = statVars.[2].AsCovariate
-//let Y = statVars.[3].AsCovariate
-//
-//open StatModels
-//let A' = A |>> (fun (level : string) -> let d = int <| level.Substring(1) in sprintf "A%d" (d % 3))
-//let B' = B |>> (fun (level : string) -> let d = int <| level.Substring(1) in sprintf "B%d" (d % 4))
-//
-//let model = glm (Y <~> A' + B' + A' * B') false Gamma Ln 50 1e-8
+let statVars = Glm.importCsv pathCsv [|','|] [||] true false
+let A = statVars.[0].AsFactor
+let B = statVars.[1].AsFactor
+let X = statVars.[2].AsCovariate
+let Y = statVars.[3].AsCovariate
+
+
+let model = glm (Y <~> A + B + X) true Gamma Ln 50 1e-8
 //
 //
 //let fitted = model.Predict(new DataFrame(statVars))

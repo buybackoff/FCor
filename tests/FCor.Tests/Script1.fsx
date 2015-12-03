@@ -1,20 +1,21 @@
-﻿#r "./bin/release/Interop.MLApp.dll"
+﻿//#r "./bin/release/Interop.MLApp.dll"
 #r "./bin/release/FCor.Tests.dll"
 #r "./bin/release/FCor.dll"
 
-open MLApp
+//open MLApp
 open System
 open FCor
 open FCor.Tests
 open FCor.Tests.Util
+open FCor.ExplicitConversion
+open FCor.CsvProvider
+open FCor.StatModels
 
-let inline (<=>) (x : float[]) (y :float[]) = epsEqualArray x y epsEqualFloat 0.0
-
-let x = [|1.0;Double.NaN|]
-let v1 = new Vector(x)
-let v2 = new Vector([|1.0;12.|])
-let res1 = v1 .^ v2
-Math.Pow(Double.NaN, 12.)
+type GammaCsv = CsvDataFrame< "gamma.csv" >
+let df = new GammaCsv()
+let model = glm (df.lifetime <~> df.mfg) true Gamma Ln 100 1e-9
+df.lifetime.GetStats()
+log(df.lifetime.GetStats().Mean)
 
 
 

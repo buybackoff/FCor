@@ -79,7 +79,7 @@ type GlmModel =
      Distribution : GlmDistribution
      Link : GlmLink
      HasIntercept : bool
-     GoodnessOfFit : GlmGoodnessOfFit
+     GoodnessOfFit : GlmGoodnessOfFit option
      Beta : Vector
      InvHDiag : Vector
      Iter : int
@@ -96,19 +96,25 @@ type GlmModel =
         sb.AppendLine <| sprintf "%-15s %s" "Response" this.Response.Name |> ignore
         sb.AppendLine <| sprintf "%-15s %s" "Predictors" (String.Join("+", this.Predictors |> List.map (fun p -> p.Name))) |> ignore
         sb.AppendLine <| sprintf "%-15s %b" "Intercept" this.HasIntercept |> ignore
-        sb.AppendLine <| sprintf "%-15s %i" "Valid Obs Count" this.GoodnessOfFit.ValidObsCount |> ignore
-        sb.AppendLine <| sprintf "Algorithm converged in %d iterations" this.Iter |> ignore
-        sb.AppendLine("") |> ignore
-        sb.Append(this.GoodnessOfFit.AsString) |> ignore
-        sb.AppendLine("") |> ignore
-        sb.AppendLine <| "Parameter Estimates" |> ignore
-        sb.AppendLine <| sprintf "%-15s  %-15s  %-3s  %-12s %-12s %-12s %-12s" "Predictor" "Level" "DoF" "Estimate" "StdError" "Wald ChiSq" "Pr > ChiSq" |> ignore
-        this.Parameters |> List.iter (fun prm -> 
-                                          sb.AppendLine <| sprintf "%-15s  %-15s  %3d  %12G %12G %12G %12G" prm.Predictor.Name (String.Join("*", prm.Levels))
-                                                                   (if prm.IsDisabled then 0 else 1) prm.Value prm.Std prm.WaldChiSq prm.PValue |> ignore
-                                     )
+        match this.GoodnessOfFit with
+            | Some(goodnessOfFit) ->
+                sb.AppendLine <| sprintf "%-15s %i" "Valid Obs Count" goodnessOfFit.ValidObsCount |> ignore
+                sb.AppendLine <| sprintf "Algorithm converged in %d iterations" this.Iter |> ignore
+                sb.AppendLine("") |> ignore
+                sb.Append(goodnessOfFit.AsString) |> ignore
+                sb.AppendLine("") |> ignore
+                sb.AppendLine <| "Parameter Estimates" |> ignore
+                sb.AppendLine <| sprintf "%-20s  %-20s  %-3s  %-12s %-12s %-12s %-12s" "Predictor" "Level" "DoF" "Estimate" "StdError" "Wald ChiSq" "Pr > ChiSq" |> ignore
+                this.Parameters |> List.iter (fun prm -> 
+                                                  sb.AppendLine <| sprintf "%-20s  %-20s  %3d  %12G %12G %12G %12G" prm.Predictor.Name (String.Join("*", prm.Levels))
+                                                                           (if prm.IsDisabled then 0 else 1) prm.Value prm.Std prm.WaldChiSq prm.PValue |> ignore
+                                             )
+            | None -> 
+                if this.Beta = Vector.Empty then
+                    sb.AppendLine <| sprintf "Algorithm did not converge: all parameters disabled" |> ignore
+                else
+                    sb.AppendLine <| sprintf "Algorithm did not converge after %d iterations" this.Iter |> ignore
         sb.ToString()
-        
 
 
 module Glm =
@@ -297,7 +303,7 @@ module Glm =
                 | [], [] -> []
                 | (h::t), [] ->
                     if h >= 0 && (h - n) >= 0 then (h - n)::(updateEstMap' t isNumDisabled' n)
-                    else raise (new InvalidOperationException())
+                    else h::(updateEstMap' t isNumDisabled' n)
                 | [], (h::t) -> raise (new InvalidOperationException())
                 | (h1::t1), (h2::t2) ->
                     if h2 then
@@ -873,7 +879,10 @@ module Glm =
                 else
                     let newEstMaps, newCumEstCount = updateEstimateMaps estimateMaps cumEstimateCounts (isNumDisabled.ToArray())
                     let newBeta = beta.[BoolVector.Not isNumDisabled]
-                    iwls response design newEstMaps glmDistribution glmLink newBeta None maxIter (iter + 1) obsCount sliceLength newCumEstCount eps
+                    if newBeta = Vector.Empty then
+                        Vector.Empty, Vector.Empty, iter, false, newEstMaps, newCumEstCount
+                    else
+                        iwls response design newEstMaps glmDistribution glmLink newBeta None maxIter (iter + 1) obsCount sliceLength newCumEstCount eps
             else
                 use delta = Matrix.CholSolve(H, U)
                 let nextBeta = beta + delta
@@ -1045,7 +1054,6 @@ module Glm =
                             let gamLogL' = gammaLogL' currScale d N'
                             if Double.IsNaN(currScale) || iter >= maxIter then Double.NaN
                             elif Math.Abs(gamLogL') <= 1e-10 then
-                                printfn "Scale converged after %d iter" iter
                                 currScale
                             else 
                                 getScale (currScale - (gammaLogL' currScale d N') / ((trigamma currScale) - 1.0 / currScale)) d N' (iter + 1) maxIter
@@ -1193,8 +1201,8 @@ module Glm =
         let length = minLen
         let respCov = response.AsCovariate
         checkResponse respCov glmDistribution sliceLength
-        let respSlice = (respCov.GetSlices(0L, int64(sliceLength - 1), sliceLength) |> Seq.take 1 |> Seq.toArray).[0]
-        let meanReponseSlice = Vector.Mean(respSlice.[respSlice .= respSlice])
+        let meanReponseSlice = (respCov.GetSlices(0L, (min (int64(sliceLength)) length) - 1L, sliceLength) |> Seq.map (fun v -> Vector.Mean (v.[v .= v])))
+                                                                                                           |> Seq.take 1 |> Seq.nth 0
 
         let estimableDesign = getEstimableDesign predictors includeIntercept
         let estimateCounts = estimableDesign |> List.map getEstimateCount |> List.toArray
@@ -1212,7 +1220,7 @@ module Glm =
              Distribution = glmDistribution
              Link = glmLink
              HasIntercept = includeIntercept
-             GoodnessOfFit = goodnessOfFit
+             GoodnessOfFit = goodnessOfFit |> Some
              Beta = beta
              InvHDiag = invHDiag
              Iter = iter
@@ -1221,7 +1229,20 @@ module Glm =
              CumEstimateCount = cumEstimateCountsFinal
             }
         else 
-            raise (new InvalidOperationException(sprintf "Glm algorithm did not converge after %d iterations" iter))
+            {
+             Response = response
+             Predictors = predictors
+             Distribution = glmDistribution
+             Link = glmLink
+             HasIntercept = includeIntercept
+             GoodnessOfFit = None
+             Beta = beta
+             InvHDiag = invHDiag
+             Iter = iter
+             Parameters = []
+             EstimateMaps = estimateMapsFinal
+             CumEstimateCount = cumEstimateCountsFinal
+            }
 
     let getPermutedFactor (baseFactor : Factor) (factorToPermute : Factor) =
         let baseLevelMap = new Dictionary<string, int>()

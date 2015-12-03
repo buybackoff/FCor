@@ -125,8 +125,8 @@ let slice = v10.[1..2]
 produces a value of:
 *)
 (*** include-value: slice ***)
-v10.SetSlice(Some(1), Some(2), 3.3) 
-v10.SetSlice(Some(1), Some(2), v11.[1..2]) 
+v10.[1..2] <- 3.3 
+v10.[1..2] <- v11.[1..2] 
 (**
 You can also use a sequence of indices to get or set part of a vector:
 *)

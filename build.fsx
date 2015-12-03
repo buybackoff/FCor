@@ -161,7 +161,7 @@ Target "RunTests_x86" (fun _ ->
         { p with
             ShadowCopy = false
             TimeOut = TimeSpan.FromMinutes 20.
-            ToolPath = "./packages/xunit.runners/tools/xunit.console.clr4.x86.exe"
+            ToolPath = "./packages/xunit.runner.console/tools/xunit.console.x86.exe"
              })
 )
 
@@ -171,7 +171,7 @@ Target "RunMatlabTests_x86" (fun _ ->
         { p with
             ShadowCopy = false
             TimeOut = TimeSpan.FromMinutes 20.
-            ToolPath = "./packages/xunit.runners/tools/xunit.console.clr4.x86.exe"
+            ToolPath = "./packages/xunit.runner.console/tools/xunit.console.x86.exe"
              })
 )
 
@@ -182,7 +182,7 @@ Target "RunTests_x64" (fun _ ->
         { p with
             ShadowCopy = false
             TimeOut = TimeSpan.FromMinutes 20.
-            ToolPath = "./packages/xunit.runners/tools/xunit.console.clr4.exe"
+            ToolPath = "./packages/xunit.runner.console/tools/xunit.console.exe"
              })
 )
 
@@ -192,7 +192,7 @@ Target "RunMatlabTests_x64" (fun _ ->
         { p with
             ShadowCopy = false
             TimeOut = TimeSpan.FromMinutes 20.
-            ToolPath = "./packages/xunit.runners/tools/xunit.console.clr4.exe"
+            ToolPath = "./packages/xunit.runner.console/tools/xunit.console.exe"
              })
 )
 
@@ -387,3 +387,5 @@ Target "All" DoNothing
 //  ==> "Release"
 
 RunTargetOrDefault "All"
+
+//"target=PublishNuget" "NugetKey=NUGETKEY"

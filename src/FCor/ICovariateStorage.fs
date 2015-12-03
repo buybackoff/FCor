@@ -34,23 +34,28 @@ type CovariateStorageFloat32 () =
     interface ICovariateStorage with
         member this.Length = length
         member __.GetSlices (fromObs : int64, toObs : int64, sliceLength : int) =
-                    seq
-                      {
-                        let sizeof = sizeof<float32> |> int64
-                        let length = toObs - fromObs + 1L
-                        let sliceLength = int64 sliceLength
-                        let m = length / sliceLength |> int
-                        let k = length % sliceLength 
-                        use buffer = new Vector((if m > 0 then sliceLength else k), 0.0)
-                        for i in 0..m-1 do
-                            let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<float32>
-                            MklFunctions.S_D_Convert_Array(sliceLength, offsetAddr, buffer.NativeArray)
-                            yield buffer
-                        if k > 0L then
-                            let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(m) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<float32>
-                            MklFunctions.S_D_Convert_Array(k, offsetAddr, buffer.NativeArray)
-                            yield buffer.View(0L, k-1L)
-                      }
+                    if fromObs < 0L then raise (new IndexOutOfRangeException())
+                    if toObs >= length then raise (new IndexOutOfRangeException())
+                    if sliceLength <= 0 then raise (new ArgumentException("Slice length must be > 0"))
+                    if fromObs > toObs then Seq.empty
+                    else
+                        seq
+                          {
+                            let sizeof = sizeof<float32> |> int64
+                            let length = toObs - fromObs + 1L
+                            let sliceLength = int64 sliceLength
+                            let m = length / sliceLength |> int
+                            let k = length % sliceLength 
+                            use buffer = new Vector((if m > 0 then sliceLength else k), 0.0)
+                            for i in 0..m-1 do
+                                let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<float32>
+                                MklFunctions.S_D_Convert_Array(sliceLength, offsetAddr, buffer.NativeArray)
+                                yield buffer
+                            if k > 0L then
+                                let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(m) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<float32>
+                                MklFunctions.S_D_Convert_Array(k, offsetAddr, buffer.NativeArray)
+                                yield buffer.View(0L, k-1L)
+                          }
 
     interface IDisposable with
         member this.Dispose() = this.DoDispose(true)

@@ -88,44 +88,49 @@ type FactorStorage () =
         member __.Level with get(levelIndex) = levelMap.[levelIndex |> uint16]
         member __.Cardinality = levelMap.Count
         member __.GetSlices (fromObs : int64, toObs : int64, sliceLength : int) =
-            match nativeArray with
-                | Choice1Of2(nativeArray) ->
-                    seq
-                      {
-                        let sizeof = sizeof<uint8> |> int64
-                        let length = toObs - fromObs + 1L
-                        let sliceLength = int64 sliceLength
-                        let m = length / sliceLength |> int
-                        let k = length % sliceLength 
-                        use buffer = new UInt16Vector((if m > 0 then sliceLength else k), 0us)
-                        for i in 0..m-1 do
-                            let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint8>
-                            MklFunctions.UI8_UI16_Convert_Array(sliceLength, offsetAddr, buffer.NativeArray)
-                            yield buffer
-                        if k > 0L then
-                            let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(m) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint8>
-                            MklFunctions.UI8_UI16_Convert_Array(k, offsetAddr, buffer.NativeArray)
-                            yield buffer.View(0L, k-1L)
-                      }
+            if fromObs < 0L then raise (new IndexOutOfRangeException())
+            if toObs >= length then raise (new IndexOutOfRangeException())
+            if sliceLength <= 0 then raise (new ArgumentException("Slice length must be > 0"))
+            if fromObs > toObs then Seq.empty
+            else
+                match nativeArray with
+                    | Choice1Of2(nativeArray) ->
+                        seq
+                          {
+                            let sizeof = sizeof<uint8> |> int64
+                            let length = toObs - fromObs + 1L
+                            let sliceLength = int64 sliceLength
+                            let m = length / sliceLength |> int
+                            let k = length % sliceLength 
+                            use buffer = new UInt16Vector((if m > 0 then sliceLength else k), 0us)
+                            for i in 0..m-1 do
+                                let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint8>
+                                MklFunctions.UI8_UI16_Convert_Array(sliceLength, offsetAddr, buffer.NativeArray)
+                                yield buffer
+                            if k > 0L then
+                                let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(m) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint8>
+                                MklFunctions.UI8_UI16_Convert_Array(k, offsetAddr, buffer.NativeArray)
+                                yield buffer.View(0L, k-1L)
+                          }
 
-                | Choice2Of2(nativeArray) ->
-                    seq
-                      {
-                        let sizeof = sizeof<uint16> |> int64
-                        let length = toObs - fromObs + 1L
-                        let sliceLength = int64 sliceLength
-                        let m = length / sliceLength |> int
-                        let k = length % sliceLength 
-                        use buffer = new UInt16Vector(sliceLength, 0us)
-                        for i in 0..m-1 do
-                            let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint16>
-                            MklFunctions.UI16_Copy_Array(sliceLength, offsetAddr, buffer.NativeArray)
-                            yield buffer
-                        if k > 0L then
-                            let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(m) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint16>
-                            MklFunctions.UI16_Copy_Array(k, offsetAddr, buffer.NativeArray)
-                            yield buffer.View(0L, k-1L)
-                      }
+                    | Choice2Of2(nativeArray) ->
+                        seq
+                          {
+                            let sizeof = sizeof<uint16> |> int64
+                            let length = toObs - fromObs + 1L
+                            let sliceLength = int64 sliceLength
+                            let m = length / sliceLength |> int
+                            let k = length % sliceLength 
+                            use buffer = new UInt16Vector(sliceLength, 0us)
+                            for i in 0..m-1 do
+                                let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint16>
+                                MklFunctions.UI16_Copy_Array(sliceLength, offsetAddr, buffer.NativeArray)
+                                yield buffer
+                            if k > 0L then
+                                let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(m) * sliceLength)*sizeof) |> NativePtr.ofNativeInt<uint16>
+                                MklFunctions.UI16_Copy_Array(k, offsetAddr, buffer.NativeArray)
+                                yield buffer.View(0L, k-1L)
+                          }
 
     interface IDisposable with
         member this.Dispose() = this.DoDispose(true)

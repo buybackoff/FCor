@@ -1,3 +1,12 @@
+### 1.0.2-beta - December 3 2015
+* types for statistical data : Factor and Covariate
+* Factor and Covariate expressions
+* DataFrame
+* Csv Data Type Provider
+* Factor and Covariate summary stats
+* strongly typed statistical model specification, e.g. (Y .> 0) <~> A + B + A * B + log(X)
+* Ultra fast Generalized Linear Model fitting and predictions
+
 ### 1.0.1-beta - November 24 2015
 * types for statistical data : Factor and Covariate
 * Factor and Covariate expressions

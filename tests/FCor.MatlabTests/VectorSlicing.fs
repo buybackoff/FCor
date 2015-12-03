@@ -251,7 +251,7 @@ module VectorSlicing =
                                     let res = getVector app "v"
                                     let v = new Vector(v)
                                     v.SetSlice(Some fromIndex, Some toIndex, a)
-                                    epsEqual 0.0 (v.ToArray()) res       
+                                    epsEqual 0.0 (v.ToArray()) res
                                     )
 
     [<Property>]

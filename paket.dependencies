@@ -3,8 +3,8 @@ source https://nuget.org/api/v2
 nuget FSharp.Formatting
 nuget NUnit 
 nuget NUnit.Runners
-nuget xUnit
-nuget xUnit.Runners
+nuget xUnit 1.9.2
+nuget xUnit.runners 1.9.2
 nuget FsUnit.xUnit
 nuget FsCheck
 nuget FsCheck.NUnit

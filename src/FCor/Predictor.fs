@@ -71,18 +71,22 @@ type Factor(name : string, factorStorage : IFactorStorage) =
                   member __.Length = 1L
                   member __.Cardinality = 1
                   member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
-                    seq
-                      {
-                        let length = toObs - fromObs + 1L
-                        let sliceLength = int64 sliceLength
-                        let m = length / sliceLength |> int
-                        let k = length % sliceLength 
-                        use buffer = new UInt16Vector((if m > 0 then sliceLength else k), 0us)
-                        for i in 0..m-1 do
-                            yield buffer
-                        if k > 0L then
-                            yield buffer.View(0L, k-1L)
-                      }
+                    if fromObs < 0L then raise (new IndexOutOfRangeException())
+                    if sliceLength <= 0 then raise (new ArgumentException("Slice length must be > 0"))
+                    if fromObs > toObs then Seq.empty
+                    else
+                        seq
+                          {
+                            let length = toObs - fromObs + 1L
+                            let sliceLength = int64 sliceLength
+                            let m = length / sliceLength |> int
+                            let k = length % sliceLength 
+                            use buffer = new UInt16Vector((if m > 0 then sliceLength else k), 0us)
+                            for i in 0..m-1 do
+                                yield buffer
+                            if k > 0L then
+                                yield buffer.View(0L, k-1L)
+                          }
              }
         new Factor("<INTERCEPT>", factorStorage)
 
@@ -339,25 +343,29 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                     let mergedLevel = String.Join("|", mergedLevels)
                     let mergedLevels = new Set<_>(mergedLevels)
                     let isMerged = Array.init factor.Cardinality (fun i -> mergedLevels.Contains(factor.Level i))
-                    let cumMergedCount = Array.sub (isMerged |> Array.scan (fun cum isMerged -> if isMerged then cum + 1 else cum) 0) 1 isMerged.Length
-                                         |> Array.map (fun cum -> if cum = 0 then cum else cum - 1)
-                    let levelMap = Array.init factor.Cardinality (fun i -> (i - cumMergedCount.[i]) |> uint16)
-                    let factorStorage = 
-                         {
-                          new IFactorStorage with
-                              member __.Level
-                                  with get(index) =
-                                      if isMerged.[index] && cumMergedCount.[index] = 0 then
-                                          mergedLevel
-                                      else 
-                                          factor.Level(index + cumMergedCount.[index])
-                              member __.Length = factor.Length
-                              member __.Cardinality = factor.Cardinality - cumMergedCount.[factor.Cardinality - 1]
-                              member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
-                                  factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
-                                                                                                     v)
-                         }
-                    new Factor(factor.Name, factorStorage)
+                    match isMerged |> Array.tryFindIndex id with
+                        | Some(index) -> 
+                            let cumMergedCount = Array.sub (isMerged |> Array.scan (fun cum isMerged -> if isMerged then cum + 1 else cum) 0) 1 isMerged.Length
+                                                 |> Array.map (fun cum -> if cum = 0 then cum else cum - 1)
+                            let levelMap = Array.init factor.Cardinality (fun i -> if isMerged.[i] then index |> uint16 else (i - cumMergedCount.[i]) |> uint16)
+                            let factorStorage = 
+                                 {
+                                  new IFactorStorage with
+                                      member __.Level
+                                          with get(index) =
+                                              if isMerged.[index] && cumMergedCount.[index] = 0 then
+                                                  mergedLevel
+                                              else 
+                                                  factor.Level(index + cumMergedCount.[index])
+                                      member __.Length = factor.Length
+                                      member __.Cardinality = factor.Cardinality - cumMergedCount.[factor.Cardinality - 1]
+                                      member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) = 
+                                          factor.GetSlices(fromObs, toObs, sliceLength) |> Seq.map (fun v -> MklFunctions.Update_Level_Index(v.Length, v.NativeArray, levelMap)
+                                                                                                             v)
+                                 }
+                            new Factor(factor.Name, factorStorage)
+                        | None -> factor
+
                 | Cross(f1, f2) -> 
                     let factor1 = f1.AsFactor
                     let factor2 = f2.AsFactor
@@ -597,17 +605,22 @@ and Covariate(name : string, covariateStorage : ICovariateStorage) =
               new ICovariateStorage with
                   member __.Length = data.LongLength
                   member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
-                    seq
-                      {
-                        let length = toObs - fromObs + 1L
-                        let sliceLength = int64 sliceLength
-                        let m = length / sliceLength |> int
-                        let k = length % sliceLength 
-                        for i in 0..m-1 do
-                            yield data.View(fromObs + int64(i) * sliceLength, fromObs + int64(i + 1) * sliceLength - 1L)
-                        if k > 0L then
-                            yield data.View(fromObs + int64(m) * sliceLength, fromObs + int64(m) * sliceLength + k - 1L)
-                      }
+                    if fromObs < 0L then raise (new IndexOutOfRangeException())
+                    if toObs >= data.LongLength then raise (new IndexOutOfRangeException())
+                    if sliceLength <= 0 then raise (new ArgumentException("Slice length must be > 0"))
+                    if fromObs > toObs then Seq.empty
+                    else
+                        seq
+                          {
+                            let length = toObs - fromObs + 1L
+                            let sliceLength = int64 sliceLength
+                            let m = length / sliceLength |> int
+                            let k = length % sliceLength 
+                            for i in 0..m-1 do
+                                yield data.View(fromObs + int64(i) * sliceLength, fromObs + int64(i + 1) * sliceLength - 1L)
+                            if k > 0L then
+                                yield data.View(fromObs + int64(m) * sliceLength, fromObs + int64(m) * sliceLength + k - 1L)
+                          }
              }
         new Covariate("Covariate", covariateStorage)
 
@@ -921,12 +934,17 @@ and [<StructuredFormatDisplay("{AsString}")>] CovariateExpr =
                       new ICovariateStorage with
                           member __.Length = this.MinLength
                           member __.GetSlices(fromObs : int64, toObs : int64, sliceLength : int) =
-                            seq
-                              {
-                                let buffer = new Vector((min (int64(sliceLength)) (toObs - fromObs + 1L)), 0.0)
-                                for sliceExpr in this.GetSlicesExpr(fromObs, toObs, sliceLength) do
-                                    yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
-                              }
+                            if fromObs < 0L then raise (new IndexOutOfRangeException())
+                            if toObs >= this.MinLength then raise (new IndexOutOfRangeException())
+                            if sliceLength <= 0 then raise (new ArgumentException("Slice length must be > 0"))
+                            if fromObs > toObs then Seq.empty
+                            else
+                                seq
+                                  {
+                                    let buffer = new Vector((min (int64(sliceLength)) (toObs - fromObs + 1L)), 0.0)
+                                    for sliceExpr in this.GetSlicesExpr(fromObs, toObs, sliceLength) do
+                                        yield VectorExpr.EvalIn(sliceExpr, sliceExpr.Length |> Option.map (fun len -> if len = buffer.LongLength then buffer else buffer.View(0L, len - 1L)))
+                                  }
                      }
                 let name = this.Name // remove ()
                 new Covariate(name, covariateStorage)
