@@ -1,0 +1,1311 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Numerical Computing with F# and MKL</title>
+    <meta name="description" content="">
+    <meta name="author" content="Adam Mlocek (StatFactory Ltd)">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="//code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="//code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/Black.css" id="theme">
+    <link type="text/css" rel="stylesheet" href="fsharp.formatting/styles/style.css" />
+    <link type="text/css" rel="stylesheet" href="fsharp.formatting/styles/deedle.css" />
+    <link type="text/css" rel="stylesheet" href="css/custom.css" />
+    <script src="fsharp.formatting/styles/tips.js" type="text/javascript"></script>
+    <!-- For syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+    <link rel="stylesheet" href="css/fsreveal.css">
+    <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+    <script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+    </script>
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+    <script language="javascript" type="text/javascript">
+        function init()
+        {
+            websocket = new WebSocket("ws://localhost:8083/websocket");
+            websocket.onmessage = function(evt) { location.reload(); };
+        }
+        window.addEventListener("load", init, false);
+    </script>
+</head>
+<body>
+    <div class="reveal">
+        <div class="tip" id="fs1">namespace FCor</div>
+<div class="tip" id="fs2">module BasicStats<br /><br />from FCor</div>
+<div class="tip" id="fs3">module ExplicitConversion<br /><br />from FCor</div>
+<div class="tip" id="fs4">module Math<br /><br />from FCor</div>
+<div class="tip" id="fs5">module Random<br /><br />from FCor</div>
+<div class="tip" id="fs6">namespace System</div>
+<div class="tip" id="fs7">module StatModels<br /><br />from FCor</div>
+<div class="tip" id="fs8">namespace FCor.CsvProvider</div>
+<div class="tip" id="fs9">val bv1 : BoolVector<br /><br />Full name: Slides.bv1</div>
+<div class="tip" id="fs10">Multiple items<br />type BoolVector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:bool -&gt; BoolVector<br />&#160;&#160;new : data:seq&lt;bool&gt; -&gt; BoolVector<br />&#160;&#160;new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />&#160;&#160;new : data:bool [] * copyData:bool -&gt; BoolVector<br />&#160;&#160;new : length:int * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * init:bool -&gt; BoolVector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCor.BoolVector<br /><br />--------------------<br />new : data:seq&lt;bool&gt; -&gt; BoolVector<br />new : data:bool -&gt; BoolVector<br />new : length:int64 * init:bool -&gt; BoolVector<br />new : length:int * init:bool -&gt; BoolVector<br />new : data:bool [] * copyData:bool -&gt; BoolVector<br />new : length:int * initializer:(int -&gt; bool) -&gt; BoolVector<br />new : length:int64 * nativeArray:nativeptr&lt;bool&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:BoolVector option -&gt; BoolVector</div>
+<div class="tip" id="fs11">val v1 : Vector<br /><br />Full name: Slides.v1</div>
+<div class="tip" id="fs12">Multiple items<br />type Vector =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Vector<br />&#160;&#160;new : data:seq&lt;float&gt; -&gt; Vector<br />&#160;&#160;new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />&#160;&#160;new : data:float [] * copyData:bool -&gt; Vector<br />&#160;&#160;new : length:int * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * init:float -&gt; Vector<br />&#160;&#160;new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;...<br /><br />Full name: FCor.Vector<br /><br />--------------------<br />new : data:seq&lt;float&gt; -&gt; Vector<br />new : data:float -&gt; Vector<br />new : length:int64 * init:float -&gt; Vector<br />new : length:int * init:float -&gt; Vector<br />new : data:float [] * copyData:bool -&gt; Vector<br />new : length:int * initializer:(int -&gt; float) -&gt; Vector<br />new : length:int64 * nativeArray:nativeptr&lt;float&gt; * gcHandlePtr:IntPtr * isView:bool * parentVector:Vector option -&gt; Vector</div>
+<div class="tip" id="fs13">val bm1 : BoolMatrix<br /><br />Full name: Slides.bm1</div>
+<div class="tip" id="fs14">Multiple items<br />type BoolMatrix =<br />&#160;&#160;interface IFormattable<br />&#160;&#160;interface IDisposable<br />&#160;&#160;new : data:bool -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; bool) -&gt; BoolMatrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;bool&gt; -&gt; BoolMatrix<br />&#160;&#160;...<br /><br />Full name: FCor.BoolMatrix<br /><br />--------------------<br />new : colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool [,] -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;bool&gt;&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool list&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;bool array&gt; -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * colMajorDataVector:BoolVector -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:bool -&gt; BoolMatrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="tip" id="fs15">val m1 : Matrix<br /><br />Full name: Slides.m1</div>
+<div class="tip" id="fs16">Multiple items<br />type Matrix =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : data:float -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;new : data:float [,] -&gt; Matrix<br />&#160;&#160;new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * initializer:(int -&gt; int -&gt; float) -&gt; Matrix<br />&#160;&#160;new : rowCount:int * colCount:int * colMajorDataSeq:seq&lt;float&gt; -&gt; Matrix<br />&#160;&#160;...<br /><br />Full name: FCor.Matrix<br /><br />--------------------<br />new : colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float [,] -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;seq&lt;float&gt;&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float list&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : dataRows:seq&lt;float array&gt; -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : data:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * colMajorDataVector:Vector -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int64 * colCount:int64 * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em><br />new : rowCount:int * colCount:int * init:float -&gt; Matrix<br />&#160;&#160;&#160;<em>(+0 other overloads)</em></div>
+<div class="tip" id="fs17">val v2 : Vector<br /><br />Full name: Slides.v2</div>
+<div class="tip" id="fs18">val v3 : Vector<br /><br />Full name: Slides.v3</div>
+<div class="tip" id="fs19">val x1 : float<br /><br />Full name: Slides.x1</div>
+<div class="tip" id="fs20">val m2 : Matrix<br /><br />Full name: Slides.m2</div>
+<div class="tip" id="fs21">val m3 : Matrix<br /><br />Full name: Slides.m3</div>
+<div class="tip" id="fs22">val v4 : Vector<br /><br />Full name: Slides.v4</div>
+<div class="tip" id="fs23">val b1 : bool<br /><br />Full name: Slides.b1</div>
+<div class="tip" id="fs24">val bv2 : BoolVector<br /><br />Full name: Slides.bv2</div>
+<div class="tip" id="fs25">val bm2 : BoolMatrix<br /><br />Full name: Slides.bm2</div>
+<div class="tip" id="fs26">val bm3 : BoolMatrix<br /><br />Full name: Slides.bm3</div>
+<div class="tip" id="fs27">val v5 : Vector<br /><br />Full name: Slides.v5</div>
+<div class="tip" id="fs28">val v6 : Vector<br /><br />Full name: Slides.v6</div>
+<div class="tip" id="fs29">val v7 : Vector<br /><br />Full name: Slides.v7</div>
+<div class="tip" id="fs30">val v8 : Vector<br /><br />Full name: Slides.v8</div>
+<div class="tip" id="fs31">val sqrt : x:&#39;S -&gt; &#39;U (requires member Sqrt)<br /><br />Full name: FCor.Math.sqrt</div>
+<div class="tip" id="fs32">val m4 : Matrix<br /><br />Full name: Slides.m4</div>
+<div class="tip" id="fs33">val x2 : float<br /><br />Full name: Slides.x2</div>
+<div class="tip" id="fs34">val sum : x:&#39;S -&gt; &#39;U (requires member Sum)<br /><br />Full name: FCor.BasicStats.sum</div>
+<div class="tip" id="fs35">val v9 : Vector<br /><br />Full name: Slides.v9</div>
+<div class="tip" id="fs36">union case MatrixAxis.ColumnAxis: MatrixAxis</div>
+<div class="tip" id="fs37">val rng : MT19937Rng<br /><br />Full name: Slides.rng</div>
+<div class="tip" id="fs38">Multiple items<br />type MT19937Rng =<br />&#160;&#160;inherit MklRng<br />&#160;&#160;new : unit -&gt; MT19937Rng<br />&#160;&#160;new : streamPtr:IntPtr -&gt; MT19937Rng<br />&#160;&#160;new : seed:uint32 -&gt; MT19937Rng<br />&#160;&#160;new : seeds:uint32 [] -&gt; MT19937Rng<br />&#160;&#160;member Copy : unit -&gt; MT19937Rng<br />&#160;&#160;member SkipAhead : nSkip:int -&gt; unit<br />&#160;&#160;member SkipAhead : nSkip:int64 -&gt; unit<br /><br />Full name: FCor.MT19937Rng<br /><br />--------------------<br />new : unit -&gt; MT19937Rng<br />new : seeds:uint32 [] -&gt; MT19937Rng<br />new : seed:uint32 -&gt; MT19937Rng<br />new : streamPtr:IntPtr -&gt; MT19937Rng</div>
+<div class="tip" id="fs39">val v10 : Vector<br /><br />Full name: Slides.v10</div>
+<div class="tip" id="fs40">val rand : rng:&#39;T -&gt; &#39;S (requires member op_Explicit)<br /><br />Full name: FCor.Random.rand</div>
+<div class="tip" id="fs41">val m5 : Matrix<br /><br />Full name: Slides.m5</div>
+<div class="tip" id="fs42">val rand&#39; : (int64 -&gt; Vector)<br /><br />Full name: Slides.rand&#39;</div>
+<div class="tip" id="fs43">Multiple items<br />val int64 : value:&#39;T -&gt; int64 (requires member op_Explicit)<br /><br />Full name: Microsoft.FSharp.Core.Operators.int64<br /><br />--------------------<br />type int64 = Int64<br /><br />Full name: Microsoft.FSharp.Core.int64<br /><br />--------------------<br />type int64&lt;&#39;Measure&gt; = int64<br /><br />Full name: Microsoft.FSharp.Core.int64&lt;_&gt;</div>
+<div class="tip" id="fs44">val v11 : Vector<br /><br />Full name: Slides.v11</div>
+<div class="tip" id="fs45">val vexpr1 : VectorExpr<br /><br />Full name: Slides.vexpr1</div>
+<div class="tip" id="fs46">property Vector.AsExpr: VectorExpr</div>
+<div class="tip" id="fs47">val v12 : Vector<br /><br />Full name: Slides.v12</div>
+<div class="tip" id="fs48">val eval : expr:&#39;S -&gt; &#39;U (requires member EvalIn)<br /><br />Full name: FCor.Math.eval</div>
+<div class="tip" id="fs49">val v1&#39; : VectorExpr<br /><br />Full name: Slides.v1&#39;</div>
+<div class="tip" id="fs50">val v13 : Vector<br /><br />Full name: Slides.v13</div>
+<div class="tip" id="fs51">val sin : value:&#39;T -&gt; &#39;T (requires member Sin)<br /><br />Full name: Microsoft.FSharp.Core.Operators.sin</div>
+<div class="tip" id="fs52">val cos : value:&#39;T -&gt; &#39;T (requires member Cos)<br /><br />Full name: Microsoft.FSharp.Core.Operators.cos</div>
+<div class="tip" id="fs53">val v14 : Vector<br /><br />Full name: Slides.v14</div>
+<div class="tip" id="fs54">val iif : boolExpr:&#39;S -&gt; trueExpr:&#39;U -&gt; falseExpr:&#39;V -&gt; &#39;Z (requires member IIf)<br /><br />Full name: FCor.Math.iif</div>
+<div class="tip" id="fs55">val π : n:int -&gt; float<br /><br />Full name: Slides.π</div>
+<div class="tip" id="fs56">val n : int</div>
+<div class="tip" id="fs57">Multiple items<br />val int : value:&#39;T -&gt; int (requires member op_Explicit)<br /><br />Full name: Microsoft.FSharp.Core.Operators.int<br /><br />--------------------<br />type int = int32<br /><br />Full name: Microsoft.FSharp.Core.int<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; = int<br /><br />Full name: Microsoft.FSharp.Core.int&lt;_&gt;</div>
+<div class="tip" id="fs58">type MklControl =<br />&#160;&#160;static member DisableFastMM : unit -&gt; unit<br />&#160;&#160;static member FreeBuffers : unit -&gt; unit<br />&#160;&#160;static member MemStat : unit -&gt; int64<br />&#160;&#160;static member SetMaxThreads : n:int -&gt; unit<br />&#160;&#160;static member ThreadFreeBuffers : unit -&gt; unit<br /><br />Full name: FCor.MklControl</div>
+<div class="tip" id="fs59">static member MklControl.SetMaxThreads : n:int -&gt; unit</div>
+<div class="tip" id="fs60">val rng : MT19937Rng</div>
+<div class="tip" id="fs61">val x1 : Vector</div>
+<div class="tip" id="fs62">val x2 : Vector</div>
+<div class="tip" id="fs63">val inCircle : BoolVector</div>
+<div class="tip" id="fs64">Multiple items<br />val float : value:&#39;T -&gt; float (requires member op_Explicit)<br /><br />Full name: Microsoft.FSharp.Core.Operators.float<br /><br />--------------------<br />type float = Double<br /><br />Full name: Microsoft.FSharp.Core.float<br /><br />--------------------<br />type float&lt;&#39;Measure&gt; = float<br /><br />Full name: Microsoft.FSharp.Core.float&lt;_&gt;</div>
+<div class="tip" id="fs65">val binomAmerican : S0:float -&gt; K:float -&gt; r:float -&gt; vol:float -&gt; T:float -&gt; n:int -&gt; float<br /><br />Full name: Slides.binomAmerican</div>
+<div class="tip" id="fs66">val S0 : float</div>
+<div class="tip" id="fs67">val K : float</div>
+<div class="tip" id="fs68">val r : float</div>
+<div class="tip" id="fs69">val vol : float</div>
+<div class="tip" id="fs70">val T : float</div>
+<div class="tip" id="fs71">val dt : float</div>
+<div class="tip" id="fs72">val u : float</div>
+<div class="tip" id="fs73">val exp : x:&#39;S -&gt; &#39;U (requires member Exp)<br /><br />Full name: FCor.Math.exp</div>
+<div class="tip" id="fs74">val pUp : float</div>
+<div class="tip" id="fs75">val pDown : float</div>
+<div class="tip" id="fs76">val u2 : Vector</div>
+<div class="tip" id="fs77">val S : Vector</div>
+<div class="tip" id="fs78">val cumprod : x:&#39;S -&gt; &#39;U (requires member CumProd)<br /><br />Full name: FCor.BasicStats.cumprod</div>
+<div class="tip" id="fs79">val K2 : Vector</div>
+<div class="tip" id="fs80">val V : Vector</div>
+<div class="tip" id="fs81">val evalIn : expr:&#39;S -&gt; res:&#39;U -&gt; unit (requires member EvalIn)<br /><br />Full name: FCor.Math.evalIn</div>
+<div class="tip" id="fs82">val expr1 : VectorExpr</div>
+<div class="tip" id="fs83">val expr2 : VectorExpr</div>
+<div class="tip" id="fs84">type VectorExpr =<br />&#160;&#160;| Scalar of float<br />&#160;&#160;| Var of Vector<br />&#160;&#160;| UnaryFunction of VectorExpr * (DataBuffer&lt;float&gt; -&gt; DataBuffer&lt;float&gt; -&gt; unit) * string<br />&#160;&#160;| BinaryFunction of VectorExpr * VectorExpr * (DataBuffer&lt;float&gt; -&gt; DataBuffer&lt;float&gt; -&gt; DataBuffer&lt;float&gt; -&gt; unit) * string<br />&#160;&#160;| IfFunction of BoolVectorExpr * VectorExpr * VectorExpr<br />&#160;&#160;member Length : int64 option<br />&#160;&#160;static member ACosh : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ASinh : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ATanh : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Abs : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Acos : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Asin : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Atan : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Ceiling : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Cos : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Cosh : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Erf : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Erfc : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Erfcinv : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Erfinv : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member EvalIn : vectorExpr:VectorExpr * res:Vector option -&gt; Vector<br />&#160;&#160;static member EvalSlice : vectorExpr:VectorExpr -&gt; sliceStart:int64 -&gt; sliceLen:int64 -&gt; memPool:MemoryPool -&gt; DataBuffer&lt;float&gt; * MemoryPool<br />&#160;&#160;static member Exp : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Expm1 : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Floor : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member FuseAxpby : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Log : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Log10 : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Log1p : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Max : a:float * vector:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Max : vector:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member Max : vector1:Vector * vector2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Max : vector1:VectorExpr * vector2:Vector -&gt; VectorExpr<br />&#160;&#160;static member Max : vector1:VectorExpr * vector2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Min : a:float * vector:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Min : vector:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member Min : vector1:Vector * vector2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Min : vector1:VectorExpr * vector2:Vector -&gt; VectorExpr<br />&#160;&#160;static member Min : vector1:VectorExpr * vector2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Normcdf : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Norminv : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Round : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Sin : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Sinh : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Sqrt : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Tan : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Tanh : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member Truncate : vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( + ) : a:float * vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( + ) : vectorExpr:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member ( + ) : vector1:Vector * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( + ) : vectorExpr1:VectorExpr * vector2:Vector -&gt; VectorExpr<br />&#160;&#160;static member ( + ) : vectorExpr1:VectorExpr * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( / ) : a:float * vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( / ) : vectorExpr:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member ( ./ ) : a:float * vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( ./ ) : vectorExpr:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member ( ./ ) : vector1:Vector * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( ./ ) : vectorExpr1:VectorExpr * vector2:Vector -&gt; VectorExpr<br />&#160;&#160;static member ( ./ ) : vectorExpr1:VectorExpr * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( .= ) : a:float * vector:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .= ) : vector:VectorExpr * a:float -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .= ) : vector1:Vector * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .= ) : vector1:VectorExpr * vector2:Vector -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .= ) : vector1:VectorExpr * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt; ) : a:float * vector:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt; ) : vector:VectorExpr * a:float -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt; ) : vector1:Vector * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt; ) : vector1:VectorExpr * vector2:Vector -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt; ) : vector1:VectorExpr * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt;= ) : a:float * vector:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt;= ) : vector:VectorExpr * a:float -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt;= ) : vector1:Vector * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt;= ) : vector1:VectorExpr * vector2:Vector -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&gt;= ) : vector1:VectorExpr * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .^ ) : vectorExpr:VectorExpr * n:int -&gt; VectorExpr<br />&#160;&#160;static member ( .^ ) : a:float * vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( .^ ) : vectorExpr:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member ( .^ ) : vector1:Vector * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( .^ ) : vectorExpr1:VectorExpr * vector2:Vector -&gt; VectorExpr<br />&#160;&#160;static member ( .^ ) : vectorExpr1:VectorExpr * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( .&lt; ) : a:float * vector:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt; ) : vector:VectorExpr * a:float -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt; ) : vector1:Vector * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt; ) : vector1:VectorExpr * vector2:Vector -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt; ) : vector1:VectorExpr * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;= ) : a:float * vector:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;= ) : vector:VectorExpr * a:float -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;= ) : vector1:Vector * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;= ) : vector1:VectorExpr * vector2:Vector -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;= ) : vector1:VectorExpr * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;&gt; ) : a:float * vector:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;&gt; ) : vector:VectorExpr * a:float -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;&gt; ) : vector1:Vector * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;&gt; ) : vector1:VectorExpr * vector2:Vector -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .&lt;&gt; ) : vector1:VectorExpr * vector2:VectorExpr -&gt; BoolVectorExpr<br />&#160;&#160;static member ( .* ) : a:float * vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( .* ) : vectorExpr:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member ( .* ) : vector1:Vector * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( .* ) : vectorExpr1:VectorExpr * vector2:Vector -&gt; VectorExpr<br />&#160;&#160;static member ( .* ) : vectorExpr1:VectorExpr * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( * ) : a:float * vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( * ) : vectorExpr:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member ( - ) : a:float * vectorExpr:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( - ) : vectorExpr:VectorExpr * a:float -&gt; VectorExpr<br />&#160;&#160;static member ( - ) : vector1:Vector * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( - ) : vectorExpr1:VectorExpr * vector2:Vector -&gt; VectorExpr<br />&#160;&#160;static member ( - ) : vectorExpr1:VectorExpr * vectorExpr2:VectorExpr -&gt; VectorExpr<br />&#160;&#160;static member ( ~- ) : vectorExpr:VectorExpr -&gt; VectorExpr<br /><br />Full name: FCor.VectorExpr</div>
+<div class="tip" id="fs85">static member VectorExpr.Max : a:float * vector:VectorExpr -&gt; VectorExpr<br />static member VectorExpr.Max : vector:VectorExpr * a:float -&gt; VectorExpr<br />static member VectorExpr.Max : vector1:Vector * vector2:VectorExpr -&gt; VectorExpr<br />static member VectorExpr.Max : vector1:VectorExpr * vector2:Vector -&gt; VectorExpr<br />static member VectorExpr.Max : vector1:VectorExpr * vector2:VectorExpr -&gt; VectorExpr</div>
+<div class="tip" id="fs86">val i : int</div>
+<div class="tip" id="fs87">val V1 : Vector</div>
+<div class="tip" id="fs88">Multiple items<br />property Vector.View: int64 * int64 -&gt; Vector<br /><br />--------------------<br />property Vector.View: int * int -&gt; Vector</div>
+<div class="tip" id="fs89">val V2 : Vector</div>
+<div class="tip" id="fs90">val factor1 : Factor<br /><br />Full name: Slides.factor1</div>
+<div class="tip" id="fs91">Multiple items<br />union case CategoricalPredictor.Factor: FactorExpr -&gt; CategoricalPredictor<br /><br />--------------------<br />type Factor =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : name:string * factorStorage:IFactorStorage -&gt; Factor<br />&#160;&#160;member private DoDispose : isDisposing:bool -&gt; unit<br />&#160;&#160;override Finalize : unit -&gt; unit<br />&#160;&#160;member GetSlices : fromObs:int64 * toObs:int64 * sliceLen:int -&gt; seq&lt;UInt16Vector&gt;<br />&#160;&#160;member GetStats : unit -&gt; FactorStats<br />&#160;&#160;member GetStats : sliceLen:int -&gt; FactorStats<br />&#160;&#160;override ToString : unit -&gt; string<br />&#160;&#160;member AsExpr : FactorExpr<br />&#160;&#160;...<br /><br />Full name: FCor.Factor<br /><br />--------------------<br />new : name:string * factorStorage:IFactorStorage -&gt; Factor</div>
+<div class="tip" id="fs92">val cov1 : Covariate<br /><br />Full name: Slides.cov1</div>
+<div class="tip" id="fs93">Multiple items<br />type Covariate =<br />&#160;&#160;interface IDisposable<br />&#160;&#160;interface IFormattable<br />&#160;&#160;new : name:string * covariateStorage:ICovariateStorage -&gt; Covariate<br />&#160;&#160;member private DoDispose : isDisposing:bool -&gt; unit<br />&#160;&#160;override Finalize : unit -&gt; unit<br />&#160;&#160;member GetSlices : fromObs:int64 * toObs:int64 * sliceLen:int -&gt; seq&lt;Vector&gt;<br />&#160;&#160;member GetStats : unit -&gt; CovariateStats<br />&#160;&#160;member GetStats : sliceLen:int -&gt; CovariateStats<br />&#160;&#160;override ToString : unit -&gt; string<br />&#160;&#160;member AsExpr : CovariateExpr<br />&#160;&#160;...<br /><br />Full name: FCor.Covariate<br /><br />--------------------<br />new : name:string * covariateStorage:ICovariateStorage -&gt; Covariate</div>
+<div class="tip" id="fs94">val fstats : FactorStats<br /><br />Full name: Slides.fstats</div>
+<div class="tip" id="fs95">member Factor.GetStats : unit -&gt; FactorStats<br />member Factor.GetStats : sliceLen:int -&gt; FactorStats</div>
+<div class="tip" id="fs96">val cstats : CovariateStats<br /><br />Full name: Slides.cstats</div>
+<div class="tip" id="fs97">member Covariate.GetStats : unit -&gt; CovariateStats<br />member Covariate.GetStats : sliceLen:int -&gt; CovariateStats</div>
+<div class="tip" id="fs98">val cov2 : CovariateExpr<br /><br />Full name: Slides.cov2</div>
+<div class="tip" id="fs99">val factor2 : FactorExpr<br /><br />Full name: Slides.factor2</div>
+<div class="tip" id="fs100">val covX : CovariateExpr<br /><br />Full name: Slides.covX</div>
+<div class="tip" id="fs101">val factor4 : FactorExpr<br /><br />Full name: Slides.factor4</div>
+<div class="tip" id="fs102">val level : string</div>
+<div class="tip" id="fs103">Multiple items<br />val string : value:&#39;T -&gt; string<br /><br />Full name: Microsoft.FSharp.Core.Operators.string<br /><br />--------------------<br />type string = String<br /><br />Full name: Microsoft.FSharp.Core.string</div>
+<div class="tip" id="fs104">String.Replace(oldValue: string, newValue: string) : string<br />String.Replace(oldChar: char, newChar: char) : string</div>
+<div class="tip" id="fs105">val cov3 : CovariateExpr<br /><br />Full name: Slides.cov3</div>
+<div class="tip" id="fs106">val factor5 : FactorExpr<br /><br />Full name: Slides.factor5</div>
+<div class="tip" id="fs107">val factor6 : FactorExpr<br /><br />Full name: Slides.factor6</div>
+<div class="tip" id="fs108">val floor : x:&#39;S -&gt; &#39;U (requires member Floor)<br /><br />Full name: FCor.Math.floor</div>
+<div class="tip" id="fs109">val cov4 : CovariateExpr<br /><br />Full name: Slides.cov4</div>
+<div class="tip" id="fs110">type MyData = CsvDataFrame&lt;...&gt;<br /><br />Full name: Slides.MyData</div>
+<div class="tip" id="fs111">type CsvDataFrame<br /><br />Full name: FCor.CsvProvider.CsvDataFrame</div>
+<div class="tip" id="fs112">val df : MyData<br /><br />Full name: Slides.df</div>
+<div class="tip" id="fs113">val A : Factor<br /><br />Full name: Slides.A</div>
+<div class="tip" id="fs114">property CsvDataFrame&lt;...&gt;.A: Factor</div>
+<div class="tip" id="fs115">val B : Factor<br /><br />Full name: Slides.B</div>
+<div class="tip" id="fs116">property CsvDataFrame&lt;...&gt;.B: Factor</div>
+<div class="tip" id="fs117">val X : Covariate<br /><br />Full name: Slides.X</div>
+<div class="tip" id="fs118">property CsvDataFrame&lt;...&gt;.X: Covariate</div>
+<div class="tip" id="fs119">val Y : Covariate<br /><br />Full name: Slides.Y</div>
+<div class="tip" id="fs120">property CsvDataFrame&lt;...&gt;.Y: Covariate</div>
+<div class="tip" id="fs121">val design1 : Predictor list<br /><br />Full name: Slides.design1</div>
+<div class="tip" id="fs122">val design2 : Predictor list<br /><br />Full name: Slides.design2</div>
+<div class="tip" id="fs123">val design3 : Predictor list<br /><br />Full name: Slides.design3</div>
+<div class="tip" id="fs124">val design4 : Predictor list<br /><br />Full name: Slides.design4</div>
+<div class="tip" id="fs125">val design5 : Predictor list<br /><br />Full name: Slides.design5</div>
+<div class="tip" id="fs126">val design6 : Predictor list<br /><br />Full name: Slides.design6</div>
+<div class="tip" id="fs127">val model0 : GlmModel<br /><br />Full name: Slides.model0</div>
+<div class="tip" id="fs128">val glm : CovariateExpr * Predictor list -&gt; includeIntercept:bool -&gt; glmDistribution:GlmDistribution -&gt; glmLink:GlmLink -&gt; maxIter:int -&gt; eps:float -&gt; GlmModel<br /><br />Full name: FCor.StatModels.glm</div>
+<div class="tip" id="fs129">union case GlmDistribution.Gaussian: GlmDistribution</div>
+<div class="tip" id="fs130">union case GlmLink.Id: GlmLink</div>
+<div class="tip" id="fs131">val model1 : GlmModel<br /><br />Full name: Slides.model1</div>
+<div class="tip" id="fs132">union case GlmDistribution.Gamma: GlmDistribution</div>
+<div class="tip" id="fs133">union case GlmLink.Ln: GlmLink</div>
+<div class="tip" id="fs134">val pred1 : Covariate<br /><br />Full name: Slides.pred1</div>
+<div class="tip" id="fs135">member GlmModel.Predict : unit -&gt; Covariate<br />member GlmModel.Predict : data:DataFrame -&gt; Covariate</div>
+<div class="tip" id="fs136">val pred2 : Covariate<br /><br />Full name: Slides.pred2</div>
+<div class="tip" id="fs137">property CsvDataFrame&lt;...&gt;.DataFrame: DataFrame</div>
+
+        <!-- Any section element inside of this container is displayed as a slide -->
+        <div class="slides">
+            <section >
+
+<h2>Numerical Computing with F# and MKL</h2>
+
+<h4>Adam Mlocek, StatFactory Ltd UK</h4>
+
+<p><a href="https://twitter.com/fsharpnumerics">@FSharpNumerics</a></p>
+
+</section>
+
+<section >
+
+<h3>About me</h3>
+
+<ul>
+<li>SAS dev and stat modelling in insurance/reinsurance (before 2005)</li>
+<li>C# developer since 2002</li>
+<li>F# developer since 2010</li>
+<li>Founder of StatFactory Ltd</li>
+<li>Co-creator of FCell: .NET integration with Excel</li>
+<li>Master's degree in Applied Math</li>
+</ul>
+
+</section>
+
+<section >
+
+<h3>I Sho it before</h3>
+
+<ul>
+<li>R</li>
+<li>Matlab</li>
+<li>SAS</li>
+<li>numpy</li>
+<li>NMath</li>
+<li>Math.NET</li>
+</ul>
+
+</section>
+
+<section >
+
+<h3>I actually wanted this:</h3>
+
+<ul>
+<li>expressive and concise, I don't like typing</li>
+<li>feeling natural for math and stat people</li>
+<li>but strongly and statically typed, I am often dislexic</li>
+<li>but with minimum type annotations (did I say concise?)</li>
+<li>I paid for RAM, I want access to all of it</li>
+<li>it's 2015, my data could be int64, not int16</li>
+</ul>
+
+</section>
+
+<section >
+
+<h3>F# DSL for math and stat: codename 'FCor'</h3>
+
+<ul>
+<li>open source (MIT)</li>
+<li>C/MKL allocated memory, int64 size</li>
+<li>Intel MKL: BLAS, LAPACK, RNG...</li>
+<li>free Community version of MKL</li>
+<li>heavily overloaded F# operators and functions</li>
+<li>packaged as 1 .NET dll, available from NuGet</li>
+<li>1.0 released, 1.0.1 beta</li>
+<li>source code: <a href="https://github.com/Statfactory/FCor">FCor on GitHub</a></li>
+<li>to be renamed to 'ξ' (Xi: ksi)</li>
+</ul>
+
+</section>
+
+<section >
+
+<section >
+
+<h3>Basic type system for numerics</h3>
+
+<ul>
+<li>BoolVector</li>
+<li>Vector</li>
+<li>BoolMatrix</li>
+<li>Matrix</li>
+</ul>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs9', 15)" onmouseover="showTip(event, 'fs9', 15)" class="i">bv1</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs10', 16)" onmouseover="showTip(event, 'fs10', 16)" class="t">BoolVector</span>([<span class="k">true</span>;<span class="k">false</span>])
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+  True
+ False
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs11', 17)" onmouseover="showTip(event, 'fs11', 17)" class="i">v1</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs12', 18)" onmouseover="showTip(event, 'fs12', 18)" class="t">Vector</span>([<span class="n">1.0</span>;<span class="n">2.0</span>])
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   1
+   2
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 19)" onmouseover="showTip(event, 'fs13', 19)" class="i">bm1</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs14', 20)" onmouseover="showTip(event, 'fs14', 20)" class="t">BoolMatrix</span>([[<span class="k">true</span>;<span class="k">false</span>]
+                          [<span class="k">false</span>;<span class="k">true</span>]])
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Size = [2,2]
+  True False
+ False  True
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs15', 21)" onmouseover="showTip(event, 'fs15', 21)" class="i">m1</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs16', 22)" onmouseover="showTip(event, 'fs16', 22)" class="t">Matrix</span>([[<span class="n">1.0</span>;<span class="n">2.0</span>]
+                     [<span class="n">3.0</span>;<span class="n">4.0</span>]])
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Size = [2,2]
+   1   2
+   3   4
+
+</code></pre></td></tr></table>
+
+</section>
+
+</section>
+
+<section >
+
+<section >
+
+<h3>Overloaded operators</h3>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs17', 23)" onmouseover="showTip(event, 'fs17', 23)" class="i">v2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 24)" onmouseover="showTip(event, 'fs11', 24)" class="i">v1</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs11', 25)" onmouseover="showTip(event, 'fs11', 25)" class="i">v1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   2
+   4
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs18', 26)" onmouseover="showTip(event, 'fs18', 26)" class="i">v3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 27)" onmouseover="showTip(event, 'fs11', 27)" class="i">v1</span> <span class="o">.</span><span class="o">*</span> <span onmouseout="hideTip(event, 'fs11', 28)" onmouseover="showTip(event, 'fs11', 28)" class="i">v1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   1
+   4
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="i">x1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 30)" onmouseover="showTip(event, 'fs11', 30)" class="i">v1</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs11', 31)" onmouseover="showTip(event, 'fs11', 31)" class="i">v1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>5.0</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs20', 32)" onmouseover="showTip(event, 'fs20', 32)" class="i">m2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 33)" onmouseover="showTip(event, 'fs15', 33)" class="i">m1</span> <span class="o">.</span><span class="o">*</span> <span onmouseout="hideTip(event, 'fs15', 34)" onmouseover="showTip(event, 'fs15', 34)" class="i">m1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Size = [2,2]
+   1   4
+   9  16
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs21', 35)" onmouseover="showTip(event, 'fs21', 35)" class="i">m3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 36)" onmouseover="showTip(event, 'fs15', 36)" class="i">m1</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs15', 37)" onmouseover="showTip(event, 'fs15', 37)" class="i">m1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Size = [2,2]
+   7  10
+  15  22
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 38)" onmouseover="showTip(event, 'fs22', 38)" class="i">v4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 39)" onmouseover="showTip(event, 'fs15', 39)" class="i">m1</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs11', 40)" onmouseover="showTip(event, 'fs11', 40)" class="i">v1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   5
+  11
+
+</code></pre></td></tr></table>
+
+</section>
+
+</section>
+
+<section >
+
+<section >
+
+<h3>Comparison</h3>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs23', 41)" onmouseover="showTip(event, 'fs23', 41)" class="i">b1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 42)" onmouseover="showTip(event, 'fs11', 42)" class="i">v1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 43)" onmouseover="showTip(event, 'fs11', 43)" class="i">v1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>true</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 44)" onmouseover="showTip(event, 'fs24', 44)" class="i">bv2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 45)" onmouseover="showTip(event, 'fs11', 45)" class="i">v1</span> <span class="o">.</span><span class="o">&lt;</span> <span class="n">2.0</span> 
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+  True
+ False
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs25', 46)" onmouseover="showTip(event, 'fs25', 46)" class="i">bm2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 47)" onmouseover="showTip(event, 'fs15', 47)" class="i">m1</span> <span class="o">.</span><span class="o">&lt;&gt;</span> <span class="n">3.0</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Size = [2,2]
+  True  True
+ False  True
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs26', 48)" onmouseover="showTip(event, 'fs26', 48)" class="i">bm3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 49)" onmouseover="showTip(event, 'fs15', 49)" class="i">m1</span> <span class="o">.</span><span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 50)" onmouseover="showTip(event, 'fs15', 50)" class="i">m1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Size = [2,2]
+ True True
+ True True
+
+</code></pre></td></tr></table>
+
+</section>
+
+</section>
+
+<section >
+
+<section >
+
+<h3>Slicing and indexing</h3>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 51)" onmouseover="showTip(event, 'fs27', 51)" class="i">v5</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 52)" onmouseover="showTip(event, 'fs15', 52)" class="i">m1</span><span class="o">.</span>[<span class="o">*</span>, <span class="n">1</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   2
+   4
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs28', 53)" onmouseover="showTip(event, 'fs28', 53)" class="i">v6</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 54)" onmouseover="showTip(event, 'fs15', 54)" class="i">m1</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs13', 55)" onmouseover="showTip(event, 'fs13', 55)" class="i">bm1</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   1
+   4
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 56)" onmouseover="showTip(event, 'fs29', 56)" class="i">v7</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs15', 57)" onmouseover="showTip(event, 'fs15', 57)" class="i">m1</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs15', 58)" onmouseover="showTip(event, 'fs15', 58)" class="i">m1</span> <span class="o">.</span><span class="o">&lt;</span> <span class="n">2.0</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 1
+   1
+
+</code></pre></td></tr></table>
+
+</section>
+
+</section>
+
+<section >
+
+<section >
+
+<h3>Overloaded functions</h3>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs30', 59)" onmouseover="showTip(event, 'fs30', 59)" class="i">v8</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs31', 60)" onmouseover="showTip(event, 'fs31', 60)" class="f">sqrt</span> <span onmouseout="hideTip(event, 'fs11', 61)" onmouseover="showTip(event, 'fs11', 61)" class="i">v1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+               1
+ 1.4142135623731
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs32', 62)" onmouseover="showTip(event, 'fs32', 62)" class="i">m4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs31', 63)" onmouseover="showTip(event, 'fs31', 63)" class="f">sqrt</span> <span onmouseout="hideTip(event, 'fs15', 64)" onmouseover="showTip(event, 'fs15', 64)" class="i">m1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Size = [2,2]
+                1  1.4142135623731
+ 1.73205080756888                2
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs33', 65)" onmouseover="showTip(event, 'fs33', 65)" class="i">x2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs34', 66)" onmouseover="showTip(event, 'fs34', 66)" class="f">sum</span> <span onmouseout="hideTip(event, 'fs11', 67)" onmouseover="showTip(event, 'fs11', 67)" class="i">v1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>3.0</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs35', 68)" onmouseover="showTip(event, 'fs35', 68)" class="i">v9</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs34', 69)" onmouseover="showTip(event, 'fs34', 69)" class="f">sum</span> <span onmouseout="hideTip(event, 'fs15', 70)" onmouseover="showTip(event, 'fs15', 70)" class="i">m1</span> <span onmouseout="hideTip(event, 'fs36', 71)" onmouseover="showTip(event, 'fs36', 71)" class="p">ColumnAxis</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   4
+   6
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs37', 72)" onmouseover="showTip(event, 'fs37', 72)" class="i">rng</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs38', 73)" onmouseover="showTip(event, 'fs38', 73)" class="t">MT19937Rng</span>()
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs39', 74)" onmouseover="showTip(event, 'fs39', 74)" class="i">v10</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs12', 75)" onmouseover="showTip(event, 'fs12', 75)" class="t">Vector</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs40', 76)" onmouseover="showTip(event, 'fs40', 76)" class="f">rand</span> <span onmouseout="hideTip(event, 'fs37', 77)" onmouseover="showTip(event, 'fs37', 77)" class="i">rng</span> <span class="n">3</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 3
+ 0.134364244760945
+ 0.569203870836645
+ 0.847433738177642
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs41', 78)" onmouseover="showTip(event, 'fs41', 78)" class="i">m5</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs40', 79)" onmouseover="showTip(event, 'fs40', 79)" class="f">rand</span> <span onmouseout="hideTip(event, 'fs37', 80)" onmouseover="showTip(event, 'fs37', 80)" class="i">rng</span> <span class="n">3</span> <span class="n">3</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Size = [3,3]
+ 0.802265059202909 0.255069031380117 0.760962442494929
+ 0.763774619437754 0.117918702075258 0.449491061968729
+ 0.063106823945418 0.495435087708756 0.472245238954201
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs42', 81)" onmouseover="showTip(event, 'fs42', 81)" class="f">rand&#39;</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs43', 82)" onmouseover="showTip(event, 'fs43', 82)" class="t">int64</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs12', 83)" onmouseover="showTip(event, 'fs12', 83)" class="t">Vector</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs40', 84)" onmouseover="showTip(event, 'fs40', 84)" class="f">rand</span> <span onmouseout="hideTip(event, 'fs37', 85)" onmouseover="showTip(event, 'fs37', 85)" class="i">rng</span>
+</code></pre></td>
+</tr>
+</table>
+
+</section>
+
+</section>
+
+<section >
+
+<section >
+
+<h3>Vector and Matrix Expressions</h3>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs44', 86)" onmouseover="showTip(event, 'fs44', 86)" class="i">v11</span> <span class="o">=</span> <span class="n">2.0</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs11', 87)" onmouseover="showTip(event, 'fs11', 87)" class="i">v1</span> <span class="o">+</span> <span class="n">3.0</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs17', 88)" onmouseover="showTip(event, 'fs17', 88)" class="i">v2</span>
+</code></pre></td>
+</tr>
+</table>
+
+<ul>
+<li>intermediate results are instantiated and GC'd</li>
+<li>not cache friendly</li>
+<li>no evaluation optimization</li>
+</ul>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs45', 89)" onmouseover="showTip(event, 'fs45', 89)" class="i">vexpr1</span> <span class="o">=</span> <span class="n">2.0</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs11', 90)" onmouseover="showTip(event, 'fs11', 90)" class="i">v1</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 91)" onmouseover="showTip(event, 'fs46', 91)" class="i">AsExpr</span> <span class="o">+</span> <span class="n">3.0</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs17', 92)" onmouseover="showTip(event, 'fs17', 92)" class="i">v2</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 93)" onmouseover="showTip(event, 'fs46', 93)" class="i">AsExpr</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs47', 94)" onmouseover="showTip(event, 'fs47', 94)" class="i">v12</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs48', 95)" onmouseover="showTip(event, 'fs48', 95)" class="f">eval</span> <span onmouseout="hideTip(event, 'fs45', 96)" onmouseover="showTip(event, 'fs45', 96)" class="i">vexpr1</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   8
+  16
+
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<ul>
+<li>evaluated in small slices (100000 default)</li>
+<li>optimized memory usage</li>
+<li>cache friendly</li>
+<li>no GC pressure</li>
+<li>expression optimization, e.g. aX+bY mapped directly to MKL 'axpby'</li>
+</ul>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs49', 97)" onmouseover="showTip(event, 'fs49', 97)" class="i">v1&#39;</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs11', 98)" onmouseover="showTip(event, 'fs11', 98)" class="i">v1</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 99)" onmouseover="showTip(event, 'fs46', 99)" class="i">AsExpr</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 100)" onmouseover="showTip(event, 'fs50', 100)" class="i">v13</span> <span class="o">=</span> (<span onmouseout="hideTip(event, 'fs51', 101)" onmouseover="showTip(event, 'fs51', 101)" class="f">sin</span>(<span onmouseout="hideTip(event, 'fs49', 102)" onmouseover="showTip(event, 'fs49', 102)" class="i">v1&#39;</span>) <span class="o">.</span><span class="o">^</span> <span class="n">2</span>) <span class="o">+</span> (<span onmouseout="hideTip(event, 'fs52', 103)" onmouseover="showTip(event, 'fs52', 103)" class="f">cos</span>(<span onmouseout="hideTip(event, 'fs49', 104)" onmouseover="showTip(event, 'fs49', 104)" class="i">v1&#39;</span>) <span class="o">.</span><span class="o">^</span> <span class="n">2</span>) <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs48', 105)" onmouseover="showTip(event, 'fs48', 105)" class="f">eval</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   1
+   1
+
+</code></pre></td></tr></table>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs53', 106)" onmouseover="showTip(event, 'fs53', 106)" class="i">v14</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs54', 107)" onmouseover="showTip(event, 'fs54', 107)" class="f">iif</span> (<span onmouseout="hideTip(event, 'fs49', 108)" onmouseover="showTip(event, 'fs49', 108)" class="i">v1&#39;</span> <span class="o">.</span><span class="o">&gt;</span> <span class="n">0.0</span>) <span onmouseout="hideTip(event, 'fs11', 109)" onmouseover="showTip(event, 'fs11', 109)" class="i">v1</span> <span onmouseout="hideTip(event, 'fs17', 110)" onmouseover="showTip(event, 'fs17', 110)" class="i">v2</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs48', 111)" onmouseover="showTip(event, 'fs48', 111)" class="f">eval</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Length = 2
+   1
+   2
+
+</code></pre></td></tr></table>
+
+</section>
+
+</section>
+
+<section >
+
+<section >
+
+<h3>Example: Pi Monte Carlo</h3>
+
+<p>Matlab:</p>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="matlab">function value = piMC(n)
+    x1 = rand(n,1);
+    x2 = rand(n,1);
+    value = sum(x1.^2+x2.^2 &lt;= 1)/n*4;
+end
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs55', 112)" onmouseover="showTip(event, 'fs55', 112)" class="f">π</span> (<span onmouseout="hideTip(event, 'fs56', 113)" onmouseover="showTip(event, 'fs56', 113)" class="i">n</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs57', 114)" onmouseover="showTip(event, 'fs57', 114)" class="t">int</span>) <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs58', 115)" onmouseover="showTip(event, 'fs58', 115)" class="t">MklControl</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs59', 116)" onmouseover="showTip(event, 'fs59', 116)" class="f">SetMaxThreads</span>(<span class="n">4</span>)
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs60', 117)" onmouseover="showTip(event, 'fs60', 117)" class="i">rng</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs38', 118)" onmouseover="showTip(event, 'fs38', 118)" class="t">MT19937Rng</span>()
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs61', 119)" onmouseover="showTip(event, 'fs61', 119)" class="i">x1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs40', 120)" onmouseover="showTip(event, 'fs40', 120)" class="f">rand</span> <span onmouseout="hideTip(event, 'fs60', 121)" onmouseover="showTip(event, 'fs60', 121)" class="i">rng</span> <span onmouseout="hideTip(event, 'fs56', 122)" onmouseover="showTip(event, 'fs56', 122)" class="i">n</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs12', 123)" onmouseover="showTip(event, 'fs12', 123)" class="t">Vector</span>
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs62', 124)" onmouseover="showTip(event, 'fs62', 124)" class="i">x2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs40', 125)" onmouseover="showTip(event, 'fs40', 125)" class="f">rand</span> <span onmouseout="hideTip(event, 'fs60', 126)" onmouseover="showTip(event, 'fs60', 126)" class="i">rng</span> <span onmouseout="hideTip(event, 'fs56', 127)" onmouseover="showTip(event, 'fs56', 127)" class="i">n</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs12', 128)" onmouseover="showTip(event, 'fs12', 128)" class="t">Vector</span>
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs63', 129)" onmouseover="showTip(event, 'fs63', 129)" class="i">inCircle</span> <span class="o">=</span> (<span onmouseout="hideTip(event, 'fs61', 130)" onmouseover="showTip(event, 'fs61', 130)" class="i">x1</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 131)" onmouseover="showTip(event, 'fs46', 131)" class="i">AsExpr</span> <span class="o">.</span><span class="o">^</span> <span class="n">2</span>) <span class="o">+</span> (<span onmouseout="hideTip(event, 'fs62', 132)" onmouseover="showTip(event, 'fs62', 132)" class="i">x2</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 133)" onmouseover="showTip(event, 'fs46', 133)" class="i">AsExpr</span> <span class="o">.</span><span class="o">^</span> <span class="n">2</span>) <span class="o">.</span><span class="o">&lt;=</span> <span class="n">1.0</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs48', 134)" onmouseover="showTip(event, 'fs48', 134)" class="f">eval</span>
+    (<span onmouseout="hideTip(event, 'fs63', 135)" onmouseover="showTip(event, 'fs63', 135)" class="i">inCircle</span><span class="o">.</span>[<span onmouseout="hideTip(event, 'fs63', 136)" onmouseover="showTip(event, 'fs63', 136)" class="i">inCircle</span>]<span class="o">.</span><span class="i">LongLength</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs64', 137)" onmouseover="showTip(event, 'fs64', 137)" class="f">float</span>) <span class="o">/</span> <span onmouseout="hideTip(event, 'fs64', 138)" onmouseover="showTip(event, 'fs64', 138)" class="f">float</span>(<span onmouseout="hideTip(event, 'fs56', 139)" onmouseover="showTip(event, 'fs56', 139)" class="i">n</span>) <span class="o">*</span> <span class="n">4.0</span>
+</code></pre></td>
+</tr>
+</table>
+
+</section>
+
+</section>
+
+<section >
+
+<section >
+
+<h4>Example: binomial pricing of American Put option</h4>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="matlab">function value = binomAmerican(S0, K, r, vol, T, n)
+    dt = T / n;
+    u = exp(vol*sqrt(dt));
+    pUp = (u*exp(r*dt) - 1.0) / (u*u - 1.0) * exp(-r*dt);
+    pDown = exp(-r*dt) - pUp;
+    u2 = (1.0/(u*u))*ones(n+1,1);
+    u2(1,:) = 1.0;
+    S = S0 *(u^n)*cumprod(u2, 1);
+    K2 = repmat(K, n+1,1);
+    V = K2 - S;
+    V(V &lt; 0) = 0;
+    for i = n:-1:1
+        V1 = V(1:i);
+        V2 = V(2:i+1);
+        V(1:i) = pUp * V1 + pDown * V2;
+        S = S / u;
+        V = max(V, K2-S);
+    end  
+    value = V(1);
+end
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs65', 140)" onmouseover="showTip(event, 'fs65', 140)" class="f">binomAmerican</span> (<span onmouseout="hideTip(event, 'fs66', 141)" onmouseover="showTip(event, 'fs66', 141)" class="i">S0</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs64', 142)" onmouseover="showTip(event, 'fs64', 142)" class="t">float</span>) (<span onmouseout="hideTip(event, 'fs67', 143)" onmouseover="showTip(event, 'fs67', 143)" class="i">K</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs64', 144)" onmouseover="showTip(event, 'fs64', 144)" class="t">float</span>) (<span onmouseout="hideTip(event, 'fs68', 145)" onmouseover="showTip(event, 'fs68', 145)" class="i">r</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs64', 146)" onmouseover="showTip(event, 'fs64', 146)" class="t">float</span>) (<span onmouseout="hideTip(event, 'fs69', 147)" onmouseover="showTip(event, 'fs69', 147)" class="i">vol</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs64', 148)" onmouseover="showTip(event, 'fs64', 148)" class="t">float</span>) (<span onmouseout="hideTip(event, 'fs70', 149)" onmouseover="showTip(event, 'fs70', 149)" class="i">T</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs64', 150)" onmouseover="showTip(event, 'fs64', 150)" class="t">float</span>) <span onmouseout="hideTip(event, 'fs56', 151)" onmouseover="showTip(event, 'fs56', 151)" class="i">n</span> <span class="o">=</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs71', 152)" onmouseover="showTip(event, 'fs71', 152)" class="i">dt</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs70', 153)" onmouseover="showTip(event, 'fs70', 153)" class="i">T</span> <span class="o">/</span> <span onmouseout="hideTip(event, 'fs64', 154)" onmouseover="showTip(event, 'fs64', 154)" class="f">float</span>(<span onmouseout="hideTip(event, 'fs56', 155)" onmouseover="showTip(event, 'fs56', 155)" class="i">n</span>)
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs72', 156)" onmouseover="showTip(event, 'fs72', 156)" class="i">u</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs73', 157)" onmouseover="showTip(event, 'fs73', 157)" class="f">exp</span>(<span onmouseout="hideTip(event, 'fs69', 158)" onmouseover="showTip(event, 'fs69', 158)" class="i">vol</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs31', 159)" onmouseover="showTip(event, 'fs31', 159)" class="f">sqrt</span>(<span onmouseout="hideTip(event, 'fs71', 160)" onmouseover="showTip(event, 'fs71', 160)" class="i">dt</span>))
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs74', 161)" onmouseover="showTip(event, 'fs74', 161)" class="i">pUp</span> <span class="o">=</span> (<span onmouseout="hideTip(event, 'fs72', 162)" onmouseover="showTip(event, 'fs72', 162)" class="i">u</span><span class="o">*</span><span onmouseout="hideTip(event, 'fs73', 163)" onmouseover="showTip(event, 'fs73', 163)" class="f">exp</span>(<span onmouseout="hideTip(event, 'fs68', 164)" onmouseover="showTip(event, 'fs68', 164)" class="i">r</span><span class="o">*</span><span onmouseout="hideTip(event, 'fs71', 165)" onmouseover="showTip(event, 'fs71', 165)" class="i">dt</span>) <span class="o">-</span> <span class="n">1.0</span>) <span class="o">/</span> (<span onmouseout="hideTip(event, 'fs72', 166)" onmouseover="showTip(event, 'fs72', 166)" class="i">u</span><span class="o">*</span><span onmouseout="hideTip(event, 'fs72', 167)" onmouseover="showTip(event, 'fs72', 167)" class="i">u</span> <span class="o">-</span> <span class="n">1.0</span>) <span class="o">*</span> <span onmouseout="hideTip(event, 'fs73', 168)" onmouseover="showTip(event, 'fs73', 168)" class="f">exp</span>(<span class="o">-</span><span onmouseout="hideTip(event, 'fs68', 169)" onmouseover="showTip(event, 'fs68', 169)" class="i">r</span><span class="o">*</span><span onmouseout="hideTip(event, 'fs71', 170)" onmouseover="showTip(event, 'fs71', 170)" class="i">dt</span>)
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs75', 171)" onmouseover="showTip(event, 'fs75', 171)" class="i">pDown</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs73', 172)" onmouseover="showTip(event, 'fs73', 172)" class="f">exp</span>(<span class="o">-</span><span onmouseout="hideTip(event, 'fs68', 173)" onmouseover="showTip(event, 'fs68', 173)" class="i">r</span><span class="o">*</span><span onmouseout="hideTip(event, 'fs71', 174)" onmouseover="showTip(event, 'fs71', 174)" class="i">dt</span>) <span class="o">-</span> <span onmouseout="hideTip(event, 'fs74', 175)" onmouseover="showTip(event, 'fs74', 175)" class="i">pUp</span>
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs76', 176)" onmouseover="showTip(event, 'fs76', 176)" class="i">u2</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs12', 177)" onmouseover="showTip(event, 'fs12', 177)" class="t">Vector</span>(<span onmouseout="hideTip(event, 'fs56', 178)" onmouseover="showTip(event, 'fs56', 178)" class="i">n</span><span class="o">+</span><span class="n">1</span>, <span class="n">1.0</span><span class="o">/</span>(<span onmouseout="hideTip(event, 'fs72', 179)" onmouseover="showTip(event, 'fs72', 179)" class="i">u</span><span class="o">*</span><span onmouseout="hideTip(event, 'fs72', 180)" onmouseover="showTip(event, 'fs72', 180)" class="i">u</span>))
+    <span onmouseout="hideTip(event, 'fs76', 181)" onmouseover="showTip(event, 'fs76', 181)" class="i">u2</span><span class="o">.</span>[<span class="n">0L</span>] <span class="o">&lt;-</span> <span class="n">1.0</span>
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs77', 182)" onmouseover="showTip(event, 'fs77', 182)" class="i">S</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs66', 183)" onmouseover="showTip(event, 'fs66', 183)" class="i">S0</span> <span class="o">*</span>(<span onmouseout="hideTip(event, 'fs72', 184)" onmouseover="showTip(event, 'fs72', 184)" class="i">u</span><span class="o">**</span><span onmouseout="hideTip(event, 'fs64', 185)" onmouseover="showTip(event, 'fs64', 185)" class="f">float</span>(<span onmouseout="hideTip(event, 'fs56', 186)" onmouseover="showTip(event, 'fs56', 186)" class="i">n</span>)) <span class="o">*</span> (<span onmouseout="hideTip(event, 'fs78', 187)" onmouseover="showTip(event, 'fs78', 187)" class="f">cumprod</span> <span onmouseout="hideTip(event, 'fs76', 188)" onmouseover="showTip(event, 'fs76', 188)" class="i">u2</span>)
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs79', 189)" onmouseover="showTip(event, 'fs79', 189)" class="i">K2</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs12', 190)" onmouseover="showTip(event, 'fs12', 190)" class="t">Vector</span>(<span onmouseout="hideTip(event, 'fs56', 191)" onmouseover="showTip(event, 'fs56', 191)" class="i">n</span><span class="o">+</span><span class="n">1</span>, <span onmouseout="hideTip(event, 'fs67', 192)" onmouseover="showTip(event, 'fs67', 192)" class="i">K</span>)
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs80', 193)" onmouseover="showTip(event, 'fs80', 193)" class="i">V</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs79', 194)" onmouseover="showTip(event, 'fs79', 194)" class="i">K2</span> <span class="o">-</span> <span onmouseout="hideTip(event, 'fs77', 195)" onmouseover="showTip(event, 'fs77', 195)" class="i">S</span>
+    <span onmouseout="hideTip(event, 'fs81', 196)" onmouseover="showTip(event, 'fs81', 196)" class="f">evalIn</span> (<span onmouseout="hideTip(event, 'fs54', 197)" onmouseover="showTip(event, 'fs54', 197)" class="f">iif</span> (<span onmouseout="hideTip(event, 'fs80', 198)" onmouseover="showTip(event, 'fs80', 198)" class="i">V</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 199)" onmouseover="showTip(event, 'fs46', 199)" class="i">AsExpr</span> <span class="o">.</span><span class="o">&lt;</span> <span class="n">0.0</span>) <span class="o">!!</span><span class="n">0.0</span> <span onmouseout="hideTip(event, 'fs80', 200)" onmouseover="showTip(event, 'fs80', 200)" class="i">V</span>) <span onmouseout="hideTip(event, 'fs80', 201)" onmouseover="showTip(event, 'fs80', 201)" class="i">V</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs82', 202)" onmouseover="showTip(event, 'fs82', 202)" class="i">expr1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs77', 203)" onmouseover="showTip(event, 'fs77', 203)" class="i">S</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 204)" onmouseover="showTip(event, 'fs46', 204)" class="i">AsExpr</span> <span class="o">/</span> <span onmouseout="hideTip(event, 'fs72', 205)" onmouseover="showTip(event, 'fs72', 205)" class="i">u</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs83', 206)" onmouseover="showTip(event, 'fs83', 206)" class="i">expr2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs84', 207)" onmouseover="showTip(event, 'fs84', 207)" class="t">VectorExpr</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs85', 208)" onmouseover="showTip(event, 'fs85', 208)" class="f">Max</span>(<span onmouseout="hideTip(event, 'fs80', 209)" onmouseover="showTip(event, 'fs80', 209)" class="i">V</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 210)" onmouseover="showTip(event, 'fs46', 210)" class="i">AsExpr</span>, (<span onmouseout="hideTip(event, 'fs79', 211)" onmouseover="showTip(event, 'fs79', 211)" class="i">K2</span><span class="o">-</span><span onmouseout="hideTip(event, 'fs77', 212)" onmouseover="showTip(event, 'fs77', 212)" class="i">S</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 213)" onmouseover="showTip(event, 'fs46', 213)" class="i">AsExpr</span>))
+    <span class="k">for</span> <span onmouseout="hideTip(event, 'fs86', 214)" onmouseover="showTip(event, 'fs86', 214)" class="i">i</span> <span class="k">in</span> <span onmouseout="hideTip(event, 'fs56', 215)" onmouseover="showTip(event, 'fs56', 215)" class="i">n</span><span class="o">..</span>(<span class="o">-</span><span class="n">1</span>)<span class="o">..</span><span class="n">1</span> <span class="k">do</span>
+        <span class="k">use</span> <span onmouseout="hideTip(event, 'fs87', 216)" onmouseover="showTip(event, 'fs87', 216)" class="i">V1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs80', 217)" onmouseover="showTip(event, 'fs80', 217)" class="i">V</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs88', 218)" onmouseover="showTip(event, 'fs88', 218)" class="i">View</span>(<span class="n">0</span>,<span onmouseout="hideTip(event, 'fs86', 219)" onmouseover="showTip(event, 'fs86', 219)" class="i">i</span><span class="o">-</span><span class="n">1</span>)
+        <span class="k">use</span> <span onmouseout="hideTip(event, 'fs89', 220)" onmouseover="showTip(event, 'fs89', 220)" class="i">V2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs80', 221)" onmouseover="showTip(event, 'fs80', 221)" class="i">V</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs88', 222)" onmouseover="showTip(event, 'fs88', 222)" class="i">View</span>(<span class="n">1</span>,<span onmouseout="hideTip(event, 'fs86', 223)" onmouseover="showTip(event, 'fs86', 223)" class="i">i</span>)
+        <span onmouseout="hideTip(event, 'fs81', 224)" onmouseover="showTip(event, 'fs81', 224)" class="f">evalIn</span> (<span onmouseout="hideTip(event, 'fs74', 225)" onmouseover="showTip(event, 'fs74', 225)" class="i">pUp</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs87', 226)" onmouseover="showTip(event, 'fs87', 226)" class="i">V1</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 227)" onmouseover="showTip(event, 'fs46', 227)" class="i">AsExpr</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs75', 228)" onmouseover="showTip(event, 'fs75', 228)" class="i">pDown</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs89', 229)" onmouseover="showTip(event, 'fs89', 229)" class="i">V2</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs46', 230)" onmouseover="showTip(event, 'fs46', 230)" class="i">AsExpr</span>) <span onmouseout="hideTip(event, 'fs87', 231)" onmouseover="showTip(event, 'fs87', 231)" class="i">V1</span>
+        <span onmouseout="hideTip(event, 'fs81', 232)" onmouseover="showTip(event, 'fs81', 232)" class="f">evalIn</span> <span onmouseout="hideTip(event, 'fs82', 233)" onmouseover="showTip(event, 'fs82', 233)" class="i">expr1</span> <span onmouseout="hideTip(event, 'fs77', 234)" onmouseover="showTip(event, 'fs77', 234)" class="i">S</span>
+        <span onmouseout="hideTip(event, 'fs81', 235)" onmouseover="showTip(event, 'fs81', 235)" class="f">evalIn</span> <span onmouseout="hideTip(event, 'fs83', 236)" onmouseover="showTip(event, 'fs83', 236)" class="i">expr2</span> <span onmouseout="hideTip(event, 'fs80', 237)" onmouseover="showTip(event, 'fs80', 237)" class="i">V</span>
+    <span onmouseout="hideTip(event, 'fs80', 238)" onmouseover="showTip(event, 'fs80', 238)" class="i">V</span><span class="o">.</span>[<span class="n">0</span>]
+</code></pre></td>
+</tr>
+</table>
+
+</section>
+
+</section>
+
+<section >
+
+<h3>How about statistics?</h3>
+
+<p>Statistical data is generally:</p>
+
+<ul>
+<li>categorical (Factor)</li>
+<li>numeric (Covariate)</li>
+</ul>
+
+<p>We need more types!</p>
+
+</section>
+
+<section >
+
+<section >
+
+<h3>Factors and Covariates</h3>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs90', 239)" onmouseover="showTip(event, 'fs90', 239)" class="i">factor1</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs91', 240)" onmouseover="showTip(event, 'fs91', 240)" class="t">Factor</span> <span class="o">=</span> <span class="o">!!</span>[<span class="s">&quot;A0&quot;</span>;<span class="s">&quot;A1&quot;</span>;<span class="s">&quot;A0&quot;</span>;<span class="s">&quot;A2&quot;</span>;<span class="s">&quot;A3&quot;</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Factor 'Factor' with 5 obs and 4 levels: A0 A1 A0 A2 A3 </code></pre></td></tr></table>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs92', 241)" onmouseover="showTip(event, 'fs92', 241)" class="i">cov1</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs93', 242)" onmouseover="showTip(event, 'fs93', 242)" class="t">Covariate</span> <span class="o">=</span> <span class="o">!!</span>[<span class="n">1.1</span><span class="o">..</span><span class="n">5.1</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Covariate 'Covariate' with 5 obs: 1.1 2.1 3.1 4.1 5.1 </code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs94', 243)" onmouseover="showTip(event, 'fs94', 243)" class="i">fstats</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs90', 244)" onmouseover="showTip(event, 'fs90', 244)" class="i">factor1</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs95', 245)" onmouseover="showTip(event, 'fs95', 245)" class="f">GetStats</span>()
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>
+Obs Count                 5
+Missing Freq              0
+Missing %                 0
+
+Level            Frequency     Frequency % 
+A0                          2            40
+A1                          1            20
+A2                          1            20
+A3                          1            20
+</code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs96', 246)" onmouseover="showTip(event, 'fs96', 246)" class="i">cstats</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs92', 247)" onmouseover="showTip(event, 'fs92', 247)" class="i">cov1</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs97', 248)" onmouseover="showTip(event, 'fs97', 248)" class="f">GetStats</span>()
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>
+Obs Count                 5
+NaN Freq                  0
+NaN (%)                   0
+Min                     1.1
+Max                     5.1
+Mean                    3.1
+Std                 1.58114
+</code></pre></td></tr></table>
+
+</section>
+
+</section>
+
+<section >
+
+<section >
+
+<h4>Factor and Covariate Expressions:</h4>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs98', 249)" onmouseover="showTip(event, 'fs98', 249)" class="i">cov2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs90', 250)" onmouseover="showTip(event, 'fs90', 250)" class="i">factor1</span> <span class="o">|&gt;&gt;</span> (<span class="o">=</span>) <span class="s">&quot;A0&quot;</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Covariate 'Factor.AsCovariate' with 5 obs: 1 0 1 0 0 </code></pre></td></tr></table>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs99', 251)" onmouseover="showTip(event, 'fs99', 251)" class="i">factor2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs90', 252)" onmouseover="showTip(event, 'fs90', 252)" class="i">factor1</span> <span class="o">|&gt;&gt;</span> [<span class="s">&quot;A2&quot;</span>;<span class="s">&quot;A3&quot;</span>]
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Factor 'Factor' with 5 obs and 3 levels: A0 A1 A0 A2|A3 A2|A3 </code></pre></td></tr></table>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs100', 253)" onmouseover="showTip(event, 'fs100', 253)" class="i">covX</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs92', 254)" onmouseover="showTip(event, 'fs92', 254)" class="i">cov1</span> <span class="o">|&gt;&gt;</span> <span class="s">&quot;X&quot;</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Covariate 'X' with 5 obs: 1.1 2.1 3.1 4.1 5.1 </code></pre></td></tr></table>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs101', 255)" onmouseover="showTip(event, 'fs101', 255)" class="i">factor4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs90', 256)" onmouseover="showTip(event, 'fs90', 256)" class="i">factor1</span> <span class="o">|&gt;&gt;</span> (<span class="k">fun</span> (<span onmouseout="hideTip(event, 'fs102', 257)" onmouseover="showTip(event, 'fs102', 257)" class="i">level</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs103', 258)" onmouseover="showTip(event, 'fs103', 258)" class="t">string</span>) <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs102', 259)" onmouseover="showTip(event, 'fs102', 259)" class="i">level</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs104', 260)" onmouseover="showTip(event, 'fs104', 260)" class="f">Replace</span>(<span class="s">&quot;A&quot;</span>, <span class="s">&quot;B&quot;</span>))
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Factor 'Factor' with 5 obs and 4 levels: B0 B1 B0 B2 B3 </code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs105', 261)" onmouseover="showTip(event, 'fs105', 261)" class="i">cov3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs31', 262)" onmouseover="showTip(event, 'fs31', 262)" class="f">sqrt</span> <span onmouseout="hideTip(event, 'fs100', 263)" onmouseover="showTip(event, 'fs100', 263)" class="i">covX</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Covariate 'sqrt(X)' with 5 obs: 1.048809 1.449138 1.760682 2.024846 2.258318 </code></pre></td></tr></table>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs106', 264)" onmouseover="showTip(event, 'fs106', 264)" class="i">factor5</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs100', 265)" onmouseover="showTip(event, 'fs100', 265)" class="i">covX</span> <span class="o">|&gt;&gt;</span> [|<span class="n">1.0</span><span class="o">..</span><span class="n">6.0</span>|]
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Factor 'X.AsFactor' with 5 obs and 6 levels: [1,2) [2,3) [3,4) [4,5) [5,6] </code></pre></td></tr></table>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs107', 266)" onmouseover="showTip(event, 'fs107', 266)" class="i">factor6</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs100', 267)" onmouseover="showTip(event, 'fs100', 267)" class="i">covX</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs108', 268)" onmouseover="showTip(event, 'fs108', 268)" class="f">floor</span> <span class="o">|&gt;&gt;</span> [|<span class="n">1..</span><span class="n">6</span>|]
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Factor 'floor(X).AsFactor' with 5 obs and 7 levels: 1 2 3 4 5 </code></pre></td></tr></table>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs109', 269)" onmouseover="showTip(event, 'fs109', 269)" class="i">cov4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs100', 270)" onmouseover="showTip(event, 'fs100', 270)" class="i">covX</span> <span class="o">.</span><span class="o">&gt;</span> <span class="n">3.0</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Covariate '(X&gt;3)' with 5 obs: 0 0 1 1 1 </code></pre></td></tr></table>
+
+</section>
+
+<section author="Adam Mlocek (StatFactory Ltd)" description="" theme="Black" title="Numerical Computing with F# and MKL" transition="default">
+
+<ul>
+<li>Factor data is encoded as byte or UInt16, 0-&gt;"Level0", 1-&gt;"Level1"...</li>
+<li>data is delivered to Factors and Covariates lazily in slices: GetSlices(fromObs, toObs, sliceLen) : Vector seq or UInt16Vector seq</li>
+<li>IFactorStorage and ICovariateStorage: implement for any data source</li>
+<li>FactorExpr and CovariateExpr are views: cheap</li>
+<li>CovariateExpr evaluation uses VectorExpr eval</li>
+<li>Big Data and Cloud ready</li>
+</ul>
+
+</section>
+
+</section>
+
+<section >
+
+<h3>CSV Type Provider</h3>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs110', 271)" onmouseover="showTip(event, 'fs110', 271)" class="t">MyData</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs111', 272)" onmouseover="showTip(event, 'fs111', 272)" class="t">CsvDataFrame</span><span class="o">&lt;</span> <span class="s">@&quot;C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gammatest250K.csv&quot;</span> <span class="o">&gt;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs112', 273)" onmouseover="showTip(event, 'fs112', 273)" class="i">df</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs110', 274)" onmouseover="showTip(event, 'fs110', 274)" class="t">MyData</span>()
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs113', 275)" onmouseover="showTip(event, 'fs113', 275)" class="i">A</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs112', 276)" onmouseover="showTip(event, 'fs112', 276)" class="i">df</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs114', 277)" onmouseover="showTip(event, 'fs114', 277)" class="i">A</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs115', 278)" onmouseover="showTip(event, 'fs115', 278)" class="i">B</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs112', 279)" onmouseover="showTip(event, 'fs112', 279)" class="i">df</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs116', 280)" onmouseover="showTip(event, 'fs116', 280)" class="i">B</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs117', 281)" onmouseover="showTip(event, 'fs117', 281)" class="i">X</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs112', 282)" onmouseover="showTip(event, 'fs112', 282)" class="i">df</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs118', 283)" onmouseover="showTip(event, 'fs118', 283)" class="i">X</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs119', 284)" onmouseover="showTip(event, 'fs119', 284)" class="i">Y</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs112', 285)" onmouseover="showTip(event, 'fs112', 285)" class="i">df</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs120', 286)" onmouseover="showTip(event, 'fs120', 286)" class="i">Y</span>
+</code></pre></td>
+</tr>
+</table>
+
+<table class="pre"><tr><td><pre><code>Factor 'A' with 250000 obs and 20 levels: A2 A11 A16 A16 A15 A1 A5 A2 A9 A15 ...</code></pre></td></tr></table>
+
+<table class="pre"><tr><td><pre><code>Factor 'B' with 250000 obs and 100 levels: B43 B19 B27 B46 B26 B76 B89 B58 B72 B54 ...</code></pre></td></tr></table>
+
+<table class="pre"><tr><td><pre><code>Covariate 'X' with 250000 obs: 0.5542786 0.2660319 0.002715668 0.727197 0.7158338 0.1280701 0.2041043 0.9373838 0.3380167 0.1766077 ...</code></pre></td></tr></table>
+
+<table class="pre"><tr><td><pre><code>Covariate 'Y' with 250000 obs: 114.7223 10.4463 1.682995 181.9969 26.20477 8.433275 6.898314 317.1213 108.2928 9.246963 ...</code></pre></td></tr></table>
+
+</section>
+
+<section >
+
+<h3>Generalized Linear Models</h3>
+
+<ul>
+<li>predictive modelling</li>
+<li>simplest version: linear regression</li>
+<li>binomial regression</li>
+<li>Poisson regression</li>
+<li>general insurance (claim size and freq), customer retention, etc</li>
+</ul>
+
+</section>
+
+<section >
+
+<h3>Model terms</h3>
+
+<ul>
+<li>main effects: factors and covariates</li>
+<li>interactions</li>
+</ul>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs121', 287)" onmouseover="showTip(event, 'fs121', 287)" class="i">design1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs113', 288)" onmouseover="showTip(event, 'fs113', 288)" class="i">A</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs115', 289)" onmouseover="showTip(event, 'fs115', 289)" class="i">B</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs122', 290)" onmouseover="showTip(event, 'fs122', 290)" class="i">design2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs113', 291)" onmouseover="showTip(event, 'fs113', 291)" class="i">A</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs115', 292)" onmouseover="showTip(event, 'fs115', 292)" class="i">B</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs113', 293)" onmouseover="showTip(event, 'fs113', 293)" class="i">A</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs115', 294)" onmouseover="showTip(event, 'fs115', 294)" class="i">B</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs123', 295)" onmouseover="showTip(event, 'fs123', 295)" class="i">design3</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs113', 296)" onmouseover="showTip(event, 'fs113', 296)" class="i">A</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs117', 297)" onmouseover="showTip(event, 'fs117', 297)" class="i">X</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs124', 298)" onmouseover="showTip(event, 'fs124', 298)" class="i">design4</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs113', 299)" onmouseover="showTip(event, 'fs113', 299)" class="i">A</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs113', 300)" onmouseover="showTip(event, 'fs113', 300)" class="i">A</span> <span class="o">*</span> <span onmouseout="hideTip(event, 'fs117', 301)" onmouseover="showTip(event, 'fs117', 301)" class="i">X</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs125', 302)" onmouseover="showTip(event, 'fs125', 302)" class="i">design5</span> <span class="o">=</span> (<span onmouseout="hideTip(event, 'fs113', 303)" onmouseover="showTip(event, 'fs113', 303)" class="i">A</span> <span class="o">|&gt;&gt;</span> [<span class="s">&quot;A0;A1&quot;</span>]) <span class="o">+</span> <span onmouseout="hideTip(event, 'fs31', 304)" onmouseover="showTip(event, 'fs31', 304)" class="f">sqrt</span>(<span onmouseout="hideTip(event, 'fs117', 305)" onmouseover="showTip(event, 'fs117', 305)" class="i">X</span>)
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs126', 306)" onmouseover="showTip(event, 'fs126', 306)" class="i">design6</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs113', 307)" onmouseover="showTip(event, 'fs113', 307)" class="i">A</span> <span class="o">+</span> (<span onmouseout="hideTip(event, 'fs117', 308)" onmouseover="showTip(event, 'fs117', 308)" class="i">X</span> <span class="o">.</span><span class="o">&gt;</span> <span class="n">0.0</span>)
+</code></pre></td>
+</tr>
+</table>
+
+</section>
+
+<section >
+
+<h3>GLM model fitting and predicting</h3>
+
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs127', 309)" onmouseover="showTip(event, 'fs127', 309)" class="i">model0</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs128', 310)" onmouseover="showTip(event, 'fs128', 310)" class="f">glm</span> (<span onmouseout="hideTip(event, 'fs119', 311)" onmouseover="showTip(event, 'fs119', 311)" class="i">Y</span> <span class="o">&lt;~&gt;</span> <span onmouseout="hideTip(event, 'fs117', 312)" onmouseover="showTip(event, 'fs117', 312)" class="i">X</span>) <span class="k">true</span> <span onmouseout="hideTip(event, 'fs129', 313)" onmouseover="showTip(event, 'fs129', 313)" class="p">Gaussian</span> <span onmouseout="hideTip(event, 'fs130', 314)" onmouseover="showTip(event, 'fs130', 314)" class="p">Id</span> <span class="n">50</span> <span class="n">1e-9</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs131', 315)" onmouseover="showTip(event, 'fs131', 315)" class="i">model1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs128', 316)" onmouseover="showTip(event, 'fs128', 316)" class="f">glm</span> (<span onmouseout="hideTip(event, 'fs119', 317)" onmouseover="showTip(event, 'fs119', 317)" class="i">Y</span> <span class="o">&lt;~&gt;</span> <span onmouseout="hideTip(event, 'fs113', 318)" onmouseover="showTip(event, 'fs113', 318)" class="i">A</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs115', 319)" onmouseover="showTip(event, 'fs115', 319)" class="i">B</span> <span class="o">+</span> <span onmouseout="hideTip(event, 'fs117', 320)" onmouseover="showTip(event, 'fs117', 320)" class="i">X</span>) <span class="k">true</span> <span onmouseout="hideTip(event, 'fs132', 321)" onmouseover="showTip(event, 'fs132', 321)" class="p">Gamma</span> <span onmouseout="hideTip(event, 'fs133', 322)" onmouseover="showTip(event, 'fs133', 322)" class="p">Ln</span> <span class="n">50</span> <span class="n">1e-9</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs134', 323)" onmouseover="showTip(event, 'fs134', 323)" class="i">pred1</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs131', 324)" onmouseover="showTip(event, 'fs131', 324)" class="i">model1</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs135', 325)" onmouseover="showTip(event, 'fs135', 325)" class="f">Predict</span>()
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs136', 326)" onmouseover="showTip(event, 'fs136', 326)" class="i">pred2</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs131', 327)" onmouseover="showTip(event, 'fs131', 327)" class="i">model1</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs135', 328)" onmouseover="showTip(event, 'fs135', 328)" class="f">Predict</span>(<span onmouseout="hideTip(event, 'fs112', 329)" onmouseover="showTip(event, 'fs112', 329)" class="i">df</span><span class="o">.</span><span onmouseout="hideTip(event, 'fs137', 330)" onmouseover="showTip(event, 'fs137', 330)" class="i">DataFrame</span>) 
+</code></pre></td>
+</tr>
+</table>
+
+</section>
+
+<section >
+
+<h3>Demo: FCor GLM</h3>
+
+<ul>
+<li>5 000 000 obs, Gamma with Log link, 2 Factors 1 Covariate</li>
+<li>H20 R GLM <a href="http://h2o.ai/">H2O</a></li>
+<li>Revolution R rxGLM <a href="http://www.slideshare.net/RevolutionAnalytics/hadoop-summit-inchiosa27jun13">source</a>: 
+<img src="images/revo.jpg" alt="rxGLM performance" /></li>
+</ul>
+
+</section>
+
+<section >
+
+<h3>FCor GLM</h3>
+
+<ul>
+<li>~1600x faster than R glm</li>
+<li>~20x faster than Revolution R rxGLM</li>
+<li>~4x faster than H2O GLM</li>
+<li>distributed version using MBrace coming soon!</li>
+</ul>
+
+</section>
+
+<section >
+
+<h3>F# open source stack is amazing. FCor uses:</h3>
+
+<ul>
+<li>FAKE</li>
+<li>Paket</li>
+<li>F# Formatting</li>
+<li>R Provider</li>
+<li>FsReveal</li>
+<li>F# Scaffold</li>
+<li>MBrace</li>
+<li>Suave</li>
+<li>FsCheck</li>
+<li>FsUnit</li>
+<li>and of cource F# Core!</li>
+</ul>
+
+</section>
+
+<section >
+
+<h3>Interested?</h3>
+
+<ul>
+<li>contributions are welcome</li>
+<li>any feedback highly appreciated</li>
+<li>commercial support available</li>
+<li>custom extensions</li>
+</ul>
+
+</section>
+
+
+
+        </div>
+    </div>
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+    <script>
+        // Add the nohighlight class and data-noescape attribute to code elements that have already been formatted by FSharp.Formatting
+        $('pre.highlighted code').addClass('nohighlight').attr('data-noescape', '');
+
+        // Full list of configuration options available here:
+        // https://github.com/hakimel/reveal.js#configuration
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            history: true,
+            center: true,
+
+            transition: 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+            // Parallax scrolling
+            // parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+            // parallaxBackgroundSize: '2100px 900px',
+
+            // Optional libraries used to extend on reveal.js
+            dependencies: [
+                { src: 'lib/js/classList.js', condition: function () { return !document.body.classList; } },
+                { src: 'plugin/markdown/marked.js', condition: function () { return !!document.querySelector('[data-markdown]'); } },
+                { src: 'plugin/markdown/markdown.js', condition: function () { return !!document.querySelector('[data-markdown]'); } },
+                { src: 'plugin/highlight/highlight.js', async: true, callback: function () { hljs.initHighlightingOnLoad(); } },
+                { src: 'plugin/zoom-js/zoom.js', async: true, condition: function () { return !!document.body.classList; } },
+                { src: 'plugin/notes/notes.js', async: true, condition: function () { return !!document.body.classList; } }
+            ]
+        });
+
+    </script>
+</body>
+</html>
+
