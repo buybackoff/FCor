@@ -9,11 +9,8 @@ module Util =
     let getApp() =
         try
             new MLAppClass()
-        with _ -> System.Threading.Thread.Sleep(10000)
-                  try
-                      new MLAppClass()
-                  with _ -> System.Threading.Thread.Sleep(10000)
-                            new MLAppClass()
+        with _ -> Threading.Thread.Sleep(5000)
+                  new MLAppClass()
 
     let fixEmpty (a : 'T[,]) =
         if a.Length = 0 then Array2D.zeroCreate<'T> 0 0 

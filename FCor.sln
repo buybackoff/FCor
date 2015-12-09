@@ -13,7 +13,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{BF60BC93-E09B-4E5F-9D85-95A519479D54}"
 	ProjectSection(SolutionItems) = preProject
 		build.fsx = build.fsx
-		build1.fsx = build1.fsx
 		build_scaffold.fsx = build_scaffold.fsx
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md

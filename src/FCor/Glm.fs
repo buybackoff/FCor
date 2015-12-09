@@ -11,12 +11,10 @@ open FCor.ExplicitConversion
 
 type GlmLink =
     | Id
-    | Ln
-    | Log of float
-    | Power of float
+    | Log
+    | Inverse
     | Logit
     | Probit
-    | LogLog
     | CLogLog
 
 type GlmDistribution =
@@ -53,7 +51,7 @@ type GlmGoodnessOfFit =
      LogLikehood : float
      Deviance : float
      PearsonChi : float
-     AIC : float
+     //AIC : float
      MLScale : float
      MLPhi : float    
     }
@@ -66,7 +64,7 @@ type GlmGoodnessOfFit =
             sb.AppendLine <| sprintf "%-20s%12G%s%12G" "Deviance" (float this.Deviance) "  " (float (this.Deviance / N_dof)) |> ignore
             sb.AppendLine <| sprintf "%-20s%12G%s%12G" "Pearson Chi-Square" (float this.PearsonChi) "  " (float (this.PearsonChi / N_dof)) |> ignore
             sb.AppendLine <| sprintf "%-20s%12G" "Log Likelihood" (float this.LogLikehood) |> ignore
-            sb.AppendLine <| sprintf "%-20s%12G" "AIC" (float this.AIC) |> ignore
+            //sb.AppendLine <| sprintf "%-20s%12G" "AIC" (float this.AIC) |> ignore
             sb.AppendLine <| sprintf "%-20s%12G" "ML Scale" (float this.MLScale) |> ignore
             sb.AppendLine <| sprintf "%-20s%12G" "ML Phi" (float this.MLPhi) |> ignore
             sb.ToString()
@@ -483,79 +481,78 @@ module Glm =
     let getPred (xbeta : Vector) (glmLink : GlmLink) =
         match glmLink with
             | Id -> xbeta
-            | Ln -> Vector.Exp(xbeta)
-            | Log(d) -> Vector.Exp(xbeta * Math.Log(d))
-            | Power(d) -> xbeta .^ (1.0 / d)
+            | Log -> Vector.Exp(xbeta)
+            | Inverse -> 1.0 ./ xbeta
             | Logit -> Vector.Exp(xbeta) ./ (1.0 + Vector.Exp(xbeta))
-            | LogLog -> Vector.Exp(-Vector.Exp(-xbeta))
             | CLogLog -> 1.0 - Vector.Exp(-Vector.Exp(xbeta))
             | Probit -> Vector.Normcdf(xbeta)
 
-    let get_u (resp : Vector) (pred : Vector) (xbeta : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
+    let get_u (resp : Vector) (pred : Vector) (xbeta : Vector) (obsW : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
         match glmDistribution, glmLink with
             | Gaussian, Id -> 
                 (resp - pred)
-            | Gaussian, Ln ->
+            | Gaussian, Log ->
                 ((resp - pred) .* pred)
-            | Gaussian, Log(d) -> 
-                (resp - pred) * Math.Log(d) .* pred
-            | Gaussian, Power(d) ->
-                ((resp - pred) * d) .* (pred .^ (1.0 - 1.0 / d))
+            | Gaussian, Inverse ->
+                ((pred - resp)) .* (pred .* pred)
             | Gamma, Id -> 
                 (resp - pred) ./ (pred .* pred)
-            | Gamma, Ln ->
+            | Gamma, Log ->
                 VectorExpr.EvalIn((resp.AsExpr - pred) ./ pred, None)
-            | Gamma, Log(d) -> 
-                ((resp - pred) ./ pred) * Math.Log(d)
-            | Gamma, Power(d) ->
-                ((resp - pred) * d) .* (pred .^ (-1.0 - 1.0 / d))
+            | Gamma, Inverse ->
+                pred - resp
             | Poisson, Id -> 
                 (resp - pred) ./ pred
-            | Poisson, Ln ->
+            | Poisson, Log ->
                 resp - pred
-            | Poisson, Log(d) -> 
-                (resp - pred) * Math.Log(d)
-            | Poisson, Power(d) ->
-                ((resp - pred) * d) .* (pred .^ (-1.0 / d))
-            | Binomial, Logit -> resp - pred
-            | Binomial, LogLog -> -(resp - pred) ./ (1.0 - pred) .* Vector.Log(pred)
-            | Binomial, CLogLog -> -(resp - pred) ./ pred .* Vector.Log(1.0 - pred)
+            | Poisson, Inverse ->
+                (pred - resp) .* pred
+            | Binomial, Logit -> if obsW = Vector.Empty then (resp - pred) else obsW .* (resp - pred)
+            | Binomial, CLogLog ->
+                if obsW = Vector.Empty then 
+                    -(resp - pred) ./ pred .* Vector.Log(1.0 - pred)
+                else
+                    -(resp - pred) ./ pred .* Vector.Log(1.0 - pred) .* obsW
             | Binomial, Probit -> 
-                (resp - pred) ./ (pred .* (1.0 - pred)) .* (Vector.Exp(-0.5 * xbeta .* xbeta) / (Math.Sqrt(2.0 * Math.PI)))
-            | _ -> raise (new InvalidOperationException())
+                if obsW = Vector.Empty then 
+                    (resp - pred) ./ (pred .* (1.0 - pred)) .* (Vector.Exp(-0.5 * xbeta .* xbeta) / (Math.Sqrt(2.0 * Math.PI)))
+                else
+                    (resp - pred) ./ (pred .* (1.0 - pred)) .* obsW .* (Vector.Exp(-0.5 * xbeta .* xbeta) / (Math.Sqrt(2.0 * Math.PI)))
+            | _ -> raise (new NotImplementedException("Glm distribution and link not implemented"))
 
-    let getWeight (pred : Vector) (xbeta : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
+    let getWeight (pred : Vector) (xbeta : Vector) (obsW : Vector) (glmLink : GlmLink) (glmDistribution : GlmDistribution) =
         match glmDistribution, glmLink with
             | Gaussian, Id -> 
                 let xbeta = xbeta.AsExpr
                 VectorExpr.EvalIn(VectorExpr.IfFunction((xbeta .= xbeta), VectorExpr.Scalar(1.0), VectorExpr.Scalar(Double.NaN)), None) 
-            | Gaussian, Ln ->
+            | Gaussian, Log ->
                 pred .* pred
-            | Gaussian, Log(d) -> 
-                Math.Log(d) * pred * Math.Log(d) .* pred
-            | Gaussian, Power(d) ->
-                d * d * (pred .^ (2.0 - 2.0 / d))
+            | Gaussian, Inverse ->
+                (pred .^ 4.0)
             | Gamma, Id -> 
                 1.0 ./ (pred .*pred)
-            | Gamma, Ln ->
+            | Gamma, Log ->
                 let xbeta = xbeta.AsExpr
                 VectorExpr.EvalIn(VectorExpr.IfFunction((xbeta .= xbeta), VectorExpr.Scalar(1.0), VectorExpr.Scalar(Double.NaN)), None) 
-            | Gamma, Log(d) -> 
-                new Vector(pred.Length, Math.Log(d) * Math.Log(d))
-            | Gamma, Power(d) ->
-                d * d / (pred .^ (2.0 / d))
+            | Gamma, Inverse ->
+                pred .* pred
             | Poisson, Id -> 
                 1.0 ./ pred
-            | Poisson, Ln ->
+            | Poisson, Log ->
                 pred
-            | Poisson, Log(d) -> 
-                Math.Log(d) * Math.Log(d) * pred
-            | Poisson, Power(d) ->
-                d * d * (pred .^ (1.0 - 2.0 / d))
-            | Binomial, Logit -> pred .* (1.0 - pred)
-            | Binomial, LogLog -> pred .* Vector.Log(pred) .* Vector.Log(pred) ./ (1.0 - pred)
-            | Binomial, CLogLog -> (1.0 - pred) .* (Vector.Log(1.0 - pred) ./ pred) .* Vector.Log(1.0 - pred)
-            | Binomial, Probit -> (Vector.Exp(-0.5 * xbeta .* xbeta) ./ (Math.Sqrt(2.0 * Math.PI)) .^ 2.0) ./ (pred*(1.0 - pred))
+            | Poisson, Inverse ->
+                (pred .^ 3.0)
+            | Binomial, Logit -> if obsW = Vector.Empty then pred .* (1.0 - pred) else obsW .* (pred .* (1.0 - pred))
+            | Binomial, CLogLog ->
+                if obsW = Vector.Empty then
+                    (1.0 - pred) .* (Vector.Log(1.0 - pred) ./ pred) .* Vector.Log(1.0 - pred)
+                else
+                    (1.0 - pred) .* (Vector.Log(1.0 - pred) ./ pred) .* Vector.Log(1.0 - pred) .* obsW
+            | Binomial, Probit ->
+                if obsW = Vector.Empty then
+                    (Vector.Exp(-0.5 * xbeta .* xbeta) ./ (Math.Sqrt(2.0 * Math.PI)) .^ 2.0) ./ (pred*(1.0 - pred))
+                else
+                    (Vector.Exp(-0.5 * xbeta .* xbeta) ./ (Math.Sqrt(2.0 * Math.PI)) .^ 2.0) ./ (pred*(1.0 - pred)) .* obsW
             | _ -> raise (new InvalidOperationException())
 
     let getXBeta (design : ((UInt16Vector list * int[]) option * Vector option * int[]) list) (beta : Vector) (sliceLen : int)
@@ -791,16 +788,16 @@ module Glm =
                         | _ -> ()
         H
 
-    let rec iwls (response : Covariate) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[]) option * Covariate option) list)
+    let rec iwls (response : Covariate) (obsW : Covariate option) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[]) option * Covariate option) list)
                  (estimateMaps : int[] list)
                  (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector) (H : Matrix option)
-                 (maxIter : int) (iter : int) (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) eps =
+                 (maxIter : int) (iter : int) (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) eps (delta : Vector) (halfStep : bool) =
         if iter > maxIter then 
             beta, Vector.Empty, iter, false, estimateMaps, cumEstimateCounts
         else
             let processorCount = Environment.ProcessorCount
             let processorChunk = obsCount / int64(processorCount)
-            let U, H =
+            let (U, isPredInvalid), H =
                 match H with
                     | Some(H) ->
                         seq{0..processorCount - 1} 
@@ -810,23 +807,32 @@ module Glm =
                                                     let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
                                                     let U = new Vector(totalEstimateCount, 0.0)
                                                     let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                                    let obsWSlices =
+                                                        match obsW with
+                                                            | Some(obsW) -> obsW.GetSlices(fromObs, toObs, sliceLength) 
+                                                            | None -> respSlices |> Seq.map (fun _ -> Vector.Empty)
                                                     let design' =
                                                         estimateMaps |> List.zip
                                                                         (design |> List.map (fun (factorsOpt, covOpt) ->
                                                                                                 factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
                                                                                                            |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
                                                                      |> List.map (fun ((x,y),z) -> x,y,z)
-                                                                     |> zipDesign |> Seq.zip respSlices
-                                                    for resp, slice in design' do
+                                                                     |> zipDesign |> Seq.zip3 respSlices obsWSlices
+                                                    let mutable isInvalid = false
+                                                    for resp, obsW, slice in design' do
                                                        let sliceLength = resp.Length
                                                        use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
                                                        use pred = getPred xbeta glmLink
-                                                       use u = get_u resp pred xbeta glmLink glmDistribution
+                                                       match glmDistribution with
+                                                           | Gamma | Poisson -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0)
+                                                           | Binomial -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0) || (Vector.Max(pred) > 1.0)
+                                                           | _ -> ()
+                                                       use u = get_u resp pred xbeta obsW glmLink glmDistribution
                                                        use updateU = getU slice u sliceLength cumEstimateCounts
                                                        VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
-                                                    U   
+                                                    U, isInvalid   
                                                   )
-                        |> Array.reduce (+), H
+                        |> Array.reduce (fun (u1, isInv1) (u2, isInv2) -> (u1 + u2), (isInv1 || isInv2)), H
                     | None -> 
                         seq{0..processorCount - 1} 
                            |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
@@ -836,65 +842,78 @@ module Glm =
                                                     let U = new Vector(totalEstimateCount, 0.0)
                                                     let H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
                                                     let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                                    let obsWSlices =
+                                                        match obsW with
+                                                            | Some(obsW) -> obsW.GetSlices(fromObs, toObs, sliceLength) 
+                                                            | None -> respSlices |> Seq.map (fun _ -> Vector.Empty)
                                                     let design' =
                                                         estimateMaps |> List.zip
                                                             (design |> List.map (fun (factorsOpt, covOpt) ->
                                                                                     factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
                                                                                                |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
                                                                |> List.map (fun ((x,y),z) -> x,y,z)
-                                                               |> zipDesign |> Seq.zip respSlices
-                                                    for resp, slice in design' do
+                                                               |> zipDesign |> Seq.zip3 respSlices obsWSlices
+                                                    let mutable isInvalid = false
+                                                    for resp, obsW, slice in design' do
                                                        let sliceLength = resp.Length
                                                        use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
                                                        use pred = getPred xbeta glmLink
-                                                       use u = get_u resp pred xbeta glmLink glmDistribution
-                                                       use weight = getWeight pred xbeta glmLink glmDistribution
+                                                       match glmDistribution with
+                                                           | Gamma | Poisson -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0)
+                                                           | Binomial -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0) || (Vector.Max(pred) > 1.0)
+                                                           | _ -> ()
+                                                       use u = get_u resp pred xbeta obsW glmLink glmDistribution
+                                                       use weight = getWeight pred xbeta obsW glmLink glmDistribution
                                                        use updateU = getU slice u sliceLength cumEstimateCounts
                                                        use updateH = getH slice weight sliceLength cumEstimateCounts
                                                        VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
                                                        MatrixExpr.EvalIn(H.AsExpr + updateH, Some H) |> ignore  
-                                                    U, H    
+                                                    (U, isInvalid), H    
                                                   )
-                        |> Array.reduce (fun (u1, h1) (u2, h2) -> (u1 + u2), (h1 + h2))
+                        |> Array.reduce (fun ((u1, isInv1), h1) ((u2, isInv2), h2) -> ((u1 + u2), (isInv1 || isInv2)), (h1 + h2))
             
-            if iter = 0 then
-                MatrixExpr.EvalIn(H.AsExpr + (Matrix.Transpose(Matrix.UpperTri(H, 1))), Some H) |> ignore
-                let q, r = Matrix.Qr(H)
-                use rdiag = Vector.Abs(r.Diag(0))
-                q.Dispose()
-                r.Dispose()
-                use isNumDisabled : BoolVector = rdiag .<= eps
-                if not <| BoolVector.Any(isNumDisabled) then
-                    use delta = Matrix.CholSolve(H, U)
+            if isPredInvalid then
+                iwls response obsW design estimateMaps glmDistribution glmLink (beta - delta) None maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps delta true
+            else
+                if iter = 0 then
+                    MatrixExpr.EvalIn(H.AsExpr + (Matrix.Transpose(Matrix.UpperTri(H, 1))), Some H) |> ignore
+                    let q, r = Matrix.Qr(H)
+                    use rdiag = Vector.Abs(r.Diag(0))
+                    q.Dispose()
+                    r.Dispose()
+                    use isNumDisabled : BoolVector = rdiag .<= eps
+                    if not <| BoolVector.Any(isNumDisabled) then
+                        let delta = Matrix.CholSolve(H, U)
+                        let nextBeta = beta + delta
+                        U.Dispose()
+                        if (glmDistribution = Gaussian && glmLink = Id) || epsEqualVector beta nextBeta 1e-6 then
+                            let invHDiag = Matrix.CholInv(H).Diag(0)
+                            nextBeta, invHDiag,  iter, true, estimateMaps, cumEstimateCounts
+                        elif glmDistribution = Gamma && glmLink = Log then  // weight is 1
+                            iwls response obsW design estimateMaps glmDistribution glmLink nextBeta (Some H) maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps delta false
+                        else
+                            H.Dispose()
+                            iwls response obsW design estimateMaps glmDistribution glmLink nextBeta None maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps delta false
+                    else
+                        let newEstMaps, newCumEstCount = updateEstimateMaps estimateMaps cumEstimateCounts (isNumDisabled.ToArray())
+                        let newBeta = beta.[BoolVector.Not isNumDisabled]
+                        let newDelta = delta.[BoolVector.Not isNumDisabled]
+                        if newBeta = Vector.Empty then
+                            Vector.Empty, Vector.Empty, iter, false, newEstMaps, newCumEstCount
+                        else
+                            iwls response obsW design newEstMaps glmDistribution glmLink newBeta None maxIter (iter + 1) obsCount sliceLength newCumEstCount eps newDelta false
+                else
+                    let delta = if halfStep && delta <> Vector.Empty then 0.5 * delta else Matrix.CholSolve(H, U)
                     let nextBeta = beta + delta
                     U.Dispose()
                     if (glmDistribution = Gaussian && glmLink = Id) || epsEqualVector beta nextBeta 1e-6 then
                         let invHDiag = Matrix.CholInv(H).Diag(0)
                         nextBeta, invHDiag,  iter, true, estimateMaps, cumEstimateCounts
-                    elif glmDistribution = Gamma && glmLink = Ln then  // weight is 1
-                        iwls response design estimateMaps glmDistribution glmLink nextBeta (Some H) maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps
+                    elif glmDistribution = Gamma && glmLink = Log then  // weight is 1
+                        iwls response obsW design estimateMaps glmDistribution glmLink nextBeta (Some H) maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps delta false
                     else
                         H.Dispose()
-                        iwls response design estimateMaps glmDistribution glmLink nextBeta None maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps
-                else
-                    let newEstMaps, newCumEstCount = updateEstimateMaps estimateMaps cumEstimateCounts (isNumDisabled.ToArray())
-                    let newBeta = beta.[BoolVector.Not isNumDisabled]
-                    if newBeta = Vector.Empty then
-                        Vector.Empty, Vector.Empty, iter, false, newEstMaps, newCumEstCount
-                    else
-                        iwls response design newEstMaps glmDistribution glmLink newBeta None maxIter (iter + 1) obsCount sliceLength newCumEstCount eps
-            else
-                use delta = Matrix.CholSolve(H, U)
-                let nextBeta = beta + delta
-                U.Dispose()
-                if (glmDistribution = Gaussian && glmLink = Id) || epsEqualVector beta nextBeta 1e-6 then
-                    let invHDiag = Matrix.CholInv(H).Diag(0)
-                    nextBeta, invHDiag,  iter, true, estimateMaps, cumEstimateCounts
-                elif glmDistribution = Gamma && glmLink = Ln then  // weight is 1
-                    iwls response design estimateMaps glmDistribution glmLink nextBeta (Some H) maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps
-                else
-                    H.Dispose()
-                    iwls response design estimateMaps glmDistribution glmLink nextBeta None maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps
+                        iwls response obsW design estimateMaps glmDistribution glmLink nextBeta None maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps delta false
 
 
     let getParameterEstimates (design : (((Factor * FactorMask) list * FactorMask) * CovariateExpr option) list) (beta : Vector)
@@ -988,7 +1007,7 @@ module Glm =
                                      | ([], _), None -> []                                 
                            ) |> List.concat
 
-    let getDeviance (resp : Vector) (pred : Vector) (glmDistribution : GlmDistribution) =
+    let getDeviance (resp : Vector) (pred : Vector) (obsW : Vector) (glmDistribution : GlmDistribution) =
         let resp = resp.AsExpr
         match glmDistribution with
             | Gaussian ->
@@ -998,9 +1017,19 @@ module Glm =
             | Gamma ->
                 VectorExpr.EvalIn(-2.0 * (VectorExpr.Log(resp ./ pred) - (resp ./ pred) + 1.0), None) 
             | Binomial -> 
-                VectorExpr.EvalIn(VectorExpr.IfFunction((resp .= 0.0), (-2.0 * VectorExpr.Log(1.0 - pred.AsExpr)), (-2.0 * VectorExpr.Log(pred.AsExpr))), None)
+                if obsW = Vector.Empty then
+                    VectorExpr.EvalIn(VectorExpr.IfFunction((resp .= 0.0), (-2.0 * VectorExpr.Log(1.0 - pred.AsExpr)), (-2.0 * VectorExpr.Log(pred.AsExpr))), None)
+                else
+                    let pred = obsW .* pred.AsExpr
+                    VectorExpr.EvalIn(2.0 * VectorExpr.IfFunction(resp .= 0.0,
+                                                                  obsW .* VectorExpr.Log(obsW ./ (obsW - pred)),
+                                                                  VectorExpr.IfFunction(resp .= obsW,
+                                                                                        resp .* VectorExpr.Log(resp ./ pred), 
+                                                                                        resp .* VectorExpr.Log(resp ./ pred) + (obsW - resp) .* VectorExpr.Log((obsW - resp) ./ (obsW - pred)))),
+                                      None)
 
-    let getPearsonChi (resp : Vector) (pred : Vector) (glmDistribution : GlmDistribution) =
+
+    let getPearsonChi (resp : Vector) (pred : Vector)(obsW : Vector) (glmDistribution : GlmDistribution) =
         let resp = resp.AsExpr
         match glmDistribution with
             | Gaussian ->
@@ -1010,9 +1039,13 @@ module Glm =
             | Gamma ->
                 VectorExpr.EvalIn(((resp ./ pred) - 1.0) .^ 2, None) 
             | Binomial ->
-                VectorExpr.EvalIn((resp - pred) ./ VectorExpr.Sqrt(pred.AsExpr .* (1.0 - pred.AsExpr)) .^ 2, None)
+                if obsW = Vector.Empty then
+                    VectorExpr.EvalIn(((resp - pred) .^ 2) ./ (pred.AsExpr .* (1.0 - pred.AsExpr)), None)
+                else
+                    let resp = resp ./ obsW
+                    VectorExpr.EvalIn(((resp - pred) .^ 2) ./ (pred.AsExpr .* (1.0 - pred.AsExpr)) .* obsW, None)
 
-    let getLogLikelihoodPart (resp : Vector) (pred : Vector) (glmDistribution : GlmDistribution) =
+    let getLogLikelihoodPart (resp : Vector) (pred : Vector) (obsW : Vector) (glmDistribution : GlmDistribution) =
         let resp = resp.AsExpr
         match glmDistribution with
             | Gaussian ->
@@ -1022,9 +1055,12 @@ module Glm =
             | Gamma ->
                 VectorExpr.EvalIn((VectorExpr.Log(resp ./ pred) - (resp ./ pred)), None), VectorExpr.EvalIn(VectorExpr.Log(resp), None)
             | Binomial ->
-                VectorExpr.EvalIn(VectorExpr.IfFunction((resp .= 0.0), 
-                                                        (VectorExpr.Log(1.0 - pred.AsExpr)),
-                                                        (VectorExpr.Log(pred.AsExpr))), None), Vector.Empty
+                if obsW = Vector.Empty then
+                    VectorExpr.EvalIn(VectorExpr.IfFunction((resp .= 0.0), 
+                                                            (VectorExpr.Log(1.0 - pred.AsExpr)),
+                                                            (VectorExpr.Log(pred.AsExpr))), None), Vector.Empty
+                else
+                    VectorExpr.EvalIn(resp .* VectorExpr.Log(pred.AsExpr) + (obsW - resp) .* VectorExpr.Log(1.0 - pred.AsExpr), None), Vector.Empty
 
     let getLogLikelihood (logLikelihoodPart : float * float) (N : int64) (phi : float) (glmDistribution : GlmDistribution) =
         let L1, L2 = logLikelihoodPart
@@ -1044,7 +1080,7 @@ module Glm =
         match dispersion with
             | MaxLikelihood ->
                 match glmDistribution with
-                    | Gaussian -> deviance / N_dof
+                    | Gaussian -> deviance / N
                     | Poisson -> 1.0
                     | Binomial -> 1.0
                     | Gamma -> 
@@ -1067,10 +1103,18 @@ module Glm =
             | Gaussian -> Math.Sqrt(phi)
             | _ -> phi
 
-    let getGoodnessOfFit (response : Covariate) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[]) option * Covariate option) list)
+    let getGoodnessOfFit (response : CovariateExpr) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[]) option * Covariate option) list)
                          (estimateMaps : int[] list)
                          (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector)
                          (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) =
+
+        let response, obsWCov =
+           match glmDistribution, response with
+               | Binomial, BinaryFunction(x, y, f, _) ->
+                   match f(Vector.Empty.AsExpr, Vector.Empty.AsExpr) with
+                       | VectorExpr.BinaryFunction(_, _, _, "./") -> x.AsCovariate, Some y.AsCovariate
+                       | _ -> response.AsCovariate, None 
+               | _ -> response.AsCovariate, None 
  
         let processorCount = Environment.ProcessorCount
         let processorChunk = obsCount / int64(processorCount)
@@ -1080,21 +1124,26 @@ module Glm =
                 |> Seq.toArray 
                 |> Array.Parallel.map (fun (fromObs, toObs) -> 
                                             let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                            let obsWSlices = 
+                                                match obsWCov with
+                                                    | Some(obsW) -> obsW.GetSlices(fromObs, toObs, sliceLength) 
+                                                    | None -> respSlices |> Seq.map (fun _ -> Vector.Empty)
+
                                             estimateMaps |> List.zip
                                                 (design |> List.map (fun (factorsOpt, covOpt) ->
                                                                              factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
                                                                                         |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
                                                    |> List.map (fun ((x,y),z) -> x,y,z)
-                                                   |> zipDesign |> Seq.zip respSlices
-                                                   |> Seq.fold (fun (devSum, pearsonSum, logLSum1, logLSum2, validObs) (resp, slice) ->
+                                                   |> zipDesign |> Seq.zip3 respSlices obsWSlices
+                                                   |> Seq.fold (fun (devSum, pearsonSum, logLSum1, logLSum2, validObs) (resp, obsW, slice) ->
                                                                     let sliceLength = resp.Length
                                                                     use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
                                                                     use pred = getPred xbeta glmLink
                                                                     use isValid = pred .= pred
                                                                     use isValidPred = pred.[isValid]
-                                                                    use deviance = getDeviance resp pred glmDistribution
-                                                                    use pearsonChi = getPearsonChi resp pred glmDistribution
-                                                                    let likelihoodPart1, likelihoodPart2  = getLogLikelihoodPart resp pred glmDistribution 
+                                                                    use deviance = getDeviance resp pred obsW glmDistribution
+                                                                    use pearsonChi = getPearsonChi resp pred obsW glmDistribution
+                                                                    let likelihoodPart1, likelihoodPart2  = getLogLikelihoodPart resp pred obsW glmDistribution 
                                                                     let dsum = MklFunctions.Sum_Array_NotNan(sliceLength, deviance.NativeArray)
                                                                     let psum = MklFunctions.Sum_Array_NotNan(sliceLength, pearsonChi.NativeArray) 
                                                                     let lsum1 = MklFunctions.Sum_Array_NotNan(sliceLength, likelihoodPart1.NativeArray) 
@@ -1118,7 +1167,7 @@ module Glm =
          LogLikehood = logLikelihood
          Deviance = deviance
          PearsonChi = pearsonChi
-         AIC = -2.0 * logLikelihood + 2.0 * float(dof)
+         //AIC = -2.0 * logLikelihood + 2.0 * float(dof)
          MLScale = getScale phi glmDistribution
          MLPhi = phi
         }
@@ -1130,16 +1179,12 @@ module Glm =
             match link with
                 | Id ->
                     meanResponseEstimate
-                | Ln ->
+                | Log ->
                     Math.Log(meanResponseEstimate)
-                | Log(d) ->
-                    Math.Log(meanResponseEstimate) / Math.Log(d)
-                | Power(d) ->
-                    Math.Pow(meanResponseEstimate, 1.0 / d)
+                | Inverse ->
+                    1.0 / meanResponseEstimate
                 | Logit ->
                     Math.Log(meanResponseEstimate / (1.0 - meanResponseEstimate))
-                | LogLog ->
-                    -Math.Log(-Math.Log(meanResponseEstimate))
                 | CLogLog ->
                     Math.Log(-Math.Log(1.0 - meanResponseEstimate))
                 | Probit ->
@@ -1186,11 +1231,11 @@ module Glm =
                 let invalidCount =
                     resp.GetSlices(0L, resp.Length - 1L, sliceLen)
                         |> Seq.map (fun v -> 
-                                         use isInvalid = BoolVectorExpr.EvalIn((v.AsExpr .<> 0.0) .&& (v.AsExpr .<> 1.0) , None)
+                                         use isInvalid = BoolVectorExpr.EvalIn((v.AsExpr .< 0.0) .|| (v.AsExpr .> 1.0) , None)
                                          v.[isInvalid].LongLength
                                    )
                         |> Seq.reduce (+)
-                if invalidCount > 0L then raise (new ArgumentException("Binomial response must be 0, 1 or NaN"))
+                if invalidCount > 0L then raise (new ArgumentException("Binomial response must be in [0, 1] or NaN"))
 
 
     let fitModel (response : CovariateExpr) (predictors : Predictor list) (includeIntercept : bool)
@@ -1199,6 +1244,14 @@ module Glm =
         let maxLen = max (predictors |> List.map (fun p -> p.MaxLength) |> List.max) response.MaxLength
         if minLen <> maxLen then raise (new ArgumentException("Glm predictors data length mismatch"))
         let length = minLen
+        let obsWCov =
+           match glmDistribution, response with
+               | Binomial, BinaryFunction(_, y, f, _) ->
+                   match f(Vector.Empty.AsExpr, Vector.Empty.AsExpr) with
+                       | VectorExpr.BinaryFunction(_, _, _, "./") -> Some y
+                       | _ -> None
+               | _ -> None 
+           |> Option.map (fun covExpr -> covExpr.AsCovariate)
         let respCov = response.AsCovariate
         checkResponse respCov glmDistribution sliceLength
         let meanReponseSlice = (respCov.GetSlices(0L, (min (int64(sliceLength)) length) - 1L, sliceLength) |> Seq.map (fun v -> Vector.Mean (v.[v .= v])))
@@ -1210,10 +1263,10 @@ module Glm =
         let initBeta = getInitBeta cumEstimateCounts glmLink includeIntercept predictors meanReponseSlice
         let design = estimableDesign |> List.map (fun ((factors, _), cov) -> (getCategoricalSlicer factors), cov |> Option.map (fun c -> c.AsCovariate)) 
         let estimateMaps = estimableDesign |> List.map getPredictorEstimateMap
-        let beta, invHDiag, iter, converged, estimateMapsFinal, cumEstimateCountsFinal = iwls respCov design estimateMaps glmDistribution glmLink initBeta None maxIter 0 length sliceLength cumEstimateCounts eps
+        let beta, invHDiag, iter, converged, estimateMapsFinal, cumEstimateCountsFinal = iwls respCov obsWCov design estimateMaps glmDistribution glmLink initBeta None maxIter 0 length sliceLength cumEstimateCounts eps Vector.Empty false
         if converged then
             let parameters = getParameterEstimates estimableDesign beta estimateMapsFinal invHDiag cumEstimateCountsFinal
-            let goodnessOfFit = getGoodnessOfFit respCov design estimateMapsFinal glmDistribution glmLink beta length sliceLength cumEstimateCountsFinal
+            let goodnessOfFit = getGoodnessOfFit response design estimateMapsFinal glmDistribution glmLink beta length sliceLength cumEstimateCountsFinal
             {
              Response = response
              Predictors = predictors
@@ -1318,7 +1371,7 @@ type GlmModel with
                                                     | (Some(v::_, _), _, _)::_ -> v.Length
                                                     | (_, Some(v), _)::_ -> v.Length
                                                     | _ -> 0
-                                            use xbeta = Glm.getXBeta slice beta sliceLen cumEstimateCounts
+                                            let xbeta = Glm.getXBeta slice beta sliceLen cumEstimateCounts
                                             Glm.getPred xbeta glmLink                               
                                         )
              }

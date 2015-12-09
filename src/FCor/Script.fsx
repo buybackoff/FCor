@@ -1,4 +1,4 @@
-#r @".\bin\debug\FCor.dll"
+#r @".\bin\release\FCor.dll"
 open FCor
 open FCor.ExplicitConversion
 open FCor.Math
@@ -9,14 +9,21 @@ open System.Runtime.InteropServices
 open System.Collections.Generic
 open FCor.Random
 open FCor.StatModels
-
 open Overloading
 open BasicStats
 
-//open FCor.CsvProvider
-//type GammaCsv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\bin\GLM\gamma.csv" >
-//let df = new GammaCsv()
-//let model = glm (df.lifetime <~> df.mfg) true Gamma Ln 100 1e-9
+open FCor.CsvProvider
+type Csv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\poisson_sim.csv", Separator = "," >
+let __ = new Csv()
+let model = glm (__.num_awards <~> (__.prog |>> [|1..3|]) + __.math) true Poisson Id 500 1e-9
+let fitted = model.Predict()
+
+
+
+
+//type BinomCsv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\binomial.csv", Separator = " " >
+//let df = new BinomCsv()
+//let model = glm (df.r / df.n <~> df.x + df.drug) true Binomial Logit 50 1e-9
 
 
 
