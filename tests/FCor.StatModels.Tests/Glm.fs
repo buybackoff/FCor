@@ -22,6 +22,7 @@ module Glm =
     type BinaryCsv = CsvDataFrame< "binary.csv" > // "http://www.ats.ucla.edu/stat/data/binary.csv"
     type NormalCsv = CsvDataFrame< "normal.csv", Separator = " " > // SAS
     type PoissonCsv = CsvDataFrame< "poisson_sim.csv" > // "http://www.ats.ucla.edu/stat/data/poisson_sim.csv"
+    type HousesCsv = CsvDataFrame< "houses.csv", Separator = " " > // http://www.stat.ufl.edu/~aa/glm/data/Houses2.dat
 
     [<Fact>]
     let ``Gamma log 1 factor`` () =
@@ -250,6 +251,99 @@ module Glm =
         pred.[0] |> should (equalWithin 1e-2) 0.24
         pred.[1] |> should (equalWithin 1e-2) 0.2
 
+    [<Fact>]
+    let ``Gamma log 3 factors`` () =
+        let __ = new HousesCsv()
+        let price = __.P |>> "Price"
+        let size = __.S |>> "Size"
+        let beds = __.Be |>> "Beds" |>> [1..5]
+        let baths = __.Ba |>> "Baths" |>> [1..3]
+        let isNew = __.New |>> [0..1] |>> "IsNew"
+        let model = glm (price <~> beds + baths + isNew) true Gamma Log 50 1e-9
+        model.GoodnessOfFit.IsSome |> should be True
+        match model.GoodnessOfFit with
+            | Some(goodnessOfFit) ->
+                goodnessOfFit.ValidObsCount |> should equal 93L
+                goodnessOfFit.Deviance |> should (equalWithin 1e-4) 4.7298 
+            | None -> ()
+        let pred : Vector =  !!model.Predict()
+        pred.[0] |> should (equalWithin 1e-4) 44.2839
+        pred.[4] |> should (equalWithin 1e-3) 250.508
 
 
+    [<Fact>]
+    let ``Gamma log 3 factors and 1 interaction`` () =
+        let __ = new HousesCsv()
+        let price = __.P |>> "Price"
+        let size = __.S |>> "Size"
+        let beds = __.Be |>> [1..5]  |>> "Beds"
+        let baths = __.Ba |>> [1..3] |>> "Baths"
+        let isNew = __.New |>> [0..1] |>> "IsNew"
+        let model = glm (price <~> beds + baths + isNew + beds * baths) true Gamma Log 50 1e-9
+        model.GoodnessOfFit.IsSome |> should be True
+        match model.GoodnessOfFit with
+            | Some(goodnessOfFit) ->
+                goodnessOfFit.ValidObsCount |> should equal 93L
+                goodnessOfFit.Deviance |> should (equalWithin 1e-4) 4.4976
+            | None -> ()
+        let pred : Vector =  !!model.Predict()
+        pred.[0] |> should (equalWithin 1e-5) 41.57143
+        pred.[4] |> should (equalWithin 1e-3) 274.702
+
+    [<Fact>]
+    let ``Gamma log 3 factors 1 covariate and 1 mixed interaction`` () =
+        let __ = new HousesCsv()
+        let price = __.P |>> "Price"
+        let size = __.S |>> "Size"
+        let beds = __.Be |>> [1..5]  |>> "Beds"
+        let baths = __.Ba |>> [1..3] |>> "Baths"
+        let isNew = __.New |>> [0..1] |>> "IsNew"
+        let model = glm (price <~> beds + baths + isNew + size +  beds * size) true Gamma Log 50 1e-9
+        model.GoodnessOfFit.IsSome |> should be True
+        match model.GoodnessOfFit with
+            | Some(goodnessOfFit) ->
+                goodnessOfFit.ValidObsCount |> should equal 93L
+                goodnessOfFit.Deviance |> should (equalWithin 1e-4) 2.7268
+            | None -> ()
+        let pred : Vector =  !!model.Predict()
+        pred.[0] |> should (equalWithin 1e-4) 42.8242
+        pred.[4] |> should (equalWithin 1e-4) 279.4950
+
+    [<Fact>]
+    let ``Gamma log 3 factors 1 covariate and 1 mixed interaction 1 colinear covariate`` () =
+        let __ = new HousesCsv()
+        let price = __.P |>> "Price"
+        let size = __.S |>> "Size"
+        let beds = __.Be |>> [1..5]  |>> "Beds"
+        let baths = __.Ba |>> [1..3] |>> "Baths"
+        let isNew = __.New |>> [0..1] |>> "IsNew"
+        let model = glm (price <~> beds + baths + isNew + size +  beds * size + (2.0 * size)) true Gamma Log 50 1e-9
+        model.GoodnessOfFit.IsSome |> should be True
+        match model.GoodnessOfFit with
+            | Some(goodnessOfFit) ->
+                goodnessOfFit.ValidObsCount |> should equal 93L
+                goodnessOfFit.Deviance |> should (equalWithin 1e-4) 2.7268
+            | None -> ()
+        let pred : Vector =  !!model.Predict()
+        pred.[0] |> should (equalWithin 1e-4) 42.8242
+        pred.[4] |> should (equalWithin 1e-4) 279.4950
+
+    [<Fact>]
+    let ``Gamma log 3 factors and 2way interaction and 3way interaction`` () =
+        let __ = new HousesCsv()
+        let price = __.P |>> "Price"
+        let size = __.S |>> "Size"
+        let beds = __.Be |>> [1..5]  |>> "Beds"
+        let baths = __.Ba |>> [1..3] |>> "Baths"
+        let isNew = __.New |>> [0..1] |>> "IsNew"
+        let model = glm (price <~> beds + baths + isNew + beds * baths + beds * baths * isNew) true Gamma Log 50 1e-9
+        model.GoodnessOfFit.IsSome |> should be True
+        match model.GoodnessOfFit with
+            | Some(goodnessOfFit) ->
+                goodnessOfFit.ValidObsCount |> should equal 93L
+                goodnessOfFit.Deviance |> should (equalWithin 1e-4) 4.3745 
+            | None -> ()
+        let pred : Vector =  !!model.Predict()
+        pred.[0] |> should (equalWithin 1e-5) 41.57143
+        pred.[4] |> should (equalWithin 1e-5) 249.70000
 

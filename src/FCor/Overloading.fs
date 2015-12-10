@@ -608,11 +608,19 @@ module Overloading =
 
         static member ConvertStatVar (DummyType, x : Covariate, f : float[]) = Cut(x.AsExpr, f)
 
+        static member ConvertStatVar (DummyType, x : Covariate, f : float list) = Cut(x.AsExpr, f |> List.toArray)
+
         static member ConvertStatVar (DummyType, x : CovariateExpr, f : float[]) = Cut(x, f)
+
+        static member ConvertStatVar (DummyType, x : CovariateExpr, f : float list) = Cut(x, f |> List.toArray)
 
         static member ConvertStatVar (DummyType, x : Covariate, f : int[]) = Int(x.AsExpr, f)
 
+        static member ConvertStatVar (DummyType, x : Covariate, f : int list) = Int(x.AsExpr, f |> List.toArray)
+
         static member ConvertStatVar (DummyType, x : CovariateExpr, f : int[]) = Int(x, f)
+
+        static member ConvertStatVar (DummyType, x : CovariateExpr, f : int list) = Int(x, f |> List.toArray)
 
         static member ConvertStatVar (DummyType, x : Factor, f) = ParseFactor(x.AsExpr, f)
 

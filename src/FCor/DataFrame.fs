@@ -22,7 +22,7 @@ type DataFrame(statVars : StatVariable list) =
         with get(name : string) = statVars |> List.find (fun svar -> svar.Name = name)
 
     interface IFormattable with
-        member this.ToString(format, provider) = 
+        member this.ToString(_, _) = 
             let sb = new StringBuilder()
             this.Factors |> List.iter (fun f -> sb.AppendLine(f.ToString()) |> ignore)
             this.Covariates |> List.iter (fun c -> sb.AppendLine(c.ToString()) |> ignore)

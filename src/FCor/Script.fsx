@@ -1,4 +1,4 @@
-#r @".\bin\release\FCor.dll"
+#r @".\bin\debug\FCor.dll"
 open FCor
 open FCor.ExplicitConversion
 open FCor.Math
@@ -13,9 +13,9 @@ open Overloading
 open BasicStats
 
 open FCor.CsvProvider
-type Csv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\poisson_sim.csv", Separator = "," >
+type Csv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\beetle.csv", Separator = " " >
 let __ = new Csv()
-let model = glm (__.num_awards <~> (__.prog |>> [|1..3|]) + __.math) true Poisson Id 500 1e-9
+let model = glm (__.y / __.n <~> __.x) true Binomial Probit 50 1e-9
 let fitted = model.Predict()
 
 

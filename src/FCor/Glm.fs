@@ -180,11 +180,11 @@ module Glm =
         let getColArray (splitLines : string[][]) col =
             Array.init splitLines.Length (fun row -> if col < splitLines.[row].Length then splitLines.[row].[col] else String.Empty)
 
-        let split (s : string) = s.Split delimiter 
+        let split (s : string) = if delimiter = [|' '|] then s.Split(delimiter, StringSplitOptions.RemoveEmptyEntries) else s.Split delimiter 
         let firstLine = (take 1)
         let headers =
             if hasHeaders then firstLine.[0] |> split
-            else firstLine.[0].Split(delimiter) |> Array.mapi (fun i _ -> sprintf "Col%d" i)
+            else firstLine.[0] |> split |> Array.mapi (fun i _ -> sprintf "Col%d" i)
         let isDropped = headers |> Array.map (fun h -> dropVars.Contains h)
         let firstChunk =
             if hasHeaders then 
@@ -192,8 +192,8 @@ module Glm =
             else 
                 take firstN |> Array.append firstLine |> Array.map split
         let isFactor = Array.init headers.Length (fun col -> if isDropped.[col] then false else col |> getColArray firstChunk |> Array.exists isNotNumerics)
-        let factorStorage = Array.init headers.Length (fun col -> new FactorStorage())
-        let covStorage = Array.init headers.Length (fun col -> new CovariateStorageFloat32())
+        let factorStorage = Array.init headers.Length (fun _ -> new FactorStorage())
+        let covStorage = Array.init headers.Length (fun _ -> new CovariateStorageFloat32())
         let covSlices = Array.init headers.Length (fun col -> if isFactor.[col] then Array.create 0 0.0f else Array.create N 0.0f)
         let slices = Array.init headers.Length (fun col -> if isDropped.[col] then Array.create 0 String.Empty else Array.create N String.Empty)
 
@@ -210,7 +210,7 @@ module Glm =
             let rec processLine (fromObs : int64) (N : int) (row : int) (isFactor : bool[]) (isDropped : bool[]) (delimiter : char[]) =
                 let line = sr.ReadLine()
                 if not <| String.IsNullOrEmpty(line) then
-                    line.Split(delimiter) |> Array.iteri (fun col s -> if not isDropped.[col] then slices.[col].[row] <- s)
+                    line |> split |> Array.iteri (fun col s -> if not isDropped.[col] then slices.[col].[row] <- s)
                     if row = N - 1 then
                         isFactor |> Array.iteri (fun col isFactor -> 
                                                     if not isFactor && not isDropped.[col] then
@@ -302,13 +302,13 @@ module Glm =
                 | (h::t), [] ->
                     if h >= 0 && (h - n) >= 0 then (h - n)::(updateEstMap' t isNumDisabled' n)
                     else h::(updateEstMap' t isNumDisabled' n)
-                | [], (h::t) -> raise (new InvalidOperationException())
+                | [], (_::_) -> raise (new InvalidOperationException())
                 | (h1::t1), (h2::t2) ->
                     if h2 then
                         if h1 >= 0 then (-1)::(updateEstMap' t1 t2 (n + 1))   
                         else h1::(updateEstMap' t1 isNumDisabled' n)
                     else
-                        if h1 >= 0 then h1::(updateEstMap' t1 t2 n)
+                        if h1 >= 0 then (h1 - n)::(updateEstMap' t1 t2 n)
                         else h1::(updateEstMap' t1 isNumDisabled' n)
 
         let startCounts = [|0..cumEstCounts.Length - 1|] |> Array.map (fun i -> if i = 0 then 0, cumEstCounts.[0] else cumEstCounts.[i - 1], (cumEstCounts.[i] - cumEstCounts.[i - 1]))      
@@ -365,11 +365,19 @@ module Glm =
 
     let getNASubscripts (factors : Factor list) =
         let nas = new Set<string>(Factor.NAs)
-        factors |> List.map (fun factor -> 
-                                 [0..factor.Cardinality - 1] |> List.filter (fun index -> nas.Contains(factor.Level(index)))
-                            )
-                |> cartesian
-
+        let subscriptLists =
+            factors |> List.map (fun factor -> 
+                                     factors |> List.map (fun g ->
+                                                              if factor = g then
+                                                                  [0..g.Cardinality - 1] |> List.filter (fun index -> nas.Contains(factor.Level(index)))
+                                                              else
+                                                                  [0..g.Cardinality - 1]
+                                                         ) |> cartesian
+                                )
+        match subscriptLists with
+            | [] -> []
+            | _::_ -> subscriptLists |> List.reduce (@)
+                
     let getDisabled (maskedFactors : ((Factor * FactorMask) list) * FactorMask) =
         let factors = maskedFactors |> fst |> List.map fst |> List.toArray
         let allLevelCount = factors |> Array.fold (fun count f -> count * f.Cardinality) 1
@@ -419,7 +427,7 @@ module Glm =
 
     let getCategoricalSlicer (maskedFactors : (Factor * FactorMask) list) =
         match maskedFactors with
-            | h::t ->
+            | _::_ ->
                 let factors = maskedFactors |> List.map fst 
                 let dimProd = maskedFactors |> List.map fst |> List.map (fun f -> f.Cardinality) |> getDimProd |> List.toArray
                 let slicerFun =
@@ -601,7 +609,7 @@ module Glm =
                                             else
                                                 let slice = slice |> List.map (fun v -> v.NativeArray) |> List.toArray
                                                 MklFunctions.Glm_Update_U(sliceLen, U.NativeArray, u.NativeArray, slice.Length, slice, estimateMap, dimProd, Vector.Empty.NativeArray, offset)
-                                        | None, Some(covariate), estimateMap -> 
+                                        | None, Some(covariate), _ -> 
                                             let offset = if pInd = 0 then 0 else cumEstimateCounts.[pInd-1] 
                                             let innerProd = MklFunctions.Innerprod_Arrays_NotNan(sliceLen, u.NativeArray, covariate.NativeArray)
                                             U.[offset] <- U.[offset] + (if Double.IsNaN(innerProd) then 0.0 else innerProd)
@@ -791,86 +799,90 @@ module Glm =
     let rec iwls (response : Covariate) (obsW : Covariate option) (design : ((int64 * int64 * int -> seq<UInt16Vector list> * int[]) option * Covariate option) list)
                  (estimateMaps : int[] list)
                  (glmDistribution : GlmDistribution) (glmLink : GlmLink) (beta : Vector) (H : Matrix option)
-                 (maxIter : int) (iter : int) (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) eps (delta : Vector) (halfStep : bool) =
+                 (maxIter : int) (iter : int) (obsCount : int64) (sliceLength : int) (cumEstimateCounts : int[]) eps
+                 (delta : Vector) (halfStep : bool) =
         if iter > maxIter then 
             beta, Vector.Empty, iter, false, estimateMaps, cumEstimateCounts
         else
             let processorCount = Environment.ProcessorCount
             let processorChunk = obsCount / int64(processorCount)
             let (U, isPredInvalid), H =
-                match H with
-                    | Some(H) ->
-                        seq{0..processorCount - 1} 
-                           |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
-                           |> Seq.toArray 
-                           |> Array.Parallel.map (fun (fromObs, toObs) -> 
-                                                    let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
-                                                    let U = new Vector(totalEstimateCount, 0.0)
-                                                    let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
-                                                    let obsWSlices =
-                                                        match obsW with
-                                                            | Some(obsW) -> obsW.GetSlices(fromObs, toObs, sliceLength) 
-                                                            | None -> respSlices |> Seq.map (fun _ -> Vector.Empty)
-                                                    let design' =
-                                                        estimateMaps |> List.zip
-                                                                        (design |> List.map (fun (factorsOpt, covOpt) ->
-                                                                                                factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
-                                                                                                           |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
-                                                                     |> List.map (fun ((x,y),z) -> x,y,z)
-                                                                     |> zipDesign |> Seq.zip3 respSlices obsWSlices
-                                                    let mutable isInvalid = false
-                                                    for resp, obsW, slice in design' do
-                                                       let sliceLength = resp.Length
-                                                       use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
-                                                       use pred = getPred xbeta glmLink
-                                                       match glmDistribution with
-                                                           | Gamma | Poisson -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0)
-                                                           | Binomial -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0) || (Vector.Max(pred) > 1.0)
-                                                           | _ -> ()
-                                                       use u = get_u resp pred xbeta obsW glmLink glmDistribution
-                                                       use updateU = getU slice u sliceLength cumEstimateCounts
-                                                       VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
-                                                    U, isInvalid   
-                                                  )
-                        |> Array.reduce (fun (u1, isInv1) (u2, isInv2) -> (u1 + u2), (isInv1 || isInv2)), H
-                    | None -> 
-                        seq{0..processorCount - 1} 
-                           |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
-                           |> Seq.toArray 
-                           |> Array.Parallel.map (fun (fromObs, toObs) -> 
-                                                    let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
-                                                    let U = new Vector(totalEstimateCount, 0.0)
-                                                    let H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
-                                                    let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
-                                                    let obsWSlices =
-                                                        match obsW with
-                                                            | Some(obsW) -> obsW.GetSlices(fromObs, toObs, sliceLength) 
-                                                            | None -> respSlices |> Seq.map (fun _ -> Vector.Empty)
-                                                    let design' =
-                                                        estimateMaps |> List.zip
-                                                            (design |> List.map (fun (factorsOpt, covOpt) ->
-                                                                                    factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
-                                                                                               |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
-                                                               |> List.map (fun ((x,y),z) -> x,y,z)
-                                                               |> zipDesign |> Seq.zip3 respSlices obsWSlices
-                                                    let mutable isInvalid = false
-                                                    for resp, obsW, slice in design' do
-                                                       let sliceLength = resp.Length
-                                                       use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
-                                                       use pred = getPred xbeta glmLink
-                                                       match glmDistribution with
-                                                           | Gamma | Poisson -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0)
-                                                           | Binomial -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0) || (Vector.Max(pred) > 1.0)
-                                                           | _ -> ()
-                                                       use u = get_u resp pred xbeta obsW glmLink glmDistribution
-                                                       use weight = getWeight pred xbeta obsW glmLink glmDistribution
-                                                       use updateU = getU slice u sliceLength cumEstimateCounts
-                                                       use updateH = getH slice weight sliceLength cumEstimateCounts
-                                                       VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
-                                                       MatrixExpr.EvalIn(H.AsExpr + updateH, Some H) |> ignore  
-                                                    (U, isInvalid), H    
-                                                  )
-                        |> Array.reduce (fun ((u1, isInv1), h1) ((u2, isInv2), h2) -> ((u1 + u2), (isInv1 || isInv2)), (h1 + h2))
+                if halfStep && delta <> Vector.Empty then
+                    (Vector.Empty, false), Matrix.Empty
+                else
+                    match H with
+                        | Some(H) ->
+                            seq{0..processorCount - 1} 
+                               |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
+                               |> Seq.toArray 
+                               |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                                                        let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
+                                                        let U = new Vector(totalEstimateCount, 0.0)
+                                                        let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                                        let obsWSlices =
+                                                            match obsW with
+                                                                | Some(obsW) -> obsW.GetSlices(fromObs, toObs, sliceLength) 
+                                                                | None -> respSlices |> Seq.map (fun _ -> Vector.Empty)
+                                                        let design' =
+                                                            estimateMaps |> List.zip
+                                                                            (design |> List.map (fun (factorsOpt, covOpt) ->
+                                                                                                    factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
+                                                                                                               |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
+                                                                         |> List.map (fun ((x,y),z) -> x,y,z)
+                                                                         |> zipDesign |> Seq.zip3 respSlices obsWSlices
+                                                        let mutable isInvalid = false
+                                                        for resp, obsW, slice in design' do
+                                                           let sliceLength = resp.Length
+                                                           use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
+                                                           use pred = getPred xbeta glmLink
+                                                           match glmDistribution, glmLink with
+                                                               | Gamma, Id | Poisson, Id | Gamma, Inverse | Poisson, Inverse -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0)
+                                                               | Binomial, CLogLog | Binomial, Probit -> isInvalid <- isInvalid || (Vector.Min(pred) <= 0.0) || (Vector.Max(pred) >= 1.0)
+                                                               | _ -> ()
+                                                           use u = get_u resp pred xbeta obsW glmLink glmDistribution
+                                                           use updateU = getU slice u sliceLength cumEstimateCounts
+                                                           VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
+                                                        U, isInvalid   
+                                                      )
+                            |> Array.reduce (fun (u1, isInv1) (u2, isInv2) -> (u1 + u2), (isInv1 || isInv2)), H
+                        | None -> 
+                            seq{0..processorCount - 1} 
+                               |> Seq.map (fun i -> (int64(i) * processorChunk), if i = processorCount - 1 then obsCount - 1L else (int64(i + 1) * processorChunk - 1L))
+                               |> Seq.toArray 
+                               |> Array.Parallel.map (fun (fromObs, toObs) -> 
+                                                        let totalEstimateCount = cumEstimateCounts.[cumEstimateCounts.Length - 1]
+                                                        let U = new Vector(totalEstimateCount, 0.0)
+                                                        let H = new Matrix(totalEstimateCount, totalEstimateCount, 0.0)
+                                                        let respSlices = response.GetSlices(fromObs, toObs, sliceLength) 
+                                                        let obsWSlices =
+                                                            match obsW with
+                                                                | Some(obsW) -> obsW.GetSlices(fromObs, toObs, sliceLength) 
+                                                                | None -> respSlices |> Seq.map (fun _ -> Vector.Empty)
+                                                        let design' =
+                                                            estimateMaps |> List.zip
+                                                                (design |> List.map (fun (factorsOpt, covOpt) ->
+                                                                                        factorsOpt |> Option.map (fun f -> f(fromObs, toObs, sliceLength)), covOpt
+                                                                                                   |> Option.map (fun c -> c.GetSlices(fromObs, toObs, sliceLength))))
+                                                                   |> List.map (fun ((x,y),z) -> x,y,z)
+                                                                   |> zipDesign |> Seq.zip3 respSlices obsWSlices
+                                                        let mutable isInvalid = false
+                                                        for resp, obsW, slice in design' do
+                                                           let sliceLength = resp.Length
+                                                           use xbeta = getXBeta slice beta sliceLength cumEstimateCounts
+                                                           use pred = getPred xbeta glmLink
+                                                           match glmDistribution, glmLink with
+                                                               | Gamma, Id | Poisson, Id | Gamma, Inverse | Poisson, Inverse -> isInvalid <- isInvalid || (Vector.Min(pred) < 0.0)
+                                                               | Binomial, CLogLog | Binomial, Probit -> isInvalid <- isInvalid || (Vector.Min(pred) <= 0.0) || (Vector.Max(pred) >= 1.0)
+                                                               | _ -> ()
+                                                           use u = get_u resp pred xbeta obsW glmLink glmDistribution
+                                                           use weight = getWeight pred xbeta obsW glmLink glmDistribution
+                                                           use updateU = getU slice u sliceLength cumEstimateCounts
+                                                           use updateH = getH slice weight sliceLength cumEstimateCounts
+                                                           VectorExpr.EvalIn(U.AsExpr + updateU, Some U) |> ignore
+                                                           MatrixExpr.EvalIn(H.AsExpr + updateH, Some H) |> ignore  
+                                                        (U, isInvalid), H    
+                                                      )
+                            |> Array.reduce (fun ((u1, isInv1), h1) ((u2, isInv2), h2) -> ((u1 + u2), (isInv1 || isInv2)), (h1 + h2))
             
             if isPredInvalid then
                 iwls response obsW design estimateMaps glmDistribution glmLink (beta - delta) None maxIter (iter + 1) obsCount sliceLength cumEstimateCounts eps delta true
@@ -897,7 +909,7 @@ module Glm =
                     else
                         let newEstMaps, newCumEstCount = updateEstimateMaps estimateMaps cumEstimateCounts (isNumDisabled.ToArray())
                         let newBeta = beta.[BoolVector.Not isNumDisabled]
-                        let newDelta = delta.[BoolVector.Not isNumDisabled]
+                        let newDelta = if delta = Vector.Empty then delta else delta.[BoolVector.Not isNumDisabled]
                         if newBeta = Vector.Empty then
                             Vector.Empty, Vector.Empty, iter, false, newEstMaps, newCumEstCount
                         else
@@ -927,7 +939,7 @@ module Glm =
                                  let predictorOffset = if i = 0 then 0 else cumEstimateCounts.[i - 1]
                                  let estCount = if i = 0 then cumEstimateCounts.[0] else cumEstimateCounts.[i] - cumEstimateCounts.[i - 1]
                                  match maskedFactors, cov with
-                                     | ((h::t), _), None ->
+                                     | ((_::_), _), None ->
                                          let factors = maskedFactors |> fst |> List.map fst
                                          let dimProd = factors |> List.map (fun f -> f.Cardinality) |> getDimProd
                                          estimateMap |> List.mapi (fun index estimateIndex -> 
@@ -976,7 +988,7 @@ module Glm =
                                                WaldChiSq = Double.NaN  
                                                PValue = Double.NaN                                                                  
                                              }]                                           
-                                     | ((h::t), _), Some cov ->
+                                     | ((_::_), _), Some cov ->
                                          let factors = maskedFactors |> fst |> List.map fst
                                          let dimProd = factors |> List.map (fun f -> f.Cardinality) |> getDimProd
                                          estimateMap |> List.mapi (fun index estimateIndex -> 

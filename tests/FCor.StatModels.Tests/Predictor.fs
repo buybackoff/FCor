@@ -101,8 +101,8 @@ module Predictor =
         let cov : Covariate = !!data
         let factor = cov |>> [|1.0..3.0|]
         factor.AsFactor.Cardinality |> should equal 3
-        Array.init factor.AsFactor.Cardinality (fun i -> factor.AsFactor.Level(i)) |> should equal [|"[1,2)";"[2,3]";""|] 
-        factor.AsFactor.AsSeq |> Seq.toArray |> should equal [|(0us,"[1,2)");(1us,"[2,3]");(2us,"")|]
+        Array.init factor.AsFactor.Cardinality (fun i -> factor.AsFactor.Level(i)) |> should equal [|"[1,2)";"[2,3]";"."|] 
+        factor.AsFactor.AsSeq |> Seq.toArray |> should equal [|(0us,"[1,2)");(1us,"[2,3]");(2us,".")|]
 
     [<Fact>]
     let ``Int cov`` () =
@@ -110,7 +110,7 @@ module Predictor =
         let cov : Covariate = !!data
         let factor = cov |> floor |>> [|1..3|]
         factor.AsFactor.Cardinality |> should equal 4
-        Array.init factor.AsFactor.Cardinality (fun i -> factor.AsFactor.Level(i)) |> should equal [|"1";"2";"3";""|] 
+        Array.init factor.AsFactor.Cardinality (fun i -> factor.AsFactor.Level(i)) |> should equal [|"1";"2";"3";"."|] 
         factor.AsFactor.AsSeq |> Seq.toArray |> should equal [|(0us,"1");(1us,"2");(2us,"3")|]
 
     [<Fact>]

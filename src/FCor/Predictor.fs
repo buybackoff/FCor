@@ -400,7 +400,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                               member __.Level
                                   with get(index) =
                                       if index = breaks.Length - 1 then
-                                          String.Empty
+                                          "."
                                       elif index = breaks.Length - 2 then
                                           sprintf "[%G,%G]" breaks.[index] breaks.[index + 1]
                                       else
@@ -426,7 +426,7 @@ and [<StructuredFormatDisplay("{AsString}")>] FactorExpr =
                               member __.Level
                                   with get(index) =
                                       if index = knots.Length then
-                                          String.Empty
+                                          "."
                                       else
                                           sprintf "%d" knots.[index]
                               member __.Length = covariate.Length
