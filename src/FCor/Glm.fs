@@ -64,7 +64,6 @@ type GlmGoodnessOfFit =
             sb.AppendLine <| sprintf "%-20s%12G%s%12G" "Deviance" (float this.Deviance) "  " (float (this.Deviance / N_dof)) |> ignore
             sb.AppendLine <| sprintf "%-20s%12G%s%12G" "Pearson Chi-Square" (float this.PearsonChi) "  " (float (this.PearsonChi / N_dof)) |> ignore
             sb.AppendLine <| sprintf "%-20s%12G" "Log Likelihood" (float this.LogLikehood) |> ignore
-            //sb.AppendLine <| sprintf "%-20s%12G" "AIC" (float this.AIC) |> ignore
             sb.AppendLine <| sprintf "%-20s%12G" "ML Scale" (float this.MLScale) |> ignore
             sb.AppendLine <| sprintf "%-20s%12G" "ML Phi" (float this.MLPhi) |> ignore
             sb.ToString()
@@ -945,7 +944,9 @@ module Glm =
                                          estimateMap |> List.mapi (fun index estimateIndex -> 
                                                                           let subscripts = ind2sub index dimProd
                                                                           let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.Level(s))
-                                                                          if estimateIndex < 0 then
+                                                                          if estimateIndex <= -2 then
+                                                                              None
+                                                                          elif estimateIndex = -1 then
                                                                               {
                                                                                Predictor = CategoricalPredictor(!!factors)
                                                                                Levels = levels
@@ -954,7 +955,7 @@ module Glm =
                                                                                IsDisabled = true 
                                                                                WaldChiSq = Double.NaN  
                                                                                PValue = Double.NaN                                                                  
-                                                                              }
+                                                                              } |> Some
                                                                           else
                                                                               let estimateIndex = predictorOffset + estimateIndex
                                                                               {
@@ -965,7 +966,7 @@ module Glm =
                                                                                IsDisabled = false   
                                                                                WaldChiSq = Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0)  
                                                                                PValue = 1.0 - chicdf(1.0, Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0) )                                                                     
-                                                                              }
+                                                                              } |> Some
                                                                       )
                                      | ([], _), Some cov ->
                                          if estCount = 1 then
@@ -977,7 +978,7 @@ module Glm =
                                               IsDisabled = false  
                                               WaldChiSq = Math.Pow(beta.[predictorOffset] / Math.Sqrt(invHDiag.[predictorOffset]), 2.0)  
                                               PValue = 1.0 - chicdf(1.0, Math.Pow(beta.[predictorOffset] / Math.Sqrt(invHDiag.[predictorOffset]), 2.0) )                                                                         
-                                             }]  
+                                             } |> Some]  
                                          else
                                              [{
                                                Predictor = NumericalPredictor cov
@@ -987,14 +988,16 @@ module Glm =
                                                IsDisabled = true 
                                                WaldChiSq = Double.NaN  
                                                PValue = Double.NaN                                                                  
-                                             }]                                           
+                                             } |> Some]                                           
                                      | ((_::_), _), Some cov ->
                                          let factors = maskedFactors |> fst |> List.map fst
                                          let dimProd = factors |> List.map (fun f -> f.Cardinality) |> getDimProd
                                          estimateMap |> List.mapi (fun index estimateIndex -> 
                                                                       let subscripts = ind2sub index dimProd
                                                                       let levels = subscripts |> List.zip factors |> List.map (fun (f, s) -> f.Level(s))
-                                                                      if estimateIndex < 0 then
+                                                                      if estimateIndex <= -2 then
+                                                                          None
+                                                                      elif estimateIndex = -1 then
                                                                           {
                                                                            Predictor = MixedInteraction(!!factors, cov)
                                                                            Levels = levels
@@ -1003,7 +1006,7 @@ module Glm =
                                                                            IsDisabled = true    
                                                                            WaldChiSq = Double.NaN
                                                                            PValue = Double.NaN                                                                
-                                                                          }
+                                                                          } |> Some
                                                                       else
                                                                           let estimateIndex = predictorOffset + estimateIndex
                                                                           {
@@ -1014,10 +1017,10 @@ module Glm =
                                                                            IsDisabled = false    
                                                                            WaldChiSq = Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0)   
                                                                            PValue = 1.0 - chicdf(1.0, Math.Pow(beta.[estimateIndex] / Math.Sqrt(invHDiag.[estimateIndex]), 2.0) )                                                                    
-                                                                          }
+                                                                          } |> Some
                                                                   )                                      
                                      | ([], _), None -> []                                 
-                           ) |> List.concat
+                           ) |> List.concat |> List.choose id
 
     let getDeviance (resp : Vector) (pred : Vector) (obsW : Vector) (glmDistribution : GlmDistribution) =
         let resp = resp.AsExpr

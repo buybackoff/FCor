@@ -112,7 +112,7 @@ type IntVector(length : int64, nativeArray : nativeptr<int>, gcHandlePtr : IntPt
         with get(fromIndex : int, toIndex : int) = this.View(int64(fromIndex), int64(toIndex))
 
     member this.GetSlice(fromIndex, toIndex) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromIndex = defaultArg fromIndex 0L
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
@@ -131,7 +131,7 @@ type IntVector(length : int64, nativeArray : nativeptr<int>, gcHandlePtr : IntPt
         this.GetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64)
 
     member this.SetSlice(fromIndex : int64 option, toIndex : int64 option, value: int) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromIndex = defaultArg fromIndex 0L
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
@@ -146,7 +146,8 @@ type IntVector(length : int64, nativeArray : nativeptr<int>, gcHandlePtr : IntPt
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
 
     member this.SetSlice(fromIndex : Option<int64>, toIndex : Option<int64>, value: IntVector) =
-        ArgumentChecks.throwIfContainsDisposed [this;value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         if value.LongLength = 1L then
             this.SetSlice(fromIndex, toIndex, (value.[0L]:int))
         else
@@ -186,7 +187,7 @@ type IntVector(length : int64, nativeArray : nativeptr<int>, gcHandlePtr : IntPt
 
     interface IFormattable with
         member this.ToString(format, provider) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let maxRows, _ = DisplayControl.MaxDisplaySize
             let showRows = max 0L (min (maxRows |> int64) length) |> int
             let moreRows = length > (showRows |> int64)

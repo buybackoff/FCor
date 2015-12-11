@@ -1,4 +1,4 @@
-#r @".\bin\debug\FCor.dll"
+#r @".\bin\release\FCor.dll"
 open FCor
 open FCor.ExplicitConversion
 open FCor.Math
@@ -13,9 +13,15 @@ open Overloading
 open BasicStats
 
 open FCor.CsvProvider
-type Csv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\beetle.csv", Separator = " " >
+type Csv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\houses.csv", Separator = " " >
 let __ = new Csv()
-let model = glm (__.y / __.n <~> __.x) true Binomial Probit 50 1e-9
+let price = __.P |>> "Price"
+let size = __.S |>> "Size"
+let beds = __.Be |>> [1..5]  |>> "Beds"
+let baths = __.Ba |>> [1..3] |>> "Baths"
+let isNew = __.New |>> [0..1] |>> "IsNew"
+let model = glm (price <~> beds + baths + isNew + beds * baths) true Gamma Log 50 1e-9
+(beds .* baths).AsFactor.GetStats()
 let fitted = model.Predict()
 
 

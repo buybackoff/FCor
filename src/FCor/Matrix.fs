@@ -170,7 +170,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromRowIndex = defaultArg fromRowIndex 0L
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
@@ -207,7 +207,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex).ColMajorDataVector
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option, value : bool) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromRowIndex = defaultArg fromRowIndex 0L
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
@@ -237,7 +237,8 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option, value : BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [this;value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         if value.LongLength = 1L then
             this.SetSlice(fromRowIndex, toRowIndex, fromColIndex, toColIndex, (value.[0L]:bool))
         else
@@ -261,14 +262,14 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
                     this.ColView(fromColIndex + i).SetSlice(Some(fromRowIndex), Some(toRowIndex), value.ColView(i))
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, colIndex : int64, value : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [this]
-        ArgumentChecks.throwIfContainsDisposed [value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         let value = new BoolMatrix(value)
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
 
     member this.SetSlice(rowIndex : int64, fromColIndex : int64 option, toColIndex : int64 option, value : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [this]
-        ArgumentChecks.throwIfContainsDisposed [value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         let value = new BoolMatrix(1L, value.LongLength, value)
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
@@ -276,14 +277,14 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
        this.SetSlice(fromRowIndex |> Option.map int64, toRowIndex |> Option.map int64, fromColIndex |> Option.map int64, toColIndex |> Option.map int64, value)
 
     member this.SetSlice(fromRowIndex : int option, toRowIndex : int option, colIndex : int, value : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [this]
-        ArgumentChecks.throwIfContainsDisposed [value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         let value = new BoolMatrix(value)
         this.SetSlice(fromRowIndex, toRowIndex, Some colIndex, Some colIndex, value)
 
     member this.SetSlice(rowIndex : int, fromColIndex : int option, toColIndex : int option, value : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [this]
-        ArgumentChecks.throwIfContainsDisposed [value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         let value = new BoolMatrix(1L, value.LongLength, value)
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
@@ -332,7 +333,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     member this.Item
         with get(rowIndices : int64 seq, colIndices : int64 seq) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let rowIndices = rowIndices |> Seq.toArray
             let rowCount = rowIndices.GetLongLength(0)
             let colIndices = colIndices |> Seq.toArray
@@ -344,7 +345,8 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
             res
 
         and set (rowIndices : int64 seq, colIndices : int64 seq) (value : BoolMatrix) =
-            ArgumentChecks.throwIfContainsDisposed [this;value]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if value.IsDisposed then raise (new ObjectDisposedException(""))
             let rowIndices = rowIndices |> Seq.toArray
             let colIndices = colIndices |> Seq.toArray
             if value.LongLength = 1L then
@@ -404,7 +406,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
             colMajorDataVector.[boolMatrix.ColMajorDataVector] <- value
 
     member this.ToArray2D() =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         Array2D.init this.RowCount this.ColCount (fun i j -> this.[i, j])
 
     static member Identity(rows : int64, cols : int64) =
@@ -416,7 +418,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         BoolMatrix.Identity(rows |> int64, cols |> int64)
 
     static member Copy(matrix : BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix.LongLength = 0L then BoolMatrix.Empty 
         else
             let rows = matrix.LongRowCount
@@ -427,17 +429,19 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
     member this.AsExpr
         with get() = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             if this.LongLength = 1L then BoolMatrixExpr.Scalar(this.[0L, 0L])
             else BoolMatrixExpr.Var(this)
 
 
     static member (==) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         matrix1 = matrix2
 
     static member (!=) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         matrix1 <> matrix2
 
     static member (==) (matrix: BoolMatrix, a : bool) =
@@ -454,42 +458,48 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
 
     static member (.<) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .< matrix2.ColMajorDataVector)
 
     static member (.<=) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .<= matrix2.ColMajorDataVector)
 
     static member (.>) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .> matrix2.ColMajorDataVector)
 
     static member (.>=) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .>= matrix2.ColMajorDataVector)
 
     static member (.=) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .= matrix2.ColMajorDataVector)
 
     static member (.<>) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
@@ -538,14 +548,16 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
 
 
     static member Max(matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, BoolVector.Max(matrix1.ColMajorDataVector, matrix2.ColMajorDataVector))
 
     static member Min(matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
@@ -566,14 +578,16 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         BoolMatrix.Min(matrix, a)
 
     static member (.&&) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .&& matrix2.ColMajorDataVector)
 
     static member (.||) (matrix1: BoolMatrix, matrix2: BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
@@ -596,13 +610,13 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         matrix .|| a
 
     static member Not (matrix : BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix.LongLength = 0L then BoolMatrix.Empty
         else
             new BoolMatrix(matrix.LongRowCount, matrix.LongColCount, BoolVector.Not matrix.ColMajorDataVector)
 
     static member Any(matrix : BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -625,7 +639,7 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
                         res
 
     static member All(matrix : BoolMatrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -653,13 +667,14 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         member this.Dispose() = this.ColMajorDataVector.DoDispose(true)
 
     override this.ToString() = 
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<bool>() true, null)
 
     override this.Equals(yobj) =
         match yobj with
         | :? BoolMatrix as y ->
-            ArgumentChecks.throwIfContainsDisposed [this;y]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if y.IsDisposed then raise (new ObjectDisposedException(""))
             if this.LongLength = 0L && y.LongLength = 0L then true
             elif this.LongRowCount <> y.LongRowCount || this.LongColCount <> y.LongColCount then false
             else 
@@ -667,12 +682,12 @@ type BoolMatrix(rowCount : int64, colCount : int64, colMajorDataVector : BoolVec
         | _ -> false
  
     override this.GetHashCode() = 
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         hash (this.LongRowCount, this.LongColCount, this.ColMajorDataVector.NativeArray)
 
     interface IFormattable with
         member this.ToString(format, provider) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let maxRows, maxCols = DisplayControl.MaxDisplaySize
             let showRows = max 0L (min (maxRows |> int64) rowCount) |> int
             let showCols = max 0L (min (maxCols |> int64) colCount) |> int
@@ -720,7 +735,7 @@ and BoolMatrixExpr =
                         | Some(v) when (r,c) <> v.LongSize -> raise (new ArgumentException("Elementwise size mismatch")) 
                         | Some(v) -> v
                         | None -> new BoolMatrix(r, c, false)
-        ArgumentChecks.throwIfContainsDisposed [res]
+        if res.IsDisposed then raise (new ObjectDisposedException(""))
         if res.LongSize <> (0L, 0L) then
             BoolVectorExpr.EvalIn(matrixExpr.AsBoolVectorExpr, Some res.ColMajorDataVector) |> ignore
         res
@@ -1048,7 +1063,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
     member this.Diag
         with get(offset : int64) =
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let len = if offset < 0L then 
                                 if rowCount + offset < colCount then rowCount + offset else colCount
                             else
@@ -1059,8 +1074,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 MklFunctions.D_Get_Diag(rowCount, offset, len, colMajorDataVector.NativeArray, res.NativeArray)
                 res
         and set (offset : int64) (diag : Vector) =
-            ArgumentChecks.throwIfContainsDisposed [this]
-            ArgumentChecks.throwIfContainsDisposed [diag]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if diag.IsDisposed then raise (new ObjectDisposedException(""))
             let n = diag.LongLength
             if this.LongLength = 0L || n = 0L then ()
             else
@@ -1094,7 +1109,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
 
     member this.GetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromRowIndex = defaultArg fromRowIndex 0L
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
@@ -1132,7 +1147,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         this.GetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex).ColMajorDataVector
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option, value : float) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromRowIndex = defaultArg fromRowIndex 0L
         let toRowIndex = defaultArg toRowIndex (rowCount - 1L)
         if fromRowIndex < 0L || fromRowIndex >= rowCount then raise (new IndexOutOfRangeException())
@@ -1162,7 +1177,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         this.SetSlice(Some rowIndex, Some rowIndex, fromColIndex, toColIndex, value)
 
     member this.SetSlice(fromRowIndex : int64 option, toRowIndex : int64 option, fromColIndex : int64 option, toColIndex : int64 option, value : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [this;value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         if value.LongLength = 1L then
             this.SetSlice(fromRowIndex, toRowIndex, fromColIndex, toColIndex, (value.[0L]:float))
         else
@@ -1249,7 +1265,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
     member this.Item
         with get(rowIndices : int64 seq, colIndices : int64 seq) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let rowIndices = rowIndices |> Seq.toArray
             let rowCount = rowIndices.GetLongLength(0)
             let colIndices = colIndices |> Seq.toArray
@@ -1261,7 +1277,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             res
 
         and set (rowIndices : int64 seq, colIndices : int64 seq) (value : Matrix) =
-            ArgumentChecks.throwIfContainsDisposed [this;value]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if value.IsDisposed then raise (new ObjectDisposedException(""))
             let rowIndices = rowIndices |> Seq.toArray
             let colIndices = colIndices |> Seq.toArray
             if value.LongRowCount * value.LongColCount = 1L then
@@ -1321,17 +1338,17 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             colMajorDataVector.[boolMatrix.ColMajorDataVector] <- value
 
     member this.ToArray2D() =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         Array2D.init this.RowCount this.ColCount (fun i j -> this.[i, j])
 
     member this.AsExpr
         with get() = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             if this.LongLength = 1L then MatrixExpr.Scalar(this.[0L, 0L])
             else MatrixExpr.Var(this)
 
     member this.Transpose() =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let r = rowCount
         let c = colCount
         MklFunctions.D_Transpose_In_Place(rowCount, colCount, colMajorDataVector.NativeArray)
@@ -1348,13 +1365,13 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         Matrix.Identity(rows |> int64, cols |> int64)
 
     static member Transpose(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let res : Matrix = Matrix.Copy(matrix)
         res.Transpose()
         res
 
     static member UpperTri(matrix : Matrix, offset : int64) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
         MklFunctions.D_Get_Upper_Tri(offset, matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
         res
@@ -1363,7 +1380,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         Matrix.UpperTri(matrix, offset |> int64)
 
     static member LowerTri(matrix : Matrix, offset : int64) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let res = new Matrix(matrix.LongRowCount, matrix.LongColCount, 0.0)
         MklFunctions.D_Get_Lower_Tri(offset, matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector.NativeArray, res.ColMajorDataVector.NativeArray)
         res
@@ -1372,11 +1389,13 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         Matrix.LowerTri(matrix, offset |> int64)
 
     static member (==) (matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         matrix1 = matrix2
 
     static member (!=) (matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         matrix1 <> matrix2
 
     static member (==) (matrix: Matrix, a : float) =
@@ -1393,42 +1412,48 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member (.<) (matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .< matrix2.ColMajorDataVector)
 
     static member (.<=) (matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .<= matrix2.ColMajorDataVector)
 
     static member (.>) (matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .> matrix2.ColMajorDataVector)
 
     static member (.>=) (matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .>= matrix2.ColMajorDataVector)
 
     static member (.=) (matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new BoolMatrix(rowCount, colCount, matrix1.ColMajorDataVector .= matrix2.ColMajorDataVector)
 
     static member (.<>) (matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
@@ -1476,14 +1501,16 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member Max(matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
         new Matrix(rowCount, colCount, Vector.Max(matrix1.ColMajorDataVector, matrix2.ColMajorDataVector))
 
     static member Min(matrix1: Matrix, matrix2: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         let rowCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongRowCount matrix2.LongRowCount
         let colCount = if matrix1.LongLength = 0L || matrix2.LongLength = 0L then 0L else max matrix1.LongColCount matrix2.LongColCount
@@ -1507,7 +1534,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member (*) (matrix1 : Matrix, matrix2 : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         let n = matrix2.LongColCount
         let m = matrix1.LongRowCount
         let k = matrix1.LongColCount
@@ -1520,13 +1548,14 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             res  
 
     static member (*) (matrix : Matrix, vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let m = new Matrix(vector)
         (matrix * m).ColMajorDataVector
 
     static member (^*) (matrix1 : Matrix, matrix2 : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         let n = matrix2.LongColCount
         let k = matrix1.LongRowCount
         let m = matrix1.LongColCount
@@ -1552,7 +1581,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         matrix .* a
 
     static member (.*) (matrix1 : Matrix, matrix2 : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
@@ -1570,7 +1600,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         a + matrix
 
     static member (+) (matrix1 : Matrix, matrix2 : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
@@ -1594,7 +1625,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         matrix ./ a
 
     static member (./) (matrix1 : Matrix, matrix2 : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
@@ -1612,7 +1644,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector - a)
 
     static member (-) (matrix1 : Matrix, matrix2 : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
@@ -1624,7 +1657,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                new Matrix(matrix1.LongRowCount, matrix1.LongColCount, matrix1.ColMajorDataVector - matrix2.ColMajorDataVector)
 
     static member (~-) (matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         new Matrix(matrix.LongRowCount, matrix.LongColCount, -matrix.ColMajorDataVector)
         
     static member (.^) (a: float, matrix : Matrix) =
@@ -1634,7 +1667,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         new Matrix(matrix.LongRowCount, matrix.LongColCount, matrix.ColMajorDataVector .^ a) 
 
     static member (.^) (matrix1 : Matrix, matrix2 : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix1;matrix2]
+        if matrix1.IsDisposed then raise (new ObjectDisposedException(""))
+        if matrix2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfSizeNotOKForElementwise matrix1.LongSize matrix2.LongSize
         if matrix1.LongLength = 0L || matrix2.LongLength = 0L then Matrix.Empty
         else
@@ -1649,7 +1683,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         matrix .^ float(n)
 
     static member Abs(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1657,7 +1691,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Sqrt(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1665,7 +1699,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Sin(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1673,7 +1707,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Cos(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1681,7 +1715,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Tan(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1689,7 +1723,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Asin(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1697,7 +1731,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Acos(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1705,7 +1739,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Atan(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1713,7 +1747,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Sinh(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1721,7 +1755,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Cosh(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1729,7 +1763,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Tanh(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1737,7 +1771,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member ASinh(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1745,7 +1779,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member ACosh(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1753,7 +1787,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member ATanh(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1761,7 +1795,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Exp(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1769,7 +1803,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Expm1(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1777,7 +1811,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Log(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1785,7 +1819,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Log10(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1793,7 +1827,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Log1p(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1801,7 +1835,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Erf(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1809,7 +1843,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Erfc(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1817,7 +1851,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Erfinv(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1825,7 +1859,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Erfcinv(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1833,7 +1867,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Normcdf(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1841,7 +1875,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Norminv(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1849,7 +1883,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Round(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1857,7 +1891,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Ceiling(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1865,7 +1899,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Floor(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1873,7 +1907,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         res
 
     static member Truncate(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let res = new Matrix(m, n, 0.0)
@@ -1883,7 +1917,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member Sum(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -1906,7 +1940,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member Prod(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -1929,7 +1963,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member CumSum(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -1952,7 +1986,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member CumProd(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -1975,7 +2009,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member Min(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -1998,7 +2032,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member Max(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -2021,7 +2055,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member Mean(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -2044,7 +2078,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member Variance(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -2067,7 +2101,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member Skewness(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -2090,7 +2124,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member Kurtosis(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (matrixAxis : MatrixAxis) ->
             match matrixAxis with
                 | RowAxis ->
@@ -2113,9 +2147,9 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                         res
 
     static member Quantile(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         fun (quantileOrders : Vector) (matrixAxis : MatrixAxis) ->
-            ArgumentChecks.throwIfContainsDisposed [quantileOrders]
+            if quantileOrders.IsDisposed then raise (new ObjectDisposedException(""))
             match matrixAxis with
                 | RowAxis ->
                     let varCount = matrix.LongRowCount
@@ -2138,7 +2172,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member Corr(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix.LongLength = 0L then Matrix.Empty
         else
             let varCount = matrix.LongColCount
@@ -2150,7 +2184,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 res
 
     static member Cov(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix.LongLength = 0L then Matrix.Empty
         else
             let varCount = matrix.LongColCount
@@ -2162,7 +2196,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
                 res
 
     static member Copy(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix.LongLength = 0L then Matrix.Empty
         else
             let rows = matrix.LongRowCount
@@ -2173,7 +2207,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
 
 
     static member Chol(matrix: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix == Matrix.Empty then Matrix.Empty
         else
             if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix is not square"))
@@ -2182,7 +2216,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             res
 
     static member CholInv(matrix: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix == Matrix.Empty then Matrix.Empty
         else
             if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix is not square"))
@@ -2191,7 +2225,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             res
 
     static member CholSolve(a : Matrix, b : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [a;b]
+        if a.IsDisposed then raise (new ObjectDisposedException(""))
+        if b.IsDisposed then raise (new ObjectDisposedException(""))
         if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
         if a.LongRowCount <> a.LongColCount then raise (new ArgumentException("Matrix is not square"))
         if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0)
@@ -2206,7 +2241,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         Matrix.CholSolve(a, b).ColMajorDataVector
 
     static member Lu(matrix: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         let m = matrix.LongRowCount
         let n = matrix.LongColCount
         let L =
@@ -2224,7 +2259,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         (L, U, pivot)
 
     static member LuInv(matrix: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix == Matrix.Empty then Matrix.Empty
         else
             if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix is not square"))
@@ -2233,7 +2268,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             res
 
     static member LuSolve(a : Matrix, b : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [a;b]
+        if a.IsDisposed then raise (new ObjectDisposedException(""))
+        if b.IsDisposed then raise (new ObjectDisposedException(""))
         if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
         if a.LongRowCount <> a.LongColCount then raise (new ArgumentException("Matrix is not square"))
         if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0)
@@ -2248,7 +2284,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         Matrix.LuSolve(a, b).ColMajorDataVector
 
     static member Qr(matrix: Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix == Matrix.Empty then Matrix.Empty, Matrix.Empty
         else
             let m = matrix.LongRowCount
@@ -2267,7 +2303,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             (Q, R)
 
     static member QrSolveFull(a : Matrix, b : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [a;b]
+        if a.IsDisposed then raise (new ObjectDisposedException(""))
+        if b.IsDisposed then raise (new ObjectDisposedException(""))
         if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
         if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0)
         else
@@ -2284,7 +2321,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         Matrix.QrSolveFull(a, b).ColMajorDataVector
 
     static member QrSolve(a : Matrix, b : Matrix, tol : float) =
-        ArgumentChecks.throwIfContainsDisposed [a;b]
+        if a.IsDisposed then raise (new ObjectDisposedException(""))
+        if b.IsDisposed then raise (new ObjectDisposedException(""))
         if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
         if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0), 0
         else
@@ -2303,7 +2341,8 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         x.ColMajorDataVector, rank
 
     static member SvdSolve(a : Matrix, b : Matrix, tol : float) =
-        ArgumentChecks.throwIfContainsDisposed [a;b]
+        if a.IsDisposed then raise (new ObjectDisposedException(""))
+        if b.IsDisposed then raise (new ObjectDisposedException(""))
         if a.LongRowCount <> b.LongRowCount then raise (new ArgumentException("Matrix dimensions must agree"))
         if a == Matrix.Empty then new Matrix(a.LongRowCount, b.LongColCount, 0.0), 0
         else
@@ -2322,7 +2361,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         x.ColMajorDataVector, rank
 
     static member SvdValues(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix == Matrix.Empty then Vector.Empty
         else
             let m = matrix.LongRowCount
@@ -2333,7 +2372,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             res
 
     static member Svd(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix == Matrix.Empty then Matrix.Empty, Vector.Empty, Matrix.Empty
         else
             let m = matrix.LongRowCount
@@ -2346,7 +2385,7 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             (U, S, Vt)
 
     static member Eig(matrix : Matrix) =
-        ArgumentChecks.throwIfContainsDisposed [matrix]
+        if matrix.IsDisposed then raise (new ObjectDisposedException(""))
         if matrix.LongRowCount <> matrix.LongColCount then raise (new ArgumentException("Matrix must be square"))
         if matrix == Matrix.Empty then Matrix.Empty, Vector.Empty
         else
@@ -2357,13 +2396,14 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
             (Z, D)
 
     override this.ToString() = 
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<float>() 0.0, null)
 
     override this.Equals(yobj) =
         match yobj with
         | :? Matrix as y ->
-            ArgumentChecks.throwIfContainsDisposed [this;y]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if y.IsDisposed then raise (new ObjectDisposedException(""))
             if this.LongRowCount * this.LongColCount = 0L && y.LongRowCount * y.LongColCount = 0L then true
             elif this.LongRowCount <> y.LongRowCount || this.LongColCount <> y.LongColCount then false
             else 
@@ -2371,12 +2411,12 @@ and Matrix(rowCount : int64, colCount : int64, colMajorDataVector : Vector) =
         | _ -> false
  
     override this.GetHashCode() = 
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         hash (this.LongRowCount, this.LongColCount, this.ColMajorDataVector.NativeArray)
 
     interface IFormattable with
         member this.ToString(format, provider) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let maxRows, maxCols = DisplayControl.MaxDisplaySize
             let showRows = max 0L (min (maxRows |> int64) rowCount) |> int
             let showCols = max 0L (min (maxCols |> int64) colCount) |> int
@@ -2426,7 +2466,7 @@ and MatrixExpr =
                         | Some(v) when (r,c) <> v.LongSize -> raise (new ArgumentException("Elementwise size mismatch")) 
                         | Some(v) -> v
                         | None -> new Matrix(r, c, 0.0)
-        ArgumentChecks.throwIfContainsDisposed [res]
+        if res.IsDisposed then raise (new ObjectDisposedException(""))
         if res.LongSize <> (0L, 0L) then
             VectorExpr.EvalIn(matrixExpr.AsVectorExpr, Some res.ColMajorDataVector) |> ignore
         res

@@ -160,7 +160,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         with get(fromIndex : int, toIndex : int) = this.View(int64(fromIndex), int64(toIndex))
 
     member this.GetSlice(fromIndex, toIndex) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromIndex = defaultArg fromIndex 0L
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
@@ -179,7 +179,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         this.GetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64)
 
     member this.SetSlice(fromIndex : int64 option, toIndex : int64 option, value: bool) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromIndex = defaultArg fromIndex 0L
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
@@ -194,7 +194,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
 
     member this.SetSlice(fromIndex : Option<int64>, toIndex : Option<int64>, value: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [this;value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         if value.LongLength = 1L then
             this.SetSlice(fromIndex, toIndex, (value.[0L]:bool))
         else
@@ -234,14 +235,15 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     member this.Item
         with get(indices : int64 seq) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let indices = indices |> Seq.toArray
             let length = indices.GetLongLength(0)
             let res = new BoolVector(length, false)
             indices |> Array.iteri (fun i index -> res.[i] <- this.[index])
             res
         and set (indices : int64 seq) (value : BoolVector) =
-            ArgumentChecks.throwIfContainsDisposed [this;value]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if value.IsDisposed then raise (new ObjectDisposedException(""))
             let indices = indices |> Seq.toArray
             if value.LongLength = 1L then
                 let value = value.[0L]
@@ -251,14 +253,15 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     member this.Item
         with get(indices : int seq) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let indices = indices |> Seq.toArray
             let length = indices.GetLongLength(0)
             let res = new BoolVector(length, false)
             indices |> Array.iteri (fun i index -> res.[i] <- this.[index])
             res
         and set (indices : int seq) (value : BoolVector) =
-            ArgumentChecks.throwIfContainsDisposed [this;value]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if value.IsDisposed then raise (new ObjectDisposedException(""))
             if value.LongLength = 1L then
                 indices |> Seq.iteri (fun i index -> this.[index] <- value.[0])
             else
@@ -266,7 +269,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
     member this.Item
         with get(boolVector : BoolVector) = 
-            ArgumentChecks.throwIfContainsDisposed [this;boolVector]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if boolVector.IsDisposed then raise (new ObjectDisposedException(""))
             if length <> boolVector.LongLength then raise (new ArgumentException("Vector length mismatch"))
             let mutable arr = IntPtr.Zero
             let mutable resLen = 0L
@@ -275,22 +279,24 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
             new BoolVector(resLen, arr |> NativePtr.ofNativeInt<bool>, IntPtr.Zero, false, None)
 
         and set (boolVector : BoolVector) (value : BoolVector) =
-            ArgumentChecks.throwIfContainsDisposed [this; boolVector; value]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if boolVector.IsDisposed then raise (new ObjectDisposedException(""))
+            if value.IsDisposed then raise (new ObjectDisposedException(""))
             if length <> boolVector.LongLength then raise (new ArgumentException("Vector length mismatch"))
             MklFunctions.B_Set_Bool_Slice(length, nativeArray, boolVector.NativeArray, value.NativeArray, value.LongLength)
 
     member this.ToArray() =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         Array.init this.Length (fun i -> this.[i])
 
     member this.AsExpr
         with get() = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             if length = 1L then BoolVectorExpr.Scalar(this.[0L])
             else BoolVectorExpr.Var(this)
 
     static member Concat(vectors : BoolVector seq) =
-        ArgumentChecks.throwIfContainsDisposed vectors
+        vectors |> Seq.iter (fun v -> if v.IsDisposed then raise (new ObjectDisposedException("")))
         let vectors = vectors |> Seq.filter (fun v -> v.LongLength <> 0L) |> Seq.toArray
         if vectors.Length = 0 then BoolVector.Empty
         else
@@ -303,7 +309,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
             res
 
     static member Copy(vector : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then BoolVector.Empty
         else
             let res = new BoolVector(vector.LongLength, false)
@@ -312,32 +318,35 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
 
     static member (==) (vector1: BoolVector, vector2: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         vector1 = vector2
 
     static member (!=) (vector1: BoolVector, vector2: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         vector1 <> vector2
 
     static member (==) (vector: BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector.LongLength = 1L && vector.[0L] = a
 
     static member (!=) (vector: BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         not (vector == a)
 
     static member (==) (a : bool, vector: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector.LongLength = 1L && vector.[0L] = a
 
     static member (!=) (a : bool, vector: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         not (vector == a)
 
 
     static member (.<) (vector1: BoolVector, vector2: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -345,7 +354,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.<=) (vector1: BoolVector, vector2: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -353,7 +363,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.>) (vector1: BoolVector, vector2: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -361,7 +372,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.>=) (vector1: BoolVector, vector2: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -369,7 +381,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.=) (vector1: BoolVector, vector2: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -377,7 +390,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.<>) (vector1: BoolVector, vector2: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -387,7 +401,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
 
     static member (.<) (vector: BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new BoolVector(a)
@@ -395,7 +409,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.<=) (vector: BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new BoolVector(a)
@@ -403,7 +417,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.>) (vector: BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new BoolVector(a)
@@ -411,7 +425,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.>=) (vector: BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new BoolVector(a)
@@ -419,7 +433,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.=) (vector: BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new BoolVector(a)
@@ -427,7 +441,7 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.<>) (vector: BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new BoolVector(a)
@@ -437,33 +451,34 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
 
 
     static member (.<) (a : bool, vector: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .> a
 
     static member (.<=) (a : bool, vector: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .>= a
 
     static member (.>) (a : bool, vector: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .< a
 
     static member (.>=) (a : bool, vector: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .<= a
 
     static member (.=) (a : bool, vector: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .= a
 
     static member (.<>) (a : bool, vector: BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .<> a
 
 
 
     static member Max(vector1 : BoolVector, vector2 : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -471,7 +486,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member Min(vector1 : BoolVector, vector2 : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -479,25 +495,26 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member Max(vector : BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let a = new BoolVector(a)
         BoolVector.Max(vector, a)
 
     static member Min(vector : BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let a = new BoolVector(a)
         BoolVector.Min(vector, a)
 
     static member Max(a : bool, vector : BoolVector) = 
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         BoolVector.Max(vector, a)
 
     static member Min(a : bool, vector : BoolVector) = 
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         BoolVector.Min(vector, a)
 
     static member (.&&) (vector1 : BoolVector, vector2 : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -505,7 +522,8 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.||) (vector1 : BoolVector, vector2 : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1; vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -513,53 +531,54 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         res
 
     static member (.&&) (vector : BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let a = new BoolVector(a)
         vector .&& a
 
     static member (.||) (vector : BoolVector, a : bool) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let a = new BoolVector(a)
         vector .|| a
 
     static member (.&&) (a : bool, vector : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let a = new BoolVector(a)
         vector .&& a
 
     static member (.||) (a : bool, vector : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let a = new BoolVector(a)
         vector .|| a
 
     static member Not (vector : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let res = new BoolVector(vector.LongLength, false)
         MklFunctions.B_Not_Array(vector.LongLength, vector.NativeArray, res.NativeArray)
         res
 
     static member Any(vector : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         let mutable res = false
         MklFunctions.B_Any_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member All(vector : BoolVector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         let mutable res = false
         MklFunctions.B_All_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     override this.ToString() = 
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<bool>() true, null)
 
     override this.Equals(yobj) =
         match yobj with
         | :? BoolVector as y ->
-            ArgumentChecks.throwIfContainsDisposed [this; y]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if y.IsDisposed then raise (new ObjectDisposedException(""))
             if this.LongLength = 0L && y.LongLength = 0L then true
             elif this.LongLength <> y.LongLength then false
             else 
@@ -567,12 +586,12 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
         | _ -> false
  
     override this.GetHashCode() = 
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         hash (this.LongLength, this.NativeArray)
 
     interface IFormattable with
         member this.ToString(format, provider) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let maxRows, _ = DisplayControl.MaxDisplaySize
             let showRows = max 0L (min (maxRows |> int64) length) |> int
             let moreRows = length > (showRows |> int64)
@@ -698,7 +717,7 @@ and BoolVectorExpr =
                         | Some(v) when len <> v.LongLength -> raise (new ArgumentException("Elementwise length mismatch")) 
                         | Some(v) -> v
                         | None -> new BoolVector(len, false)
-        ArgumentChecks.throwIfContainsDisposed [res]
+        if res.IsDisposed then raise (new ObjectDisposedException(""))
         if res.LongLength <> 0L then
             let n = BoolVector.EvalSliceLength |> int64
             let len = res.LongLength
@@ -1077,7 +1096,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         with get(fromIndex : int, toIndex : int) = this.View(int64(fromIndex), int64(toIndex))
 
     member this.GetSlice(fromIndex, toIndex) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromIndex = defaultArg fromIndex 0L
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
@@ -1096,7 +1115,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         this.GetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64)
 
     member this.SetSlice(fromIndex, toIndex, value : float) =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         let fromIndex = defaultArg fromIndex 0L
         let toIndex = defaultArg toIndex (length - 1L)
         if fromIndex < 0L || fromIndex >= length then raise (new IndexOutOfRangeException())
@@ -1111,7 +1130,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         this.SetSlice(fromIndex |> Option.map int64, toIndex |> Option.map int64, value)
 
     member this.SetSlice(fromIndex : int64 option, toIndex : int64 option, value: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [this;value]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
+        if value.IsDisposed then raise (new ObjectDisposedException(""))
         if value.LongLength = 1L then
             this.SetSlice(fromIndex, toIndex, (value.[0L]:float))
         else
@@ -1152,14 +1172,15 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     member this.Item
         with get(indices : int64 seq) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let indices = indices |> Seq.toArray
             let length = indices.GetLongLength(0)
             let res = new Vector(length, 0.0)
             indices |> Array.iteri (fun i index -> res.[i] <- this.[index])
             res
         and set (indices : int64 seq) (value : Vector) =
-            ArgumentChecks.throwIfContainsDisposed [this;value]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if value.IsDisposed then raise (new ObjectDisposedException(""))
             let indices = indices |> Seq.toArray
             if value.LongLength = 1L then
                 let value = value.[0L]
@@ -1169,14 +1190,15 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     member this.Item
         with get(indices : int seq) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let indices = indices |> Seq.toArray
             let length = indices.GetLongLength(0)
             let res = new Vector(length, 0.0)
             indices |> Array.iteri (fun i index -> res.[i] <- this.[index])
             res
         and set (indices : int seq) (value : Vector) =
-            ArgumentChecks.throwIfContainsDisposed [this;value]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if value.IsDisposed then raise (new ObjectDisposedException(""))
             if value.LongLength = 1L then
                 indices |> Seq.iter (fun index -> this.[index] <- value.[0])
             else
@@ -1184,8 +1206,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
     member this.Item
         with get(boolVector : BoolVector) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
-            ArgumentChecks.throwIfContainsDisposed [boolVector]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if boolVector.IsDisposed then raise (new ObjectDisposedException(""))
             if length <> boolVector.LongLength then raise (new ArgumentException("Vector length mismatch"))
             let mutable arr = IntPtr.Zero
             let mutable resLen = 0L
@@ -1194,24 +1216,25 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             new Vector(resLen, arr |> NativePtr.ofNativeInt<float>, IntPtr.Zero, false, None)
 
         and set (boolVector : BoolVector) (value : Vector) =
-            ArgumentChecks.throwIfContainsDisposed [this;value]
-            ArgumentChecks.throwIfContainsDisposed [boolVector]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if value.IsDisposed then raise (new ObjectDisposedException(""))
+            if boolVector.IsDisposed then raise (new ObjectDisposedException(""))
             if length <> boolVector.LongLength then raise (new ArgumentException("Vector length mismatch"))
             MklFunctions.D_Set_Bool_Slice(length, nativeArray, boolVector.NativeArray, value.NativeArray, value.LongLength)
 
 
     member this.ToArray() =
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         Array.init this.Length (fun i -> this.[i])
 
     member this.AsExpr
         with get() = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             if length = 1L then VectorExpr.Scalar(this.[0L])
             else VectorExpr.Var(this)
 
     static member Concat(vectors : Vector seq) =
-        ArgumentChecks.throwIfContainsDisposed vectors
+        vectors |> Seq.iter (fun v -> if v.IsDisposed then raise (new ObjectDisposedException("")))
         let vectors = vectors |> Seq.filter (fun v -> v.LongLength <> 0L) |> Seq.toArray
         if vectors.Length = 0 then Vector.Empty
         else
@@ -1224,7 +1247,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             res
 
     static member Copy(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then Vector.Empty
         else
             let res = new Vector(vector.LongLength, 0.0)
@@ -1233,33 +1256,36 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member (==) (vector1: Vector, vector2: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         vector1 = vector2
 
     static member (!=) (vector1: Vector, vector2: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         vector1 <> vector2
 
     static member (==) (vector: Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector.LongLength = 1L && vector.[0L] = a
 
     static member (!=) (vector: Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         not (vector == a)
 
     static member (==) (a : float, vector: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector.LongLength = 1L && vector.[0L] = a
 
     static member (!=) (a : float, vector: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         not (vector == a)
 
 
 
     static member (.<) (vector1: Vector, vector2: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -1267,7 +1293,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.<=) (vector1: Vector, vector2: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -1275,7 +1302,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.>) (vector1: Vector, vector2: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -1283,7 +1311,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.>=) (vector1: Vector, vector2: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -1291,7 +1320,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.=) (vector1: Vector, vector2: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -1299,7 +1329,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.<>) (vector1: Vector, vector2: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new BoolVector(length, false)
@@ -1309,7 +1340,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member (.<) (vector: Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new Vector(a)
@@ -1317,7 +1348,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.<=) (vector: Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new Vector(a)
@@ -1325,7 +1356,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.>) (vector: Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new Vector(a)
@@ -1333,7 +1364,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.>=) (vector: Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new Vector(a)
@@ -1341,7 +1372,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.=) (vector: Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new Vector(a)
@@ -1349,7 +1380,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member (.<>) (vector: Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let length = vector.LongLength
         let res = new BoolVector(length, false)
         use a = new Vector(a)
@@ -1359,32 +1390,33 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member (.<) (a : float, vector: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .> a
 
     static member (.<=) (a : float, vector: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .>= a
 
     static member (.>) (a : float, vector: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .< a
 
     static member (.>=) (a : float, vector: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .<= a
 
     static member (.=) (a : float, vector: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .= a
 
     static member (.<>) (a : float, vector: Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         vector .<> a
 
 
     static member Max(vector1 : Vector, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new Vector(length, 0.0)
@@ -1392,7 +1424,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member Min(vector1 : Vector, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         let length = if vector1.LongLength = 0L || vector2.LongLength = 0L then 0L else max vector1.LongLength vector2.LongLength
         let res = new Vector(length, 0.0)
@@ -1400,32 +1433,33 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         res
 
     static member Max(vector : Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let a = new Vector(a)
         Vector.Max(vector, a)
 
     static member Min(vector : Vector, a : float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let a = new Vector(a)
         Vector.Min(vector, a)
 
     static member Max(a : float, vector : Vector) = 
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         Vector.Max(vector, a)
 
     static member Min(a : float, vector : Vector) = 
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         Vector.Min(vector, a)
 
 
     static member (*) (vector1 : Vector, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         if vector1.LongLength <> vector2.LongLength then raise (new ArgumentException("Vector lengths must be equal"))
         if vector1.LongLength = 0L || vector2.LongLength = 0L then raise (new ArgumentException("Vector lengths must be > 0"))
         MklFunctions.D_Inner_Product(vector1.LongLength, vector1.NativeArray, vector2.NativeArray)
 
     static member (.*) (a: float, vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Scalar_Mul_Array(a, len, vector.NativeArray, res.NativeArray)
@@ -1435,14 +1469,15 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         a .* vector
 
     static member (.*) (vector : Vector, a :  float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         a .* vector
 
     static member (*) (vector : Vector, a :  float) =
         vector .* a
 
     static member (.*) (vector1 : Vector, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] .* vector2
@@ -1455,18 +1490,19 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
            res
 
     static member (+) (a: float, vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Scalar_Add_Array(a, len, vector.NativeArray, res.NativeArray)
         res 
 
     static member (+) (vector : Vector, a :  float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         a + vector
 
     static member (+) (vector1 : Vector, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] + vector2
@@ -1479,7 +1515,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
            res
 
     static member (./) (a: float, vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Scalar_Div_Array(a, len, vector.NativeArray, res.NativeArray)
@@ -1489,7 +1525,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         a ./ vector
 
     static member (./) (vector : Vector, a :  float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Array_Div_Scalar(a, len, vector.NativeArray, res.NativeArray)
@@ -1499,7 +1535,8 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         vector ./ a
 
     static member (./) (vector1 : Vector, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] ./ vector2
@@ -1512,21 +1549,22 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
            res
 
     static member (-) (a: float, vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Scalar_Sub_Array(a, len, vector.NativeArray, res.NativeArray)
         res 
 
     static member (-) (vector : Vector, a :  float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Array_Sub_Scalar(a, len, vector.NativeArray, res.NativeArray)
         res 
 
     static member (-) (vector1 : Vector, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] - vector2
@@ -1539,28 +1577,29 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
            res
 
     static member (~-) (vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Minus_Array(len, vector.NativeArray, res.NativeArray)
         res   
         
     static member (.^) (a: float, vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Scalar_Pow_Array(a, len, vector.NativeArray, res.NativeArray)
         res 
 
     static member (.^) (vector : Vector, a :  float) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Array_Pow_scalar(a, len, vector.NativeArray, res.NativeArray)
         res  
         
     static member (.^) (vector1 : Vector, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         ArgumentChecks.throwIfLengthNotOKForElementwise vector1.LongLength vector2.LongLength
         if vector1.LongLength = 1L then
             vector1.[0] .^ vector2
@@ -1577,210 +1616,211 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member Abs(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Abs_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Sqrt(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Sqrt_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Sin(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Sin_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Cos(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Cos_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Tan(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Tan_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Asin(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_ASin_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Acos(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_ACos_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Atan(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_ATan_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Sinh(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Sinh_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Cosh(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Cosh_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Tanh(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Tanh_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member ASinh(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_ASinh_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member ACosh(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_ACosh_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member ATanh(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_ATanh_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Exp(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Exp_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Expm1(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Expm1_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Log(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Ln_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Log10(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Log10_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Log1p(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Log1p_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Erf(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Erf_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Erfc(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Erfc_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Erfinv(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Erfinv_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Erfcinv(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Erfcinv_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Normcdf(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_CdfNorm_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Norminv(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_CdfNormInv_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Round(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Round_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Ceiling(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Ceil_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Floor(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Floor_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Truncate(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         let len = vector.LongLength
         let res = new Vector(len, 0.0)
         MklFunctions.D_Trunc_Array(len, vector.NativeArray, res.NativeArray)
         res
 
     static member Axpby(a : float, vector1 : Vector, b : float, vector2 : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector1;vector2]
+        if vector1.IsDisposed then raise (new ObjectDisposedException(""))
+        if vector2.IsDisposed then raise (new ObjectDisposedException(""))
         if vector1.LongLength = 0L && vector2.LongLength = 0L then Vector.Empty
         else
             if vector1.LongLength <> vector2.LongLength then raise (new ArgumentException("Vector length mismatch"))
@@ -1793,21 +1833,21 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
 
 
     static member Sum(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         let mutable res = 0.0
         MklFunctions.D_Sum_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member Prod(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         let mutable res = 0.0
         MklFunctions.D_Prod_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member CumSum(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then Vector.Empty
         else
             let res = new Vector(vector.LongLength, 0.0)
@@ -1815,7 +1855,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             res
 
     static member CumProd(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then Vector.Empty
         else
             let res = new Vector(vector.LongLength, 0.0)
@@ -1823,7 +1863,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             res
 
     static member Min(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         if vector.LongLength = 1L then
             vector.[0]
@@ -1833,7 +1873,7 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             res
 
     static member Max(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         if vector.LongLength = 1L then
             vector.[0]
@@ -1843,14 +1883,14 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             res
 
     static member Mean(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         let mutable res = 0.0
         MklFunctions.D_Mean_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member Variance(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength = 0L then raise (new ArgumentException("Vector must have length > 0"))
         elif vector.LongLength = 1L then
             if Double.IsInfinity(vector.[0]) || Double.IsNaN(vector.[0]) then Double.NaN
@@ -1861,21 +1901,21 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
             res
 
     static member Skewness(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength <= 1L then raise (new ArgumentException("Vector must have length > 1"))
         let mutable res = 0.0
         MklFunctions.D_Skewness_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member Kurtosis(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         if vector.LongLength <= 1L then raise (new ArgumentException("Vector must have length > 1"))
         let mutable res = 0.0
         MklFunctions.D_Kurtosis_Matrix(false, 1L, vector.LongLength, vector.NativeArray, &&res)
         res
 
     static member Quantile(vector : Vector) =
-        ArgumentChecks.throwIfContainsDisposed [vector]
+        if vector.IsDisposed then raise (new ObjectDisposedException(""))
         fun (quantileOrders : Vector) ->
             if quantileOrders.LongLength = 0L then raise (new ArgumentException("Quantile orders vector must not be empty"))
             if vector.LongLength = 0L then Vector.Empty
@@ -1885,13 +1925,14 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
                 res
 
     override this.ToString() = 
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         (this:>IFormattable).ToString(GenericFormatting.GenericFormat.Instance.GetFormat<float>() 0.0, null)
 
     override this.Equals(yobj) =
         match yobj with
         | :? Vector as y ->
-            ArgumentChecks.throwIfContainsDisposed [this;y]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
+            if y.IsDisposed then raise (new ObjectDisposedException(""))
             if this.LongLength = 0L && y.LongLength = 0L then true
             elif this.LongLength <> y.LongLength then false
             else 
@@ -1899,12 +1940,12 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
         | _ -> false
  
     override this.GetHashCode() = 
-        ArgumentChecks.throwIfContainsDisposed [this]
+        if this.IsDisposed then raise (new ObjectDisposedException(""))
         hash (this.LongLength, this.NativeArray)
 
     interface IFormattable with
         member this.ToString(format, provider) = 
-            ArgumentChecks.throwIfContainsDisposed [this]
+            if this.IsDisposed then raise (new ObjectDisposedException(""))
             let maxRows, _ = DisplayControl.MaxDisplaySize
             let showRows = max 0L (min (maxRows |> int64) length) |> int
             let moreRows = length > (showRows |> int64)
@@ -2027,7 +2068,7 @@ and VectorExpr =
                         | Some(v) when len <> v.LongLength -> raise (new ArgumentException("Elementwise length mismatch")) 
                         | Some(v) -> v
                         | None -> new Vector(len, 0.0)
-        ArgumentChecks.throwIfContainsDisposed [res]
+        if res.IsDisposed then raise (new ObjectDisposedException(""))
         if res.LongLength <> 0L then
             let n = Vector.EvalSliceLength |> int64
             let len = res.LongLength
