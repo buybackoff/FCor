@@ -161,6 +161,7 @@ module Glm =
         let firstN = 1000
         let N = 1000
         let nas = new Set<_>(Factor.NAs)
+        let delimiterIsSpace = delimiter = [|' '|]
 
         let isNotNumerics (s : string) =
             not <| nas.Contains(s) && (match Single.TryParse(s) with | (true, _) -> false | _ -> true)
@@ -209,7 +210,10 @@ module Glm =
             let rec processLine (fromObs : int64) (N : int) (row : int) (isFactor : bool[]) (isDropped : bool[]) (delimiter : char[]) =
                 let line = sr.ReadLine()
                 if not <| String.IsNullOrEmpty(line) then
-                    line |> split |> Array.iteri (fun col s -> if not isDropped.[col] then slices.[col].[row] <- s)
+                    if delimiterIsSpace then
+                        line.Split(delimiter, StringSplitOptions.RemoveEmptyEntries) |> Array.iteri (fun col s -> if not isDropped.[col] then slices.[col].[row] <- s)
+                    else
+                        line.Split(delimiter) |> Array.iteri (fun col s -> if not isDropped.[col] then slices.[col].[row] <- s)
                     if row = N - 1 then
                         isFactor |> Array.iteri (fun col isFactor -> 
                                                     if not isFactor && not isDropped.[col] then

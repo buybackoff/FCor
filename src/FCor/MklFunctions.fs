@@ -1179,44 +1179,44 @@ type internal MklFunctions() =
        ui16_copy_array(new IntPtr(length), fromArray, toArray)
 
 
-    static member D_Get_Item(i : int64, array) =
-       d_get_item(new IntPtr(i), array)
-
-    static member D_Set_Item(i : int64, array, a) =
-       d_set_item(new IntPtr(i), array, a)
-
-
-    static member S_Get_Item(i : int64, array) =
-       s_get_item(new IntPtr(i), array)
-
-    static member S_Set_Item(i : int64, array, a) =
-       s_set_item(new IntPtr(i), array, a)
-
-    static member B_Get_Item(i : int64, array) =
-       b_get_item(new IntPtr(i), array)
-
-    static member B_Set_Item(i : int64, array, a) =
-       b_set_item(new IntPtr(i), array, a)
-
-
-    static member I32_Get_Item(i : int64, array) =
-       i32_get_item(new IntPtr(i), array)
-
-    static member I32_Set_Item(i : int64, array, a) =
-       i32_set_item(new IntPtr(i), array, a)
-
-
-    static member UI8_Get_Item(i : int64, array) =
-       ui8_get_item(new IntPtr(i), array)
-
-    static member UI8_Set_Item(i : int64, array, a) =
-       ui8_set_item(new IntPtr(i), array, a)
-
-    static member UI16_Get_Item(i : int64, array) =
-       ui16_get_item(new IntPtr(i), array)
-
-    static member UI16_Set_Item(i : int64, array, a) =
-       ui16_set_item(new IntPtr(i), array, a)
+//    static member D_Get_Item(i : int64, array) =
+//       d_get_item(new IntPtr(i), array)
+//
+//    static member D_Set_Item(i : int64, array, a) =
+//       d_set_item(new IntPtr(i), array, a)
+//
+//
+//    static member S_Get_Item(i : int64, array) =
+//       s_get_item(new IntPtr(i), array)
+//
+//    static member S_Set_Item(i : int64, array, a) =
+//       s_set_item(new IntPtr(i), array, a)
+//
+//    static member B_Get_Item(i : int64, array) =
+//       b_get_item(new IntPtr(i), array)
+//
+//    static member B_Set_Item(i : int64, array, a) =
+//       b_set_item(new IntPtr(i), array, a)
+//
+//
+//    static member I32_Get_Item(i : int64, array) =
+//       i32_get_item(new IntPtr(i), array)
+//
+//    static member I32_Set_Item(i : int64, array, a) =
+//       i32_set_item(new IntPtr(i), array, a)
+//
+//
+//    static member UI8_Get_Item(i : int64, array) =
+//       ui8_get_item(new IntPtr(i), array)
+//
+//    static member UI8_Set_Item(i : int64, array, a) =
+//       ui8_set_item(new IntPtr(i), array, a)
+//
+//    static member UI16_Get_Item(i : int64, array) =
+//       ui16_get_item(new IntPtr(i), array)
+//
+//    static member UI16_Set_Item(i : int64, array, a) =
+//       ui16_set_item(new IntPtr(i), array, a)
 
 
     static member S_D_Convert_Array(length : int64, fromArray, toArray) =

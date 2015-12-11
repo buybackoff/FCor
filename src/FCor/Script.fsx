@@ -12,24 +12,19 @@ open FCor.StatModels
 open Overloading
 open BasicStats
 
-open FCor.CsvProvider
-type Csv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\houses.csv", Separator = " " >
-let __ = new Csv()
-let price = __.P |>> "Price"
-let size = __.S |>> "Size"
-let beds = __.Be |>> [1..5]  |>> "Beds"
-let baths = __.Ba |>> [1..3] |>> "Baths"
-let isNew = __.New |>> [0..1] |>> "IsNew"
-let model = glm (price <~> beds + baths + isNew + beds * baths) true Gamma Log 50 1e-9
-(beds .* baths).AsFactor.GetStats()
-let fitted = model.Predict()
+//open FCor.CsvProvider
+//type Csv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\houses.csv", Separator = " " >
+//let __ = new Csv()
+//let price = __.P |>> "Price"
+//let size = __.S |>> "Size"
+//let beds = __.Be |>> [1..5]  |>> "Beds"
+//let baths = __.Ba |>> [1..3] |>> "Baths"
+//let isNew = __.New |>> [0..1] |>> "IsNew"
+//let model = glm (price <~> beds + baths + isNew + beds * baths) true Gamma Log 50 1e-9
+//(beds .* baths).AsFactor.GetStats()
+//let fitted = model.Predict()
 
 
-
-
-//type BinomCsv = CsvDataFrame< @"C:\Users\Adam Mlocek\Development\FCore\tests\FCor.StatModels.Tests\binomial.csv", Separator = " " >
-//let df = new BinomCsv()
-//let model = glm (df.r / df.n <~> df.x + df.drug) true Binomial Logit 50 1e-9
 
 
 
@@ -83,7 +78,7 @@ let X = statVars.[2].AsCovariate
 let Y = statVars.[3].AsCovariate
 
 
-let model = glm (Y <~> A + B + X) true Gamma Ln 50 1e-8
+let model = glm (Y <~> A + B + X) true Gamma Log 50 1e-8
 //
 //
 //let fitted = model.Predict(new DataFrame(statVars))

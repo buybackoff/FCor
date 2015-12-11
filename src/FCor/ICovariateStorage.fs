@@ -25,9 +25,11 @@ type CovariateStorageFloat32 () =
             let nativeArrayPtr = &&natArr |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<Float32Ptr> 
             MklFunctions.S_Resize_Array(newBufferSize, nativeArrayPtr) 
             nativeArray <- NativePtr.read nativeArrayPtr
-            data |> Array.iteri (fun i x -> MklFunctions.S_Set_Item(fromObs + int64(i), nativeArray, x))
+            data |> Array.iteri (fun i x -> let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i))*4L) |> NativePtr.ofNativeInt<float32>
+                                            NativePtr.write offsetAddr x)
         else
-            data |> Array.iteri (fun i x -> MklFunctions.S_Set_Item(fromObs + int64(i), nativeArray, x))
+            data |> Array.iteri (fun i x -> let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i))*4L) |> NativePtr.ofNativeInt<float32>
+                                            NativePtr.write offsetAddr x)
         length <- newLength
         bufferSize <- newBufferSize
 

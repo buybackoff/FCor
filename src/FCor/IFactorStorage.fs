@@ -45,7 +45,8 @@ type FactorStorage () =
                     levels |> Array.iteri (fun i level -> 
                                                let level = level.Trim()
                                                let levelIndex = levelIndexMap.[level]
-                                               MklFunctions.UI16_Set_Item(fromObs + int64(i), nativeArrayUInt16, levelIndex)
+                                               let offsetAddr = IntPtr((nativeArrayUInt16 |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i))*2L) |> NativePtr.ofNativeInt<uint16>
+                                               NativePtr.write offsetAddr levelIndex
                                           )
                     nativeArray <- Choice2Of2(nativeArrayUInt16)
                 | Choice2Of2(natArr) ->
@@ -56,7 +57,8 @@ type FactorStorage () =
                     levels |> Array.iteri (fun i level -> 
                                                let level = level.Trim()
                                                let levelIndex = levelIndexMap.[level]
-                                               MklFunctions.UI16_Set_Item(fromObs + int64(i), nativeArrayUInt16, levelIndex)
+                                               let offsetAddr = IntPtr((nativeArrayUInt16 |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i))*2L) |> NativePtr.ofNativeInt<uint16>
+                                               NativePtr.write offsetAddr levelIndex
                                           )
                     nativeArray <- Choice2Of2(nativeArrayUInt16)
         else
@@ -70,14 +72,16 @@ type FactorStorage () =
                         levels |> Array.iteri (fun i level -> 
                                                    let level = level.Trim()
                                                    let levelIndex = levelIndexMap.[level]
-                                                   MklFunctions.UI8_Set_Item(fromObs + int64(i), nativeArrayUInt8, levelIndex |> uint8)
+                                                   let offsetAddr = IntPtr((nativeArrayUInt8 |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i))) |> NativePtr.ofNativeInt<uint8>
+                                                   NativePtr.write offsetAddr (levelIndex |> uint8)
                                               )
                         nativeArray <- Choice1Of2(nativeArrayUInt8)
                     else
                         levels |> Array.iteri (fun i level -> 
                                                    let level = level.Trim()
                                                    let levelIndex = levelIndexMap.[level]
-                                                   MklFunctions.UI8_Set_Item(fromObs + int64(i), natArr, levelIndex |> uint8)
+                                                   let offsetAddr = IntPtr((natArr |> NativePtr.toNativeInt).ToInt64() + (fromObs + int64(i))) |> NativePtr.ofNativeInt<uint8>
+                                                   NativePtr.write offsetAddr (levelIndex |> uint8)
                                               )
                 | _ -> ()
         length <- newLength

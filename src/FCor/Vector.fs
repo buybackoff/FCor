@@ -216,20 +216,24 @@ type BoolVector(length : int64, nativeArray : nativeptr<bool>, gcHandlePtr : Int
     member this.Item
         with get(i : int64) =
             if isDisposed then raise (new ObjectDisposedException(""))
+            if i < 0L || i >= length then raise (new IndexOutOfRangeException())
             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + i) |> NativePtr.ofNativeInt<bool>
             NativePtr.read offsetAddr  
         and set (i : int64) value =
             if isDisposed then raise (new ObjectDisposedException(""))
+            if i < 0L || i >= length then raise (new IndexOutOfRangeException())
             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + i) |> NativePtr.ofNativeInt<bool>
             NativePtr.write offsetAddr value
 
     member this.Item
         with get(i : int) =
             if isDisposed then raise (new ObjectDisposedException(""))
+            if i < 0 || int64(i) >= length then raise (new IndexOutOfRangeException())
             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + int64(i)) |> NativePtr.ofNativeInt<bool>
             NativePtr.read offsetAddr 
         and set (i : int) value =
             if isDisposed then raise (new ObjectDisposedException(""))
+            if i < 0 || int64(i) >= length then raise (new IndexOutOfRangeException())
             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + int64(i)) |> NativePtr.ofNativeInt<bool>
             NativePtr.write offsetAddr value
 
@@ -1153,20 +1157,24 @@ and Vector (length : int64, nativeArray : nativeptr<float>, gcHandlePtr : IntPtr
     member this.Item
         with get(i : int64) =
             if isDisposed then raise (new ObjectDisposedException(""))
+            if i < 0L || i >= length then raise (new IndexOutOfRangeException())
             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + i*8L) |> NativePtr.ofNativeInt<float>
             NativePtr.read offsetAddr  
         and set (i : int64) value =
             if isDisposed then raise (new ObjectDisposedException(""))
+            if i < 0L || i >= length then raise (new IndexOutOfRangeException())
             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + i*8L) |> NativePtr.ofNativeInt<float>
             NativePtr.write offsetAddr value
 
     member this.Item
         with get(i : int) =
             if isDisposed then raise (new ObjectDisposedException(""))
+            if i < 0 || int64(i) >= length then raise (new IndexOutOfRangeException())
             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + int64(i)*8L) |> NativePtr.ofNativeInt<float>
             NativePtr.read offsetAddr 
         and set (i : int) value =
             if isDisposed then raise (new ObjectDisposedException(""))
+            if i < 0 || int64(i) >= length then raise (new IndexOutOfRangeException())
             let offsetAddr = IntPtr((nativeArray |> NativePtr.toNativeInt).ToInt64() + int64(i)*8L) |> NativePtr.ofNativeInt<float>
             NativePtr.write offsetAddr value
 
